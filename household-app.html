@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>節約マスター - ゲーミフィケーション家計簿</title>
+    <link rel="stylesheet" href="household-style.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- ヘッダー -->
+      <header class="app-header">
+        <h1><i class="fas fa-piggy-bank"></i> 節約マスター</h1>
+        <div class="user-info">
+          <div class="level-badge">Lv.<span id="user-level">1</span></div>
+          <div class="points">💰 <span id="user-points">0</span>pt</div>
+        </div>
+      </header>
+
+      <!-- キャラクター表示エリア -->
+      <section class="character-section">
+        <div class="character-container">
+          <div class="character" id="main-character">
+            <div class="character-face">😊</div>
+            <div class="character-body"></div>
+          </div>
+          <div class="character-stats">
+            <div class="stat">
+              <span class="stat-label">節約度</span>
+              <div class="stat-bar">
+                <div class="stat-fill hp" id="hp-bar" style="width: 80%"></div>
+              </div>
+              <span id="hp-value">80/100</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">料理スキル</span>
+              <div class="stat-bar">
+                <div
+                  class="stat-fill skill"
+                  id="skill-bar"
+                  style="width: 30%"
+                ></div>
+              </div>
+              <span id="skill-value">3/10</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- タブナビゲーション -->
+      <nav class="tab-navigation">
+        <button class="tab-btn active" data-tab="dashboard">
+          📊 ダッシュボード
+        </button>
+        <button class="tab-btn" data-tab="input">➕ 入力</button>
+        <button class="tab-btn" data-tab="missions">🎯 ミッション</button>
+        <button class="tab-btn" data-tab="collection">📚 図鑑</button>
+        <button class="tab-btn" data-tab="gacha">🎁 ガチャ</button>
+      </nav>
+
+      <!-- ダッシュボードタブ -->
+      <section class="tab-content active" id="dashboard">
+        <div class="dashboard-grid">
+          <div class="stat-card">
+            <h3>今月の節約額</h3>
+            <div class="big-number">¥<span id="monthly-savings">0</span></div>
+            <div class="progress-text">
+              目標まで ¥<span id="goal-remaining">10000</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <h3>自炊回数</h3>
+            <div class="big-number"><span id="cooking-count">0</span>回</div>
+            <div class="progress-text">今月の目標: 20回</div>
+          </div>
+
+          <div class="stat-card achievement">
+            <h3>最新の実績</h3>
+            <div id="latest-achievement">まだ実績がありません</div>
+          </div>
+        </div>
+
+        <div class="recent-expenses">
+          <h3>最近の支出</h3>
+          <div id="expense-list"></div>
+        </div>
+      </section>
+
+      <!-- 支出入力タブ -->
+      <section class="tab-content" id="input">
+        <div class="input-form">
+          <h3>支出を記録しよう！</h3>
+
+          <div class="form-group">
+            <label for="expense-amount">金額</label>
+            <input type="number" id="expense-amount" placeholder="例: 500" />
+          </div>
+
+          <div class="form-group">
+            <label for="expense-category">カテゴリー</label>
+            <select id="expense-category">
+              <option value="cooking">🍳 自炊 (+ポイント)</option>
+              <option value="eating-out">🍽️ 外食 (-ポイント)</option>
+              <option value="snack">🍫 お菓子 (-ポイント)</option>
+              <option value="vending-machine">🥤 自販機 (-ポイント)</option>
+              <option value="grocery">🛒 食材購入 (+ポイント)</option>
+              <option value="other">📝 その他</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="expense-description">メモ</label>
+            <input
+              type="text"
+              id="expense-description"
+              placeholder="何を買った/食べた？"
+            />
+          </div>
+
+          <button class="btn-primary" onclick="addExpense()">
+            <i class="fas fa-plus"></i> 記録する
+          </button>
+
+          <div class="point-preview" id="point-preview"></div>
+        </div>
+      </section>
+
+      <!-- ミッションタブ -->
+      <section class="tab-content" id="missions">
+        <h3>今日のミッション</h3>
+        <div class="missions-container">
+          <div class="mission-card" data-mission="daily-cooking">
+            <div class="mission-icon">🍳</div>
+            <div class="mission-info">
+              <h4>今日は自炊しよう！</h4>
+              <p>自炊を1回記録する</p>
+              <div class="mission-reward">報酬: 50pt</div>
+            </div>
+            <div class="mission-status incomplete">未完了</div>
+          </div>
+
+          <div class="mission-card" data-mission="no-snack">
+            <div class="mission-icon">🚫</div>
+            <div class="mission-info">
+              <h4>お菓子を我慢</h4>
+              <p>今日はお菓子を買わない</p>
+              <div class="mission-reward">報酬: 30pt</div>
+            </div>
+            <div class="mission-status incomplete">未完了</div>
+          </div>
+
+          <div class="mission-card" data-mission="record-expense">
+            <div class="mission-icon">📝</div>
+            <div class="mission-info">
+              <h4>家計簿記録</h4>
+              <p>支出を3回以上記録する</p>
+              <div class="mission-reward">報酬: 20pt</div>
+            </div>
+            <div class="mission-status incomplete">未完了</div>
+          </div>
+        </div>
+
+        <h3>週間チャレンジ</h3>
+        <div class="challenge-card">
+          <h4>🏆 5日連続自炊チャレンジ</h4>
+          <div class="challenge-progress">
+            <div class="progress-bar">
+              <div
+                class="progress-fill"
+                id="cooking-streak"
+                style="width: 0%"
+              ></div>
+            </div>
+            <span id="streak-text">0/5日</span>
+          </div>
+          <div class="challenge-reward">報酬: 200pt + 特別称号</div>
+        </div>
+      </section>
+
+      <!-- 料理図鑑タブ -->
+      <section class="tab-content" id="collection">
+        <h3>料理図鑑</h3>
+        <div class="collection-grid" id="recipe-collection">
+          <!-- 動的に生成される料理カード -->
+        </div>
+
+        <h3>獲得バッジ</h3>
+        <div class="badges-container" id="badges-container">
+          <!-- 動的に生成されるバッジ -->
+        </div>
+
+        <h3>ガチャコレクション</h3>
+        <div class="collection-grid" id="gacha-collection">
+          <!-- 動的に生成されるガチャアイテム -->
+        </div>
+      </section>
+
+      <!-- ガチャタブ -->
+      <section class="tab-content" id="gacha">
+        <div class="gacha-container">
+          <h3>毎日ガチャ</h3>
+          <div class="gacha-machine">
+            <div class="gacha-display" id="gacha-display">
+              <div class="gacha-item">❓</div>
+            </div>
+            <div class="gacha-info">
+              <p>100ポイントで1回ガチャが回せます！</p>
+              <p>レシピや称号、アバターパーツが当たるよ</p>
+            </div>
+            <button class="btn-gacha" id="gacha-btn" onclick="playGacha()">
+              <i class="fas fa-gift"></i> ガチャを回す (100pt)
+            </button>
+          </div>
+
+          <div class="gacha-inventory">
+            <h4>獲得アイテム</h4>
+            <div id="inventory-items"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 通知ポップアップ -->
+    <div class="notification" id="notification"></div>
+
+    <!-- レベルアップエフェクト -->
+    <div class="level-up-effect" id="level-up-effect">
+      <div class="level-up-text">レベルアップ！</div>
+    </div>
+
+    <!-- 編集モーダル -->
+    <div class="edit-modal" id="edit-modal">
+      <div class="edit-modal-content">
+        <h3>支出を編集</h3>
+        <div class="form-group">
+          <label for="edit-amount">金額</label>
+          <input type="number" id="edit-amount" placeholder="例: 500" />
+        </div>
+        <div class="form-group">
+          <label for="edit-category">カテゴリー</label>
+          <select id="edit-category">
+            <option value="cooking">🍳 自炊 (+ポイント)</option>
+            <option value="eating-out">🍽️ 外食 (-ポイント)</option>
+            <option value="snack">🍫 お菓子 (-ポイント)</option>
+            <option value="vending-machine">🥤 自販機 (-ポイント)</option>
+            <option value="grocery">🛒 食材購入 (+ポイント)</option>
+            <option value="other">📝 その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-description">メモ</label>
+          <input
+            type="text"
+            id="edit-description"
+            placeholder="何を買った/食べた？"
+          />
+        </div>
+        <div class="edit-modal-buttons">
+          <button class="btn-save" onclick="saveExpenseEdit()">保存</button>
+          <button class="btn-cancel" onclick="cancelExpenseEdit()">
+            キャンセル
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 削除確認ダイアログ -->
+    <div class="confirm-dialog" id="confirm-dialog">
+      <h4>⚠️ 削除確認</h4>
+      <p>
+        この支出記録を削除してもよろしいですか？<br />ポイントやミッション進捗も調整されます。
+      </p>
+      <div class="confirm-buttons">
+        <button class="btn-confirm" onclick="confirmDelete()">削除する</button>
+        <button class="btn-cancel-confirm" onclick="cancelDelete()">
+          キャンセル
+        </button>
+      </div>
+    </div>
+
+    <script src="household-script.js"></script>
+  </body>
+</html>
