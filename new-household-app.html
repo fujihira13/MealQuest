@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>食費管理アプリ - 節約マスター</title>
+    <link rel="stylesheet" href="new-household-style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <h1><i class="fas fa-piggy-bank"></i> 節約マスター</h1>
+            <div class="user-info">
+                <div class="level-badge">Lv.<span id="user-level">1</span></div>
+            </div>
+        </header>
+
+        <!-- タブナビゲーション -->
+        <nav class="tab-navigation">
+            <button class="tab-btn active" data-tab="home">
+                🏠 ホーム
+            </button>
+            <button class="tab-btn" data-tab="stats">
+                📊 統計
+            </button>
+            <button class="tab-btn" data-tab="collection">
+                🎁 コレクション
+            </button>
+        </nav>
+
+        <!-- ホームタブ -->
+        <section class="tab-content active" id="home">
+            <!-- 消費許容ゲージセクション -->
+            <div class="gauge-section">
+                <h3>今月の消費許容ゲージ</h3>
+                <div class="gauge-container">
+                    <div class="gauge-bar">
+                        <div class="gauge-fill" id="allowance-gauge" style="width: 65%"></div>
+                    </div>
+                    <div class="gauge-text">
+                        残り許容額: ¥<span id="remaining-allowance">8000</span> / ¥<span id="total-allowance">15000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- アバター・ステータスセクション -->
+            <div class="avatar-section">
+                <div class="avatar-container">
+                    <div class="avatar" id="main-avatar">
+                        <div class="avatar-character">
+                            <div class="avatar-head">
+                                <div class="avatar-hair"></div>
+                                <div class="avatar-face">
+                                    <div class="avatar-eyes">
+                                        <div class="eye left-eye"></div>
+                                        <div class="eye right-eye"></div>
+                                    </div>
+                                    <div class="avatar-mouth"></div>
+                                </div>
+                            </div>
+                            <div class="avatar-body">
+                                <div class="avatar-shirt"></div>
+                                <div class="avatar-arms">
+                                    <div class="arm left-arm"></div>
+                                    <div class="arm right-arm"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="avatar-info">
+                        <div class="points-display">💰 <span id="user-points">0</span>pt</div>
+                        <div class="level-progress">
+                            <div class="level-text">次のレベルまで: <span id="points-to-next">100</span>pt</div>
+                            <div class="level-bar">
+                                <div class="level-fill" id="level-progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="savings-bank">
+                            <i class="fas fa-coins"></i> 合計貯金: ¥<span id="savings-total">0</span>
+                        </div>
+                        <div class="monthly-savings">
+                            <i class="fas fa-calendar-alt"></i> 今月の貯金: ¥<span id="monthly-savings">0</span>
+                        </div>
+                        <div class="monthly-stats">
+                            <span>今月の自炊: <span id="cooking-count">0</span>回</span>
+                            <span>食費: ¥<span id="monthly-expense">0</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 自炊記録セクション -->
+            <div class="cooking-section">
+                <h3>今日の自炊記録</h3>
+                <div class="cooking-buttons">
+                    <button class="cooking-btn" data-meal="morning" onclick="recordCooking('morning', this)">
+                        朝
+                    </button>
+                    <button class="cooking-btn" data-meal="lunch" onclick="recordCooking('lunch', this)">
+                        昼
+                    </button>
+                    <button class="cooking-btn" data-meal="dinner" onclick="recordCooking('dinner', this)">
+                        夜
+                    </button>
+                </div>
+            </div>
+
+            <!-- 節約成功記録セクション -->
+            <div class="savings-record-section">
+                <h3>節約成功記録</h3>
+                <p>誘惑に負けずに節約できましたか？</p>
+                <div class="savings-buttons">
+                    <button class="savings-quick-btn" onclick="recordSavings(500)">
+                        コンビニ我慢<br>¥500
+                    </button>
+                    <button class="savings-quick-btn" onclick="recordSavings(120)">
+                        自販機我慢<br>¥120
+                    </button>
+                    <button class="savings-custom-btn" onclick="showCustomSavings()">
+                        その他<br>自由入力
+                    </button>
+                </div>
+            </div>
+
+            <!-- カテゴリ選択ボタン -->
+            <div class="category-section">
+                <h3>支出を記録する</h3>
+                <div class="category-grid">
+                    <button class="category-btn category-supermarket" onclick="showInputScreen('スーパー')">
+                        🛒<br>スーパー
+                    </button>
+                    <button class="category-btn category-vending" onclick="showInputScreen('自販機')">
+                        🥤<br>自販機
+                    </button>
+                    <button class="category-btn category-convenience" onclick="showInputScreen('コンビニ')">
+                        🏪<br>コンビニ
+                    </button>
+                    <button class="category-btn category-drinking" onclick="showInputScreen('飲み会')">
+                        🍻<br>飲み会  
+                    </button>
+                    <button class="category-btn category-date" onclick="showInputScreen('デート')">
+                        💕<br>デート
+                    </button>
+                    <button class="category-btn category-other" onclick="showInputScreen('その他')">
+                        📝<br>その他
+                    </button>
+                </div>
+            </div>
+
+            <!-- ガチャボタン -->
+            <div class="gacha-section">
+                <button class="gacha-btn" onclick="playGacha()">
+                    <i class="fas fa-gift"></i> ガチャを引く (100pt)
+                </button>
+            </div>
+        </section>
+
+        <!-- 統計タブ -->
+        <section class="tab-content" id="stats">
+            <!-- 月間統計 -->
+            <div class="stats-overview">
+                <h3>今月の統計</h3>
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <h4>総支出</h4>
+                        <div class="stat-value">¥<span id="total-expense">0</span></div>
+                        <div class="stat-detail">目標: ¥<span id="expense-goal">25000</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>節約額</h4>
+                        <div class="stat-value">¥<span id="total-savings">0</span></div>
+                        <div class="stat-detail">前月比: +¥<span id="savings-diff">0</span></div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>自炊回数</h4>
+                        <div class="stat-value"><span id="cooking-total">0</span>回</div>
+                        <div class="stat-detail">目標: <span id="cooking-goal">20</span>回</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- グラフエリア -->
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h4>支出推移</h4>
+                    <div class="chart-placeholder" id="expense-chart">
+                        📈 グラフエリア (実装予定)
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h4>カテゴリ別支出</h4>
+                    <div class="chart-placeholder" id="category-chart">
+                        🥧 円グラフエリア (実装予定)
+                    </div>
+                </div>
+            </div>
+
+            <!-- 記録一覧・編集 -->
+            <div class="records-section">
+                <h3>記録の編集・削除</h3>
+                <div class="date-selector">
+                    <label for="record-date">日付を選択:</label>
+                    <input type="date" id="record-date" onchange="loadRecordsForDate()">
+                </div>
+                <div class="record-list" id="record-list">
+                    <!-- 動的に生成される記録リスト -->
+                </div>
+            </div>
+
+            <!-- 設定セクション -->
+            <div class="settings-section">
+                <h3>月間目標設定</h3>
+                <div class="setting-items">
+                    <div class="setting-item">
+                        <label>食費目標 (円)</label>
+                        <input type="number" id="expense-goal-input" value="25000" onchange="updateGoal('expense', this.value)">
+                    </div>
+                    <div class="setting-item">
+                        <label>消費許容額 (円)</label>
+                        <input type="number" id="allowance-goal-input" value="15000" onchange="updateGoal('allowance', this.value)">
+                    </div>
+                    <div class="setting-item">
+                        <label>自炊回数目標 (回)</label>
+                        <input type="number" id="cooking-goal-input" value="20" onchange="updateGoal('cooking', this.value)">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- コレクションタブ -->
+        <section class="tab-content" id="collection">
+            <div class="collection-header">
+                <h3>🎁 ガチャコレクション</h3>
+                <div class="collection-stats">
+                    <span>所持アイテム: <span id="collection-count">0</span>個</span>
+                    <span>コンプリート率: <span id="completion-rate">0</span>%</span>
+                </div>
+            </div>
+
+            <!-- レアリティ別フィルター -->
+            <div class="rarity-filter">
+                <button class="filter-btn active" data-rarity="all" onclick="filterByRarity('all', this)">全て</button>
+                <button class="filter-btn" data-rarity="common" onclick="filterByRarity('common', this)">⭐ コモン</button>
+                <button class="filter-btn" data-rarity="rare" onclick="filterByRarity('rare', this)">⭐⭐ レア</button>
+                <button class="filter-btn" data-rarity="epic" onclick="filterByRarity('epic', this)">⭐⭐⭐ エピック</button>
+                <button class="filter-btn" data-rarity="legendary" onclick="filterByRarity('legendary', this)">⭐⭐⭐⭐ レジェンド</button>
+            </div>
+
+            <!-- コレクションアイテム一覧 -->
+            <div class="collection-grid" id="collection-grid">
+                <!-- 動的に生成されるアイテム -->
+            </div>
+
+            <!-- ガチャボタン -->
+            <div class="gacha-section">
+                <button class="gacha-btn" onclick="playGacha()">
+                    <i class="fas fa-gift"></i> ガチャを引く (100pt)
+                </button>
+                <p class="gacha-info">※ポイントが足りない場合は節約や自炊でポイントを貯めましょう！</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- 入力画面モーダル -->
+    <div class="input-modal" id="input-modal">
+        <div class="input-modal-content">
+            <div class="input-header">
+                <button class="back-btn" onclick="hideInputScreen()">
+                    <i class="fas fa-arrow-left"></i> 戻る
+                </button>
+                <h2 id="input-category-title">カテゴリ</h2>
+                <div class="spacer"></div>
+            </div>
+
+            <div class="input-content">
+                <!-- 金額入力 -->
+                <div class="amount-section">
+                    <input type="text" class="amount-input" id="amount-input" placeholder="0" readonly>
+                </div>
+
+                <!-- 数字キーパッド -->
+                <div class="keypad">
+                    <button class="key-btn" onclick="addDigit('1')">1</button>
+                    <button class="key-btn" onclick="addDigit('2')">2</button>
+                    <button class="key-btn" onclick="addDigit('3')">3</button>
+                    <button class="key-btn" onclick="addDigit('4')">4</button>
+                    <button class="key-btn" onclick="addDigit('5')">5</button>
+                    <button class="key-btn" onclick="addDigit('6')">6</button>
+                    <button class="key-btn" onclick="addDigit('7')">7</button>
+                    <button class="key-btn" onclick="addDigit('8')">8</button>
+                    <button class="key-btn" onclick="addDigit('9')">9</button>
+                    <button class="key-btn clear-btn" onclick="clearAmount()">C</button>
+                    <button class="key-btn" onclick="addDigit('0')">0</button>
+                    <button class="key-btn delete-btn" onclick="deleteDigit()">⌫</button>
+                </div>
+
+                <!-- 時間帯選択 -->
+                <div class="meal-selection">
+                    <h4>食事の時間帯</h4>
+                    <div class="meal-buttons">
+                        <button class="meal-btn" data-meal="morning" onclick="selectMeal('morning', this)">朝</button>
+                        <button class="meal-btn" data-meal="lunch" onclick="selectMeal('lunch', this)">昼</button>
+                        <button class="meal-btn" data-meal="dinner" onclick="selectMeal('dinner', this)">夜</button>
+                    </div>
+                </div>
+
+                <!-- 保存ボタン -->
+                <button class="save-btn" onclick="saveExpenseRecord()">
+                    <i class="fas fa-save"></i> 記録する
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <div class="notification-content"></div>
+    </div>
+
+    <!-- 確認ダイアログ -->
+    <div class="confirm-dialog" id="confirm-dialog">
+        <div class="confirm-content">
+            <h4>確認</h4>
+            <p id="confirm-message"></p>
+            <div class="confirm-buttons">
+                <button class="confirm-btn" onclick="confirmAction()">はい</button>
+                <button class="cancel-btn" onclick="cancelAction()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="new-household-script.js"></script>
+</body>
+</html>
