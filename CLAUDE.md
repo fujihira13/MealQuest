@@ -16,22 +16,29 @@ This is a **gamified household expense tracking web application** focused specif
 
 ## Architecture
 
-The application follows a **Progressive Web App (PWA)** pattern with:
+The application follows a **Progressive Web App (PWA)** pattern with modern React + TypeScript:
 
-- **HTML Structure**: `new-household-app.html` - Main app interface with tab-based navigation
-- **JavaScript Logic**: `new-household-script.js` - Core app logic using ES6 class-based architecture
-- **Styling**: `new-household-style.css` - Complete CSS styling with animations and responsive design
-- **PWA Manifest**: `manifest.json` - App metadata and icon configuration
-- **Service Worker**: `sw.js` - Offline functionality and caching strategy
-- **Data Storage**: LocalStorage for client-side data persistence
-- **App State**: Centralized in `HouseholdApp` class with methods for data management
+- **React Components**: Modular component-based architecture
+- **TypeScript**: Full type safety and intellisense support
+- **State Management**: Zustand for efficient state management
+- **Styling**: CSS with responsive design and animations
+- **PWA Manifest**: Vite PWA plugin for automatic PWA generation
+- **Service Worker**: Automatic service worker via Vite PWA plugin
+- **Data Storage**: LocalStorage with Zustand persistence
+- **Build System**: Vite for fast development and optimized builds
 
-### Core Classes and Structure
+### Core Architecture Components
 
-- **HouseholdApp class**: Main application controller
-  - Manages user data, expenses, missions, recipes, badges
-  - Handles UI updates, data persistence, and game mechanics
-  - Implements gamification logic (points, levels, character stats)
+- **App.tsx**: Main application component with tab routing
+- **Store (Zustand)**: Centralized state management
+  - AppStore: Application data (expenses, savings, missions, etc.)
+  - UIStore: UI state (modals, notifications, current tab)
+- **Components**: Modular React components
+  - Layout components (Header, TabNavigation)
+  - Tab components (HomeTab, StatsTab, etc.)
+  - Common components (Avatar, Notification, ConfirmDialog)
+  - Modal components (InputModal)
+- **Types**: Comprehensive TypeScript type definitions
 
 ### Key Data Models
 
@@ -43,32 +50,43 @@ The application follows a **Progressive Web App (PWA)** pattern with:
 
 ## Development Commands
 
-This is a client-side only PWA application. To develop:
+This application now uses React + TypeScript with Vite:
 
 1. **Local Development**: 
-   - **Primary version**: Open `new-household-app.html` directly in a web browser
-   - **With static server** (recommended for PWA features): `python -m http.server 8000` or `npx serve .`
-   - Access at `http://localhost:8000/new-household-app.html`
-2. **Testing**: Manual testing in browser - no automated test framework configured
-3. **PWA Testing**: Use browser dev tools to test offline functionality and service worker
-4. **Deployment**: Static hosting (can be deployed to any web server supporting PWA)
+   - Install dependencies: `npm install`
+   - Start development server: `npm run dev`
+   - Access at `http://localhost:3000`
+2. **Production Build**: `npm run build`
+3. **Type Checking**: `npm run typecheck`
+4. **Linting**: `npm run lint`
+5. **Preview Build**: `npm run preview`
+6. **Testing**: Manual testing in browser - no automated test framework configured
+7. **PWA Testing**: Use browser dev tools to test offline functionality and service worker
+8. **Deployment**: Static hosting of the built files from `dist/` directory
 
 ## Current Development State
 
-**Current active version**: `new-household-app.html`, `new-household-script.js`, `new-household-style.css`
+**Current active version**: React + TypeScript application in `src/` directory
 
-This is the primary PWA version with full offline capabilities and optimized user experience. All new development should focus on this version unless specifically requested to work on legacy files.
+The application has been migrated from vanilla JavaScript to React + TypeScript with the following structure:
+- `src/App.tsx` - Main application component
+- `src/components/` - Reusable UI components
+- `src/store/` - Zustand state management
+- `src/types/` - TypeScript type definitions
+- Modern development tooling with Vite, ESLint, TypeScript
+
+**Legacy files**: `new-household-app.html`, `new-household-script.js`, `new-household-style.css` are kept for reference but are no longer the active development files.
 
 ## Key Implementation Notes
 
-- **Data Persistence**: All data stored in browser LocalStorage under key "householdApp"
-- **No Build Process**: Pure vanilla JS/HTML/CSS - no compilation needed
+- **Data Persistence**: All data stored in browser LocalStorage with Zustand persistence middleware
+- **Build Process**: Vite for fast development and optimized production builds
 - **Mobile-First**: Responsive design optimized for mobile devices
-- **PWA Features**: Full offline capability via service worker with cache-first strategy
+- **PWA Features**: Full offline capability via Vite PWA plugin with automatic service worker
 - **External Dependencies**: Font Awesome 6.0.0 for icons, Chart.js for data visualization
-- **Event-Driven Architecture**: UI updates triggered by user interactions through event listeners
-- **State Management**: Centralized in HouseholdApp class with save/load methods for data persistence
-- **Service Worker Caching**: App shell caching with network fallback for dynamic content
+- **Component Architecture**: React functional components with hooks
+- **State Management**: Zustand stores with TypeScript for type-safe state management
+- **Service Worker**: Automatically generated by Vite PWA plugin with cache-first strategy
 
 ## Data Structure
 
@@ -83,11 +101,24 @@ The main application state includes:
 ## File Structure
 
 **Active Application Files:**
-- `new-household-app.html` - Main PWA application interface
-- `new-household-script.js` - Application logic and state management  
-- `new-household-style.css` - Styles and animations
-- `manifest.json` - PWA manifest with app metadata
-- `sw.js` - Service worker for offline functionality
+- `src/App.tsx` - Main React application component
+- `src/main.tsx` - Application entry point
+- `src/index.css` - Global styles and animations
+- `src/components/` - React components directory
+  - `Layout/` - Header, TabNavigation
+  - `Tabs/` - HomeTab, StatsTab, etc.
+  - `Common/` - Avatar, Notification, ConfirmDialog
+  - `Modals/` - InputModal
+- `src/store/useAppStore.ts` - Zustand state management
+- `src/types/index.ts` - TypeScript type definitions
+- `index.html` - HTML template
+- `package.json` - Dependencies and scripts
+- `vite.config.ts` - Vite configuration with PWA plugin
+
+**Legacy Files (reference only):**
+- `new-household-app.html` - Original vanilla JS application
+- `new-household-script.js` - Original application logic
+- `new-household-style.css` - Original styles
 
 **Documentation and Requirements:**
 - `requirements_doc.md` - Detailed Japanese requirements document
