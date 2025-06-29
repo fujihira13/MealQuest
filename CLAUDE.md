@@ -16,11 +16,13 @@ This is a **gamified household expense tracking web application** focused specif
 
 ## Architecture
 
-The application follows a **single-page application (SPA)** pattern with:
+The application follows a **Progressive Web App (PWA)** pattern with:
 
-- **HTML Structure**: `household-app.html` - Main app interface with tab-based navigation
-- **JavaScript Logic**: `household-script.js` - Core app logic using ES6 class-based architecture
-- **Styling**: `household-style.css` - Complete CSS styling with animations and responsive design
+- **HTML Structure**: `new-household-app.html` - Main app interface with tab-based navigation
+- **JavaScript Logic**: `new-household-script.js` - Core app logic using ES6 class-based architecture
+- **Styling**: `new-household-style.css` - Complete CSS styling with animations and responsive design
+- **PWA Manifest**: `manifest.json` - App metadata and icon configuration
+- **Service Worker**: `sw.js` - Offline functionality and caching strategy
 - **Data Storage**: LocalStorage for client-side data persistence
 - **App State**: Centralized in `HouseholdApp` class with methods for data management
 
@@ -41,31 +43,32 @@ The application follows a **single-page application (SPA)** pattern with:
 
 ## Development Commands
 
-This is a client-side only application. To develop:
+This is a client-side only PWA application. To develop:
 
 1. **Local Development**: 
-   - Main version: Open `household-app.html` directly in a web browser
-   - New version: Open `new-household-app.html` for the updated interface
-   - Or serve with any static file server: `python -m http.server 8000` or `npx serve .`
+   - **Primary version**: Open `new-household-app.html` directly in a web browser
+   - **With static server** (recommended for PWA features): `python -m http.server 8000` or `npx serve .`
+   - Access at `http://localhost:8000/new-household-app.html`
 2. **Testing**: Manual testing in browser - no automated test framework configured
-3. **Deployment**: Static hosting (can be deployed to any web server)
+3. **PWA Testing**: Use browser dev tools to test offline functionality and service worker
+4. **Deployment**: Static hosting (can be deployed to any web server supporting PWA)
 
 ## Current Development State
 
-There are currently two versions of the application in the repository:
-- **Original version**: `household-app.html`, `household-script.js`, `household-style.css` (~1200 lines of JS)
-- **New version**: `new-household-app.html`, `new-household-script.js`, `new-household-style.css` (~825 lines of JS)
+**Current active version**: `new-household-app.html`, `new-household-script.js`, `new-household-style.css`
 
-When making changes, verify which version you're working with as they have different feature sets and UI implementations.
+This is the primary PWA version with full offline capabilities and optimized user experience. All new development should focus on this version unless specifically requested to work on legacy files.
 
 ## Key Implementation Notes
 
 - **Data Persistence**: All data stored in browser LocalStorage under key "householdApp"
 - **No Build Process**: Pure vanilla JS/HTML/CSS - no compilation needed
 - **Mobile-First**: Responsive design optimized for mobile devices
-- **Offline Capable**: Designed to work without internet connection
+- **PWA Features**: Full offline capability via service worker with cache-first strategy
+- **External Dependencies**: Font Awesome 6.0.0 for icons, Chart.js for data visualization
 - **Event-Driven Architecture**: UI updates triggered by user interactions through event listeners
 - **State Management**: Centralized in HouseholdApp class with save/load methods for data persistence
+- **Service Worker Caching**: App shell caching with network fallback for dynamic content
 
 ## Data Structure
 
@@ -79,20 +82,26 @@ The main application state includes:
 
 ## File Structure
 
-- `household-app.html` - Main application interface
-- `household-script.js` - Application logic and state management
-- `household-style.css` - Styles and animations
+**Active Application Files:**
+- `new-household-app.html` - Main PWA application interface
+- `new-household-script.js` - Application logic and state management  
+- `new-household-style.css` - Styles and animations
+- `manifest.json` - PWA manifest with app metadata
+- `sw.js` - Service worker for offline functionality
+
+**Documentation and Requirements:**
 - `requirements_doc.md` - Detailed Japanese requirements document
 - `aidea.txt` - Additional feature ideas and concepts (in Japanese)
-- `app_wireframe.html` - UI wireframe reference
+- `CLAUDE.md` - Development guidance (this file)
 
 ## UI/UX Patterns
 
-- **Tab Navigation**: Dashboard, Input, Missions, Collection, Gacha
-- **Character System**: Animated character with mood changes based on user behavior
+- **Tab Navigation**: Home, Stats, Missions, Badges, Collection
+- **Character System**: Animated character with mood changes based on user behavior  
 - **Point System**: Positive points for cooking/grocery, negative for eating out/snacks
 - **Mission Completion**: Daily and weekly challenges with rewards
 - **Collection Elements**: Recipe unlocking, badge earning, gacha items
+- **Data Visualization**: Chart.js integration for expense tracking and trends
 
 ## Localization
 
