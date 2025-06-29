@@ -4,8 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>食費管理アプリ - 節約マスター</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="節約マスター">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='20' fill='%23667eea'/%3E%3Ctext x='96' y='120' font-size='80' text-anchor='middle' fill='white'%3E🐷%3C/text%3E%3C/svg%3E">
+    
+    <!-- Meta Tags for SEO -->
+    <meta name="description" content="食費管理に特化したゲーミフィケーション家計簿アプリ。自炊を促進し、浪費を減らして節約を楽しく続けられます。">
+    <meta name="keywords" content="家計簿,食費管理,節約,自炊,ゲーミフィケーション,PWA">
+    
     <link rel="stylesheet" href="new-household-style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -24,6 +40,12 @@
             </button>
             <button class="tab-btn" data-tab="stats">
                 📊 統計
+            </button>
+            <button class="tab-btn" data-tab="missions">
+                🎯 ミッション
+            </button>
+            <button class="tab-btn" data-tab="badges">
+                🏆 称号
             </button>
             <button class="tab-btn" data-tab="collection">
                 🎁 コレクション
@@ -185,15 +207,15 @@
             <div class="charts-section">
                 <div class="chart-container">
                     <h4>支出推移</h4>
-                    <div class="chart-placeholder" id="expense-chart">
-                        📈 グラフエリア (実装予定)
-                    </div>
+                    <canvas id="expense-chart" width="400" height="200"></canvas>
                 </div>
                 <div class="chart-container">
                     <h4>カテゴリ別支出</h4>
-                    <div class="chart-placeholder" id="category-chart">
-                        🥧 円グラフエリア (実装予定)
-                    </div>
+                    <canvas id="category-chart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4>自炊回数推移</h4>
+                    <canvas id="cooking-chart" width="400" height="200"></canvas>
                 </div>
             </div>
 
@@ -226,6 +248,74 @@
                         <input type="number" id="cooking-goal-input" value="20" onchange="updateGoal('cooking', this.value)">
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- ミッションタブ -->
+        <section class="tab-content" id="missions">
+            <div class="missions-header">
+                <h3>🎯 デイリー・ウィークリーミッション</h3>
+                <div class="missions-stats">
+                    <span>獲得可能ポイント: <span id="available-mission-points">0</span>pt</span>
+                </div>
+            </div>
+
+            <!-- デイリーミッション -->
+            <div class="missions-section">
+                <h4>📅 今日のミッション</h4>
+                <div class="mission-reset-timer">
+                    リセットまで: <span id="daily-reset-timer">--:--:--</span>
+                </div>
+                <div class="missions-grid" id="daily-missions">
+                    <!-- 動的に生成されるデイリーミッション -->
+                </div>
+            </div>
+
+            <!-- ウィークリーミッション -->
+            <div class="missions-section">
+                <h4>📊 今週のミッション</h4>
+                <div class="mission-reset-timer">
+                    リセットまで: <span id="weekly-reset-timer">--日--時間</span>
+                </div>
+                <div class="missions-grid" id="weekly-missions">
+                    <!-- 動的に生成されるウィークリーミッション -->
+                </div>
+            </div>
+
+            <!-- ミッション報酬履歴 -->
+            <div class="missions-section">
+                <h4>🏆 今週の達成履歴</h4>
+                <div class="mission-history" id="mission-history">
+                    <!-- 動的に生成される達成履歴 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 称号・バッジタブ -->
+        <section class="tab-content" id="badges">
+            <div class="badges-header">
+                <h3>🏆 称号・バッジコレクション</h3>
+                <div class="badges-stats">
+                    <span>獲得称号: <span id="earned-badges-count">0</span> / <span id="total-badges-count">0</span></span>
+                    <span>達成率: <span id="badge-completion-rate">0</span>%</span>
+                </div>
+                <div class="current-title">
+                    現在の称号: <span id="current-title">初心者</span>
+                </div>
+            </div>
+
+            <!-- 称号カテゴリフィルター -->
+            <div class="badge-categories">
+                <button class="category-filter-btn active" data-category="all" onclick="filterBadgesByCategory('all', this)">全て</button>
+                <button class="category-filter-btn" data-category="cooking" onclick="filterBadgesByCategory('cooking', this)">🍳 自炊</button>
+                <button class="category-filter-btn" data-category="savings" onclick="filterBadgesByCategory('savings', this)">💰 節約</button>
+                <button class="category-filter-btn" data-category="level" onclick="filterBadgesByCategory('level', this)">⭐ レベル</button>
+                <button class="category-filter-btn" data-category="special" onclick="filterBadgesByCategory('special', this)">✨ 特別</button>
+            </div>
+
+            <!-- バッジ一覧 -->
+            <div class="badges-grid" id="badges-grid">
+                <!-- 動的に生成されるバッジ -->
             </div>
         </section>
 

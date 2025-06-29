@@ -49,6 +49,49 @@ class FoodExpenseApp {
         // 節約記録
         this.savingsRecords = [];
 
+        // ミッション管理
+        this.missions = {
+            daily: {},
+            weekly: {},
+            lastDailyReset: '',
+            lastWeeklyReset: '',
+            completedHistory: []
+        };
+
+        // バッジ・称号システム
+        this.badges = {
+            earned: [],
+            currentTitle: 'beginner'
+        };
+        
+        this.badgeDefinitions = [
+            // 自炊関連
+            { id: 'cooking_start', category: 'cooking', title: '自炊デビュー', description: '初回自炊記録', icon: '🍳', requirement: { type: 'cooking_count', value: 1 }, earned: false },
+            { id: 'cooking_novice', category: 'cooking', title: '自炊初心者', description: '自炊5回達成', icon: '👨‍🍳', requirement: { type: 'cooking_count', value: 5 }, earned: false },
+            { id: 'cooking_adept', category: 'cooking', title: '自炊上手', description: '自炊20回達成', icon: '🧑‍🍳', requirement: { type: 'cooking_count', value: 20 }, earned: false },
+            { id: 'cooking_master', category: 'cooking', title: '自炊マスター', description: '自炊50回達成', icon: '👑', requirement: { type: 'cooking_count', value: 50 }, earned: false },
+            { id: 'cooking_legend', category: 'cooking', title: '料理の達人', description: '自炊100回達成', icon: '🌟', requirement: { type: 'cooking_count', value: 100 }, earned: false },
+
+            // 節約関連
+            { id: 'savings_start', category: 'savings', title: '節約デビュー', description: '初回節約記録', icon: '💰', requirement: { type: 'savings_count', value: 1 }, earned: false },
+            { id: 'savings_saver', category: 'savings', title: '節約家', description: '1000円節約達成', icon: '💳', requirement: { type: 'total_savings', value: 1000 }, earned: false },
+            { id: 'savings_expert', category: 'savings', title: '節約上手', description: '5000円節約達成', icon: '💎', requirement: { type: 'total_savings', value: 5000 }, earned: false },
+            { id: 'savings_master', category: 'savings', title: '節約マスター', description: '10000円節約達成', icon: '👑', requirement: { type: 'total_savings', value: 10000 }, earned: false },
+            { id: 'savings_champion', category: 'savings', title: '節約チャンピオン', description: '30000円節約達成', icon: '🏆', requirement: { type: 'total_savings', value: 30000 }, earned: false },
+
+            // レベル関連
+            { id: 'level_5', category: 'level', title: '成長中', description: 'レベル5達成', icon: '⭐', requirement: { type: 'level', value: 5 }, earned: false },
+            { id: 'level_10', category: 'level', title: '中級者', description: 'レベル10達成', icon: '⭐⭐', requirement: { type: 'level', value: 10 }, earned: false },
+            { id: 'level_20', category: 'level', title: '上級者', description: 'レベル20達成', icon: '⭐⭐⭐', requirement: { type: 'level', value: 20 }, earned: false },
+            { id: 'level_50', category: 'level', title: 'エキスパート', description: 'レベル50達成', icon: '🌟', requirement: { type: 'level', value: 50 }, earned: false },
+
+            // 特別称号
+            { id: 'first_week', category: 'special', title: '継続は力なり', description: '7日連続記録', icon: '🔥', requirement: { type: 'consecutive_days', value: 7 }, earned: false },
+            { id: 'monthly_goal', category: 'special', title: '目標達成者', description: '月間目標達成', icon: '🎯', requirement: { type: 'monthly_goal_achieved', value: 1 }, earned: false },
+            { id: 'gacha_collector', category: 'special', title: 'コレクター', description: 'ガチャアイテム10種獲得', icon: '🎁', requirement: { type: 'gacha_items', value: 10 }, earned: false },
+            { id: 'mission_master', category: 'special', title: 'ミッションマスター', description: 'ミッション20個達成', icon: '🏅', requirement: { type: 'missions_completed', value: 20 }, earned: false }
+        ];
+
         // UI状態
         this.currentInputCategory = '';
         this.currentAmount = '';
@@ -72,6 +115,9 @@ class FoodExpenseApp {
         this.showTab('home');
         this.setTodayDate();
         this.checkDailyReset();
+        this.initCharts();
+        this.initMissions();
+        this.initBadges();
     }
 
     // イベントリスナーの設定
@@ -216,6 +262,7 @@ class FoodExpenseApp {
         // データ更新
         this.updateExpenseData();
         this.updateSavingsData();
+        this.updateMissionProgress('expense_record');
         this.updateUI();
         this.saveData();
         this.hideInputScreen();
@@ -245,10 +292,12 @@ class FoodExpenseApp {
             button.classList.add('active');
             this.userData.points += 20; // 自炊でポイント獲得
             this.showNotification(`${this.getMealName(meal)}の自炊を記録しました！ +20pt`);
+            this.updateMissionProgress('cooking');
         }
 
         this.updateCookingData();
         this.updateSavingsData();
+        this.updateBadgeProgress();
         this.updateUI();
         this.saveData();
     }
@@ -268,6 +317,9 @@ class FoodExpenseApp {
 
         // 今月の貯金額を更新
         this.updateSavingsData();
+        this.updateMissionProgress('savings');
+        this.updateMissionProgress('total_savings', amount);
+        this.updateBadgeProgress();
         this.updateUI();
         this.saveData();
         this.showNotification(`節約成功！ ¥${amount.toLocaleString()}を節約貯金に追加しました！ +${Math.floor(amount / 10)}pt`);
@@ -447,6 +499,7 @@ class FoodExpenseApp {
             this.userData.level++;
             this.userData.points -= requiredPoints;
             this.showNotification(`レベルアップ！ Lv.${this.userData.level}になりました！`);
+            this.updateBadgeProgress();
         }
     }
 
@@ -733,9 +786,12 @@ class FoodExpenseApp {
             expenses: this.expenses,
             cookingRecords: this.cookingRecords,
             savingsRecords: this.savingsRecords,
-            collection: this.collection
+            collection: this.collection,
+            missions: this.missions,
+            badges: this.badges
         };
         localStorage.setItem('foodExpenseApp', JSON.stringify(data));
+        this.updateCharts();
     }
 
     // データ読み込み
@@ -749,7 +805,820 @@ class FoodExpenseApp {
             this.cookingRecords = data.cookingRecords || [];
             this.savingsRecords = data.savingsRecords || [];
             this.collection = data.collection || [];
+            this.missions = data.missions || {
+                daily: {},
+                weekly: {},
+                lastDailyReset: '',
+                lastWeeklyReset: '',
+                completedHistory: []
+            };
+            this.badges = data.badges || {
+                earned: [],
+                currentTitle: 'beginner'
+            };
         }
+    }
+
+    // グラフ初期化
+    initCharts() {
+        this.expenseChart = null;
+        this.categoryChart = null;
+        this.cookingChart = null;
+        setTimeout(() => {
+            this.renderCharts();
+        }, 100);
+    }
+
+    // グラフ描画
+    renderCharts() {
+        this.renderExpenseChart();
+        this.renderCategoryChart();
+        this.renderCookingChart();
+    }
+
+    // 支出推移グラフ
+    renderExpenseChart() {
+        const ctx = document.getElementById('expense-chart');
+        if (!ctx) return;
+
+        // 過去30日のデータを生成
+        const dates = [];
+        const expenses = [];
+        const today = new Date();
+        
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            dates.push(date.getDate() + '日');
+            
+            // その日の支出合計を計算
+            const dayExpense = this.expenses
+                .filter(expense => expense.date === dateStr)
+                .reduce((sum, expense) => sum + expense.amount, 0);
+            expenses.push(dayExpense);
+        }
+
+        if (this.expenseChart) {
+            this.expenseChart.destroy();
+        }
+
+        this.expenseChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '日次支出 (円)',
+                    data: expenses,
+                    borderColor: '#4a90e2',
+                    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        display: true,
+                        maxTicksLimit: 10
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    }
+
+    // カテゴリ別支出円グラフ
+    renderCategoryChart() {
+        const ctx = document.getElementById('category-chart');
+        if (!ctx) return;
+
+        // カテゴリ別支出を集計
+        const categoryData = {};
+        const categoryColors = {
+            'スーパー': '#4CAF50',
+            '自販機': '#FF9800',
+            'コンビニ': '#2196F3',
+            '飲み会': '#E91E63',
+            'デート': '#9C27B0',
+            'その他': '#607D8B'
+        };
+
+        this.expenses.forEach(expense => {
+            if (!categoryData[expense.category]) {
+                categoryData[expense.category] = 0;
+            }
+            categoryData[expense.category] += expense.amount;
+        });
+
+        const labels = Object.keys(categoryData);
+        const data = Object.values(categoryData);
+        const colors = labels.map(label => categoryColors[label] || '#757575');
+
+        if (this.categoryChart) {
+            this.categoryChart.destroy();
+        }
+
+        this.categoryChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ¥' + context.parsed.toLocaleString() + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 自炊回数推移グラフ
+    renderCookingChart() {
+        const ctx = document.getElementById('cooking-chart');
+        if (!ctx) return;
+
+        // 過去30日の自炊回数を集計
+        const dates = [];
+        const cookingCounts = [];
+        const today = new Date();
+        
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            dates.push(date.getDate() + '日');
+            
+            // その日の自炊回数を計算
+            const dayCount = this.cookingRecords
+                .filter(record => record.date === dateStr)
+                .length;
+            cookingCounts.push(dayCount);
+        }
+
+        if (this.cookingChart) {
+            this.cookingChart.destroy();
+        }
+
+        this.cookingChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '自炊回数',
+                    data: cookingCounts,
+                    backgroundColor: '#4CAF50',
+                    borderColor: '#388E3C',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 3,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    },
+                    x: {
+                        display: true,
+                        maxTicksLimit: 10
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    }
+
+    // グラフ更新
+    updateCharts() {
+        if (this.expenseChart || this.categoryChart || this.cookingChart) {
+            this.renderCharts();
+        }
+    }
+
+    // ミッション初期化
+    initMissions() {
+        this.checkMissionResets();
+        this.generateDailyMissions();
+        this.generateWeeklyMissions();
+        this.updateMissionUI();
+        this.startMissionTimers();
+    }
+
+    // ミッションリセットチェック
+    checkMissionResets() {
+        const today = new Date().toISOString().split('T')[0];
+        const thisWeek = this.getWeekKey();
+
+        // デイリーリセット
+        if (this.missions.lastDailyReset !== today) {
+            this.missions.daily = {};
+            this.missions.lastDailyReset = today;
+        }
+
+        // ウィークリーリセット
+        if (this.missions.lastWeeklyReset !== thisWeek) {
+            this.missions.weekly = {};
+            this.missions.lastWeeklyReset = thisWeek;
+        }
+    }
+
+    // 週キー生成
+    getWeekKey() {
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        return startOfWeek.toISOString().split('T')[0];
+    }
+
+    // デイリーミッション生成
+    generateDailyMissions() {
+        const dailyMissionTemplates = [
+            {
+                id: 'daily_cooking_1',
+                title: '自炊チャレンジ',
+                description: '今日1回自炊する',
+                target: 1,
+                reward: 30,
+                type: 'cooking',
+                icon: '🍳'
+            },
+            {
+                id: 'daily_expenses_record',
+                title: '記録の習慣',
+                description: '支出を1回記録する',
+                target: 1,
+                reward: 20,
+                type: 'expense_record',
+                icon: '📝'
+            },
+            {
+                id: 'daily_savings',
+                title: '節約成功',
+                description: '誘惑に負けず節約を記録する',
+                target: 1,
+                reward: 25,
+                type: 'savings',
+                icon: '💰'
+            }
+        ];
+
+        // 既存のミッションが存在しない場合のみ生成
+        if (Object.keys(this.missions.daily).length === 0) {
+            dailyMissionTemplates.forEach(template => {
+                this.missions.daily[template.id] = {
+                    ...template,
+                    progress: 0,
+                    completed: false,
+                    claimed: false
+                };
+            });
+        }
+    }
+
+    // ウィークリーミッション生成
+    generateWeeklyMissions() {
+        const weeklyMissionTemplates = [
+            {
+                id: 'weekly_cooking_goal',
+                title: '週間自炊マスター',
+                description: '1週間で10回自炊する',
+                target: 10,
+                reward: 100,
+                type: 'cooking',
+                icon: '👨‍🍳'
+            },
+            {
+                id: 'weekly_expense_goal',
+                title: '支出管理上手',
+                description: '1週間で食費を目標以下に抑える',
+                target: 1,
+                reward: 80,
+                type: 'expense_control',
+                icon: '📊'
+            },
+            {
+                id: 'weekly_savings_goal',
+                title: '節約チャンピオン',
+                description: '1週間で1000円節約する',
+                target: 1000,
+                reward: 120,
+                type: 'total_savings',
+                icon: '🏆'
+            }
+        ];
+
+        // 既存のミッションが存在しない場合のみ生成
+        if (Object.keys(this.missions.weekly).length === 0) {
+            weeklyMissionTemplates.forEach(template => {
+                this.missions.weekly[template.id] = {
+                    ...template,
+                    progress: 0,
+                    completed: false,
+                    claimed: false
+                };
+            });
+        }
+    }
+
+    // ミッション進捗更新
+    updateMissionProgress(actionType, value = 1) {
+        let updated = false;
+
+        // デイリーミッション更新
+        Object.values(this.missions.daily).forEach(mission => {
+            if (!mission.completed && mission.type === actionType) {
+                mission.progress = Math.min(mission.progress + value, mission.target);
+                if (mission.progress >= mission.target) {
+                    mission.completed = true;
+                    this.showNotification(`🎯 デイリーミッション達成: ${mission.title}!`, 'success');
+                }
+                updated = true;
+            }
+        });
+
+        // ウィークリーミッション更新
+        Object.values(this.missions.weekly).forEach(mission => {
+            if (!mission.completed && mission.type === actionType) {
+                if (actionType === 'total_savings') {
+                    const weekSavings = this.getWeekSavings();
+                    mission.progress = weekSavings;
+                } else if (actionType === 'cooking') {
+                    const weekCooking = this.getWeekCookingCount();
+                    mission.progress = weekCooking;
+                } else {
+                    mission.progress = Math.min(mission.progress + value, mission.target);
+                }
+                
+                if (mission.progress >= mission.target) {
+                    mission.completed = true;
+                    this.showNotification(`🏆 ウィークリーミッション達成: ${mission.title}!`, 'success');
+                }
+                updated = true;
+            }
+        });
+
+        if (updated) {
+            this.updateMissionUI();
+            this.saveData();
+        }
+    }
+
+    // 今週の節約額取得
+    getWeekSavings() {
+        const weekStart = this.getWeekKey();
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        
+        return this.savingsRecords
+            .filter(record => record.date >= weekStart && record.date < weekEnd.toISOString().split('T')[0])
+            .reduce((sum, record) => sum + record.amount, 0);
+    }
+
+    // 今週の自炊回数取得
+    getWeekCookingCount() {
+        const weekStart = this.getWeekKey();
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        
+        return this.cookingRecords
+            .filter(record => record.date >= weekStart && record.date < weekEnd.toISOString().split('T')[0])
+            .length;
+    }
+
+    // ミッションUI更新
+    updateMissionUI() {
+        this.updateDailyMissionsUI();
+        this.updateWeeklyMissionsUI();
+        this.updateMissionStats();
+    }
+
+    // デイリーミッションUI更新
+    updateDailyMissionsUI() {
+        const container = document.getElementById('daily-missions');
+        if (!container) return;
+
+        container.innerHTML = '';
+        Object.values(this.missions.daily).forEach(mission => {
+            const missionElement = this.createMissionElement(mission);
+            container.appendChild(missionElement);
+        });
+    }
+
+    // ウィークリーミッションUI更新
+    updateWeeklyMissionsUI() {
+        const container = document.getElementById('weekly-missions');
+        if (!container) return;
+
+        container.innerHTML = '';
+        Object.values(this.missions.weekly).forEach(mission => {
+            const missionElement = this.createMissionElement(mission);
+            container.appendChild(missionElement);
+        });
+    }
+
+    // ミッション要素作成
+    createMissionElement(mission) {
+        const element = document.createElement('div');
+        element.className = `mission-card ${mission.completed ? 'completed' : ''} ${mission.claimed ? 'claimed' : ''}`;
+        
+        const progressPercent = Math.min((mission.progress / mission.target) * 100, 100);
+        
+        element.innerHTML = `
+            <div class="mission-icon">${mission.icon}</div>
+            <div class="mission-content">
+                <h5>${mission.title}</h5>
+                <p>${mission.description}</p>
+                <div class="mission-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <span class="progress-text">${mission.progress}/${mission.target}</span>
+                </div>
+                <div class="mission-reward">報酬: ${mission.reward}pt</div>
+            </div>
+            <div class="mission-action">
+                ${mission.completed && !mission.claimed ? 
+                    `<button class="claim-btn" onclick="claimMissionReward('${mission.id}')">受取</button>` : 
+                    mission.claimed ? '<span class="claimed-text">受取済</span>' : ''
+                }
+            </div>
+        `;
+        
+        return element;
+    }
+
+    // ミッション報酬受取
+    claimMissionReward(missionId) {
+        const mission = this.missions.daily[missionId] || this.missions.weekly[missionId];
+        if (!mission || !mission.completed || mission.claimed) return;
+
+        mission.claimed = true;
+        this.userData.points += mission.reward;
+        this.missions.completedHistory.push({
+            id: missionId,
+            title: mission.title,
+            reward: mission.reward,
+            claimedAt: new Date().toISOString(),
+            type: this.missions.daily[missionId] ? 'daily' : 'weekly'
+        });
+
+        this.showNotification(`🎁 報酬を受け取りました: ${mission.reward}pt!`, 'success');
+        this.updateUI();
+        this.updateMissionUI();
+        this.checkLevelUp();
+        this.saveData();
+    }
+
+    // ミッション統計更新
+    updateMissionStats() {
+        const dailyPoints = Object.values(this.missions.daily)
+            .filter(m => m.completed && !m.claimed)
+            .reduce((sum, m) => sum + m.reward, 0);
+            
+        const weeklyPoints = Object.values(this.missions.weekly)
+            .filter(m => m.completed && !m.claimed)
+            .reduce((sum, m) => sum + m.reward, 0);
+
+        const availablePoints = dailyPoints + weeklyPoints;
+        const element = document.getElementById('available-mission-points');
+        if (element) {
+            element.textContent = availablePoints;
+        }
+    }
+
+    // ミッションタイマー開始
+    startMissionTimers() {
+        setInterval(() => {
+            this.updateMissionTimers();
+        }, 1000);
+    }
+
+    // ミッションタイマー更新
+    updateMissionTimers() {
+        // デイリーリセットタイマー
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        const timeToReset = tomorrow - now;
+        const hours = Math.floor(timeToReset / (1000 * 60 * 60));
+        const minutes = Math.floor((timeToReset % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeToReset % (1000 * 60)) / 1000);
+        
+        const dailyTimer = document.getElementById('daily-reset-timer');
+        if (dailyTimer) {
+            dailyTimer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // ウィークリーリセットタイマー
+        const nextWeek = new Date(now);
+        nextWeek.setDate(nextWeek.getDate() + (7 - nextWeek.getDay()));
+        nextWeek.setHours(0, 0, 0, 0);
+        
+        const timeToWeekReset = nextWeek - now;
+        const days = Math.floor(timeToWeekReset / (1000 * 60 * 60 * 24));
+        const weekHours = Math.floor((timeToWeekReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        
+        const weeklyTimer = document.getElementById('weekly-reset-timer');
+        if (weeklyTimer) {
+            weeklyTimer.textContent = `${days}日${weekHours}時間`;
+        }
+    }
+
+    // バッジシステム初期化
+    initBadges() {
+        this.syncBadgeEarnedStatus();
+        this.checkBadgeEligibility();
+        this.updateBadgeUI();
+    }
+
+    // バッジ獲得状況を同期
+    syncBadgeEarnedStatus() {
+        this.badgeDefinitions.forEach(badge => {
+            badge.earned = this.badges.earned.includes(badge.id);
+        });
+    }
+
+    // バッジ獲得条件チェック
+    checkBadgeEligibility() {
+        let newBadges = [];
+        
+        this.badgeDefinitions.forEach(badge => {
+            if (!badge.earned && this.checkBadgeRequirement(badge)) {
+                badge.earned = true;
+                this.badges.earned.push(badge.id);
+                newBadges.push(badge);
+                this.showNotification(`🏆 新しい称号を獲得しました: ${badge.title}!`, 'success');
+            }
+        });
+
+        if (newBadges.length > 0) {
+            this.updateCurrentTitle();
+            this.updateBadgeUI();
+            this.saveData();
+        }
+    }
+
+    // バッジ獲得条件の確認
+    checkBadgeRequirement(badge) {
+        const req = badge.requirement;
+        
+        switch (req.type) {
+            case 'cooking_count':
+                return this.cookingRecords.length >= req.value;
+            
+            case 'total_savings':
+                return this.userData.totalSavings >= req.value;
+            
+            case 'savings_count':
+                return this.savingsRecords.length >= req.value;
+            
+            case 'level':
+                return this.userData.level >= req.value;
+            
+            case 'consecutive_days':
+                return this.getConsecutiveDays() >= req.value;
+            
+            case 'monthly_goal_achieved':
+                return this.checkMonthlyGoalAchieved();
+            
+            case 'gacha_items':
+                return this.collection.length >= req.value;
+            
+            case 'missions_completed':
+                return this.missions.completedHistory.length >= req.value;
+            
+            default:
+                return false;
+        }
+    }
+
+    // 連続記録日数取得
+    getConsecutiveDays() {
+        if (this.expenses.length === 0 && this.cookingRecords.length === 0 && this.savingsRecords.length === 0) {
+            return 0;
+        }
+
+        const allDates = new Set();
+        this.expenses.forEach(exp => allDates.add(exp.date));
+        this.cookingRecords.forEach(rec => allDates.add(rec.date));
+        this.savingsRecords.forEach(rec => allDates.add(rec.date));
+
+        const sortedDates = Array.from(allDates).sort().reverse();
+        let consecutiveDays = 0;
+        let currentDate = new Date().toISOString().split('T')[0];
+
+        for (let i = 0; i < sortedDates.length; i++) {
+            if (sortedDates[i] === currentDate) {
+                consecutiveDays++;
+                const nextDate = new Date(currentDate);
+                nextDate.setDate(nextDate.getDate() - 1);
+                currentDate = nextDate.toISOString().split('T')[0];
+            } else {
+                break;
+            }
+        }
+
+        return consecutiveDays;
+    }
+
+    // 月間目標達成チェック
+    checkMonthlyGoalAchieved() {
+        const monthlyExpense = this.userData.monthlyExpense;
+        const monthlyCooking = this.userData.cookingCount;
+        const monthlyAllowanceUsed = this.userData.allowanceUsed;
+
+        return (
+            monthlyExpense <= this.goals.monthlyExpenseGoal &&
+            monthlyCooking >= this.goals.cookingGoal &&
+            monthlyAllowanceUsed <= this.goals.allowanceGoal
+        );
+    }
+
+    // 現在の称号更新
+    updateCurrentTitle() {
+        const earnedBadges = this.badgeDefinitions.filter(b => b.earned);
+        if (earnedBadges.length === 0) {
+            this.badges.currentTitle = 'beginner';
+            return;
+        }
+
+        // 最新の称号を設定（優先度：特別 > レベル > 自炊 > 節約）
+        const priorities = { special: 4, level: 3, cooking: 2, savings: 1 };
+        earnedBadges.sort((a, b) => {
+            const priorityDiff = priorities[b.category] - priorities[a.category];
+            if (priorityDiff !== 0) return priorityDiff;
+            return this.badges.earned.indexOf(b.id) - this.badges.earned.indexOf(a.id);
+        });
+
+        this.badges.currentTitle = earnedBadges[0].id;
+    }
+
+    // バッジUI更新
+    updateBadgeUI() {
+        this.updateBadgeStats();
+        this.updateBadgeGrid();
+        this.updateCurrentTitleDisplay();
+    }
+
+    // バッジ統計更新
+    updateBadgeStats() {
+        const totalBadges = this.badgeDefinitions.length;
+        const earnedBadges = this.badges.earned.length;
+        const completionRate = Math.round((earnedBadges / totalBadges) * 100);
+
+        const elements = {
+            'earned-badges-count': earnedBadges,
+            'total-badges-count': totalBadges,
+            'badge-completion-rate': completionRate
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        });
+    }
+
+    // バッジグリッド更新
+    updateBadgeGrid() {
+        const container = document.getElementById('badges-grid');
+        if (!container) return;
+
+        container.innerHTML = '';
+        this.badgeDefinitions.forEach(badge => {
+            const badgeElement = this.createBadgeElement(badge);
+            container.appendChild(badgeElement);
+        });
+    }
+
+    // バッジ要素作成
+    createBadgeElement(badge) {
+        const element = document.createElement('div');
+        element.className = `badge-card ${badge.earned ? 'earned' : 'locked'} category-${badge.category}`;
+        
+        const progress = this.getBadgeProgress(badge);
+        const progressPercent = badge.earned ? 100 : Math.min((progress / badge.requirement.value) * 100, 100);
+        
+        element.innerHTML = `
+            <div class="badge-icon">${badge.earned ? badge.icon : '🔒'}</div>
+            <div class="badge-content">
+                <h5 class="badge-title">${badge.earned ? badge.title : '???'}</h5>
+                <p class="badge-description">${badge.earned ? badge.description : '条件を満たすと獲得できます'}</p>
+                <div class="badge-progress">
+                    <div class="badge-progress-bar">
+                        <div class="badge-progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <span class="badge-progress-text">
+                        ${badge.earned ? '達成済み' : `${progress}/${badge.requirement.value}`}
+                    </span>
+                </div>
+            </div>
+            ${badge.earned ? '<div class="badge-earned-mark">✓</div>' : ''}
+        `;
+        
+        return element;
+    }
+
+    // バッジ進捗取得
+    getBadgeProgress(badge) {
+        const req = badge.requirement;
+        
+        switch (req.type) {
+            case 'cooking_count':
+                return this.cookingRecords.length;
+            case 'total_savings':
+                return this.userData.totalSavings;
+            case 'savings_count':
+                return this.savingsRecords.length;
+            case 'level':
+                return this.userData.level;
+            case 'consecutive_days':
+                return this.getConsecutiveDays();
+            case 'monthly_goal_achieved':
+                return this.checkMonthlyGoalAchieved() ? 1 : 0;
+            case 'gacha_items':
+                return this.collection.length;
+            case 'missions_completed':
+                return this.missions.completedHistory.length;
+            default:
+                return 0;
+        }
+    }
+
+    // 現在の称号表示更新
+    updateCurrentTitleDisplay() {
+        const element = document.getElementById('current-title');
+        if (!element) return;
+
+        const currentBadge = this.badgeDefinitions.find(b => b.id === this.badges.currentTitle);
+        element.textContent = currentBadge ? currentBadge.title : '初心者';
+    }
+
+    // カテゴリ別フィルター
+    filterBadgesByCategory(category, button) {
+        // ボタンのアクティブ状態更新
+        document.querySelectorAll('.category-filter-btn').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        // バッジ表示フィルター
+        const badges = document.querySelectorAll('.badge-card');
+        badges.forEach(badge => {
+            if (category === 'all' || badge.classList.contains(`category-${category}`)) {
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+    }
+
+    // バッジ獲得条件チェック（各アクション後に呼び出し）
+    updateBadgeProgress() {
+        this.checkBadgeEligibility();
     }
 }
 
@@ -818,6 +1687,42 @@ function cancelAction() {
 
 function filterByRarity(rarity, button) {
     app.filterByRarity(rarity, button);
+}
+
+function claimMissionReward(missionId) {
+    app.claimMissionReward(missionId);
+}
+
+function filterBadgesByCategory(category, button) {
+    app.filterBadgesByCategory(category, button);
+}
+
+// PWA Service Worker登録
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('[PWA] Service Worker registered successfully:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('[PWA] Service Worker registration failed:', error);
+            });
+    });
+}
+
+// PWA インストールプロンプト
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('[PWA] Install prompt triggered');
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallButton();
+});
+
+// インストールボタン表示
+function showInstallButton() {
+    // 将来的にインストールボタンを表示する処理
+    console.log('[PWA] App can be installed');
 }
 
 // アプリ初期化
