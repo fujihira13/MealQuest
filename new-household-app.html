@@ -99,15 +99,33 @@
                                 <div class="level-fill" id="level-progress-bar" style="width: 0%"></div>
                             </div>
                         </div>
+                        <div class="savings-level">
+                            💰 節約Lv.<span id="savings-level">1</span> (次まで: ¥<span id="savings-to-next">1000</span>)
+                        </div>
                         <div class="savings-bank">
                             <i class="fas fa-coins"></i> 合計貯金: ¥<span id="savings-total">0</span>
                         </div>
                         <div class="monthly-savings">
                             <i class="fas fa-calendar-alt"></i> 今月の貯金: ¥<span id="monthly-savings">0</span>
                         </div>
+                        <div class="savings-equivalent">
+                            <div class="savings-can-buy">
+                                <span id="savings-can-buy-text">節約額で○○が買えます！</span>
+                            </div>
+                        </div>
                         <div class="monthly-stats">
                             <span>今月の自炊: <span id="cooking-count">0</span>回</span>
                             <span>食費: ¥<span id="monthly-expense">0</span></span>
+                        </div>
+                        <div class="streak-stats">
+                            <div class="streak-item">
+                                🔥 無駄遣いなし: <span id="no-waste-streak">0</span>日連続
+                                <span class="best-record">(最高: <span id="best-no-waste-streak">0</span>日)</span>
+                            </div>
+                            <div class="streak-item">
+                                🍭 お菓子我慢: <span id="snack-free-streak">0</span>日連続
+                                <span class="best-record">(最高: <span id="best-snack-free-streak">0</span>日)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -144,6 +162,20 @@
                         その他<br>自由入力
                     </button>
                 </div>
+            </div>
+
+            <!-- 連続記録セクション -->
+            <div class="streak-record-section">
+                <h3>今日の連続記録</h3>
+                <div class="streak-buttons">
+                    <button class="streak-btn" id="no-waste-btn" onclick="recordNoWasteDay()">
+                        🔥 今日は無駄遣いなし！
+                    </button>
+                    <button class="streak-btn" id="snack-free-btn" onclick="recordSnackFreeDay()">
+                        🍭 今日はお菓子我慢！
+                    </button>
+                </div>
+                <p class="streak-note">毎日記録して連続記録を伸ばそう！</p>
             </div>
 
             <!-- カテゴリ選択ボタン -->
@@ -203,6 +235,46 @@
                 </div>
             </div>
 
+            <!-- 貯金目標セクション -->
+            <div class="savings-goals-section">
+                <h3>💰 貯金目標</h3>
+                <div class="savings-goal-cards">
+                    <div class="savings-goal-card">
+                        <h4>短期目標 (¥5,000)</h4>
+                        <div class="savings-progress">
+                            <div class="savings-progress-bar">
+                                <div class="savings-progress-fill" id="short-term-progress" style="width: 0%"></div>
+                            </div>
+                            <div class="savings-progress-text">
+                                ¥<span id="short-term-current">0</span> / ¥5,000
+                            </div>
+                        </div>
+                    </div>
+                    <div class="savings-goal-card">
+                        <h4>中期目標 (¥20,000)</h4>
+                        <div class="savings-progress">
+                            <div class="savings-progress-bar">
+                                <div class="savings-progress-fill" id="medium-term-progress" style="width: 0%"></div>
+                            </div>
+                            <div class="savings-progress-text">
+                                ¥<span id="medium-term-current">0</span> / ¥20,000
+                            </div>
+                        </div>
+                    </div>
+                    <div class="savings-goal-card">
+                        <h4>長期目標 (¥50,000)</h4>
+                        <div class="savings-progress">
+                            <div class="savings-progress-bar">
+                                <div class="savings-progress-fill" id="long-term-progress" style="width: 0%"></div>
+                            </div>
+                            <div class="savings-progress-text">
+                                ¥<span id="long-term-current">0</span> / ¥50,000
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- グラフエリア -->
             <div class="charts-section">
                 <div class="chart-container">
@@ -216,6 +288,10 @@
                 <div class="chart-container">
                     <h4>自炊回数推移</h4>
                     <canvas id="cooking-chart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4>節約額推移</h4>
+                    <canvas id="savings-chart" width="400" height="200"></canvas>
                 </div>
             </div>
 

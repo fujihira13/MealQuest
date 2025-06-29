@@ -10,7 +10,8 @@ class FoodExpenseApp {
             monthlyExpense: 0,
             cookingCount: 0,
             allowanceUsed: 0,
-            lastUpdated: new Date().toISOString().split('T')[0]
+            lastUpdated: new Date().toISOString().split('T')[0],
+            savingsLevel: 1  // 節約専用レベル
         };
 
         // ガチャコレクション
@@ -63,6 +64,37 @@ class FoodExpenseApp {
             earned: [],
             currentTitle: 'beginner'
         };
+
+        // 連続記録システム
+        this.streaks = {
+            noWasteStreak: 0,
+            lastNoWasteDate: '',
+            bestNoWasteStreak: 0,
+            snackFreeStreak: 0,
+            lastSnackFreeDate: '',
+            bestSnackFreeStreak: 0
+        };
+
+        // 節約額と買える物の対応表
+        this.savingsEquivalents = [
+            { amount: 120, item: 'ペットボトル飲料1本', icon: '🥤' },
+            { amount: 200, item: 'おにぎり1個', icon: '🍙' },
+            { amount: 300, item: 'コンビニサンドイッチ', icon: '🥪' },
+            { amount: 500, item: 'コンビニ弁当', icon: '🍱' },
+            { amount: 800, item: 'ファストフード1食', icon: '🍔' },
+            { amount: 1000, item: '好きな文庫本1冊', icon: '📚' },
+            { amount: 1500, item: 'スタバのコーヒー2杯', icon: '☕' },
+            { amount: 2000, item: 'ランチ外食1回', icon: '🍽️' },
+            { amount: 3000, item: '映画鑑賞チケット', icon: '🎬' },
+            { amount: 5000, item: '洋服1着', icon: '👕' },
+            { amount: 8000, item: '高級ランチコース', icon: '🍽️' },
+            { amount: 10000, item: '欲しかった雑貨', icon: '🛍️' },
+            { amount: 15000, item: '美容院でのトリートメント', icon: '💇' },
+            { amount: 20000, item: '友達との旅行(日帰り)', icon: '🚌' },
+            { amount: 30000, item: '新しいスニーカー', icon: '👟' },
+            { amount: 50000, item: '憧れのブランドバッグ', icon: '👜' },
+            { amount: 100000, item: '1泊2日の温泉旅行', icon: '♨️' }
+        ];
         
         this.badgeDefinitions = [
             // 自炊関連
@@ -78,6 +110,16 @@ class FoodExpenseApp {
             { id: 'savings_expert', category: 'savings', title: '節約上手', description: '5000円節約達成', icon: '💎', requirement: { type: 'total_savings', value: 5000 }, earned: false },
             { id: 'savings_master', category: 'savings', title: '節約マスター', description: '10000円節約達成', icon: '👑', requirement: { type: 'total_savings', value: 10000 }, earned: false },
             { id: 'savings_champion', category: 'savings', title: '節約チャンピオン', description: '30000円節約達成', icon: '🏆', requirement: { type: 'total_savings', value: 30000 }, earned: false },
+            { id: 'savings_legend', category: 'savings', title: '節約の王様', description: '50000円節約達成', icon: '👑', requirement: { type: 'total_savings', value: 50000 }, earned: false },
+            
+            // 節約レベル関連
+            { id: 'savings_level_5', category: 'savings', title: '節約ビギナー', description: '節約レベル5達成', icon: '⭐', requirement: { type: 'savings_level', value: 5 }, earned: false },
+            { id: 'savings_level_10', category: 'savings', title: '節約アドバンス', description: '節約レベル10達成', icon: '⭐⭐', requirement: { type: 'savings_level', value: 10 }, earned: false },
+            { id: 'savings_level_20', category: 'savings', title: '節約プロ', description: '節約レベル20達成', icon: '⭐⭐⭐', requirement: { type: 'savings_level', value: 20 }, earned: false },
+            
+            // 連続記録関連
+            { id: 'streak_week', category: 'special', title: '継続の力', description: '7日連続無駄遣いなし', icon: '🔥', requirement: { type: 'no_waste_streak', value: 7 }, earned: false },
+            { id: 'streak_month', category: 'special', title: '鉄の意志', description: '30日連続無駄遣いなし', icon: '💪', requirement: { type: 'no_waste_streak', value: 30 }, earned: false },
 
             // レベル関連
             { id: 'level_5', category: 'level', title: '成長中', description: 'レベル5達成', icon: '⭐', requirement: { type: 'level', value: 5 }, earned: false },
@@ -263,6 +305,7 @@ class FoodExpenseApp {
         this.updateExpenseData();
         this.updateSavingsData();
         this.updateMissionProgress('expense_record');
+        this.resetStreakIfNeeded(this.currentInputCategory);
         this.updateUI();
         this.saveData();
         this.hideInputScreen();
@@ -466,6 +509,18 @@ class FoodExpenseApp {
         document.getElementById('cooking-count').textContent = this.userData.cookingCount;
         document.getElementById('monthly-expense').textContent = this.userData.monthlyExpense.toLocaleString();
 
+        // 節約レベル表示
+        const savingsLevelElement = document.getElementById('savings-level');
+        const savingsToNextElement = document.getElementById('savings-to-next');
+        if (savingsLevelElement) {
+            savingsLevelElement.textContent = this.userData.savingsLevel;
+        }
+        if (savingsToNextElement) {
+            const nextSavings = this.userData.savingsLevel * 1000;
+            const remaining = Math.max(0, nextSavings - this.userData.totalSavings);
+            savingsToNextElement.textContent = remaining.toLocaleString();
+        }
+
         // 統計タブ
         document.getElementById('total-expense').textContent = this.userData.monthlyExpense.toLocaleString();
         document.getElementById('expense-goal').textContent = this.goals.monthlyExpenseGoal.toLocaleString();
@@ -475,6 +530,15 @@ class FoodExpenseApp {
 
         // 自炊ボタンの状態更新
         this.updateCookingButtons();
+
+        // 連続記録表示更新
+        this.updateStreakDisplay();
+
+        // 節約額で買える物の表示更新
+        this.updateSavingsEquivalent();
+
+        // 貯金目標の進捗更新
+        this.updateSavingsGoals();
 
         // レベルアップチェック
         this.checkLevelUp();
@@ -500,6 +564,28 @@ class FoodExpenseApp {
             this.userData.points -= requiredPoints;
             this.showNotification(`レベルアップ！ Lv.${this.userData.level}になりました！`);
             this.updateBadgeProgress();
+        }
+        
+        // 節約レベルアップチェック
+        this.checkSavingsLevelUp();
+    }
+
+    // 節約レベルアップチェック
+    checkSavingsLevelUp() {
+        const requiredSavings = this.userData.savingsLevel * 1000; // 1000円ごとにレベルアップ
+        if (this.userData.totalSavings >= requiredSavings) {
+            const newLevel = Math.floor(this.userData.totalSavings / 1000) + 1;
+            if (newLevel > this.userData.savingsLevel) {
+                const oldLevel = this.userData.savingsLevel;
+                this.userData.savingsLevel = newLevel;
+                
+                // レベルアップ報酬
+                const bonus = (newLevel - oldLevel) * 20; // レベルあたり20pt
+                this.userData.points += bonus;
+                
+                this.showNotification(`節約レベルアップ！ 節約Lv.${this.userData.savingsLevel}になりました！ (+${bonus}pt)`, 'success');
+                this.updateBadgeProgress();
+            }
         }
     }
 
@@ -788,7 +874,8 @@ class FoodExpenseApp {
             savingsRecords: this.savingsRecords,
             collection: this.collection,
             missions: this.missions,
-            badges: this.badges
+            badges: this.badges,
+            streaks: this.streaks
         };
         localStorage.setItem('foodExpenseApp', JSON.stringify(data));
         this.updateCharts();
@@ -816,6 +903,14 @@ class FoodExpenseApp {
                 earned: [],
                 currentTitle: 'beginner'
             };
+            this.streaks = data.streaks || {
+                noWasteStreak: 0,
+                lastNoWasteDate: '',
+                bestNoWasteStreak: 0,
+                snackFreeStreak: 0,
+                lastSnackFreeDate: '',
+                bestSnackFreeStreak: 0
+            };
         }
     }
 
@@ -824,6 +919,7 @@ class FoodExpenseApp {
         this.expenseChart = null;
         this.categoryChart = null;
         this.cookingChart = null;
+        this.savingsChart = null;
         setTimeout(() => {
             this.renderCharts();
         }, 100);
@@ -834,6 +930,7 @@ class FoodExpenseApp {
         this.renderExpenseChart();
         this.renderCategoryChart();
         this.renderCookingChart();
+        this.renderSavingsChart();
     }
 
     // 支出推移グラフ
@@ -1034,7 +1131,7 @@ class FoodExpenseApp {
 
     // グラフ更新
     updateCharts() {
-        if (this.expenseChart || this.categoryChart || this.cookingChart) {
+        if (this.expenseChart || this.categoryChart || this.cookingChart || this.savingsChart) {
             this.renderCharts();
         }
     }
@@ -1433,6 +1530,12 @@ class FoodExpenseApp {
             case 'missions_completed':
                 return this.missions.completedHistory.length >= req.value;
             
+            case 'savings_level':
+                return this.userData.savingsLevel >= req.value;
+            
+            case 'no_waste_streak':
+                return this.streaks.noWasteStreak >= req.value;
+            
             default:
                 return false;
         }
@@ -1585,6 +1688,10 @@ class FoodExpenseApp {
                 return this.collection.length;
             case 'missions_completed':
                 return this.missions.completedHistory.length;
+            case 'savings_level':
+                return this.userData.savingsLevel;
+            case 'no_waste_streak':
+                return this.streaks.noWasteStreak;
             default:
                 return 0;
         }
@@ -1619,6 +1726,298 @@ class FoodExpenseApp {
     // バッジ獲得条件チェック（各アクション後に呼び出し）
     updateBadgeProgress() {
         this.checkBadgeEligibility();
+    }
+
+    // 無駄遣いなしの日を記録
+    recordNoWasteDay() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (this.streaks.lastNoWasteDate === today) {
+            this.showNotification('今日はすでに記録済みです', 'error');
+            return;
+        }
+
+        // 連続記録を更新
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        if (this.streaks.lastNoWasteDate === yesterdayStr) {
+            // 連続記録継続
+            this.streaks.noWasteStreak++;
+        } else {
+            // 新しい記録スタート
+            this.streaks.noWasteStreak = 1;
+        }
+
+        this.streaks.lastNoWasteDate = today;
+        
+        // 最高記録更新チェック
+        if (this.streaks.noWasteStreak > this.streaks.bestNoWasteStreak) {
+            this.streaks.bestNoWasteStreak = this.streaks.noWasteStreak;
+            this.showNotification(`🎉 無駄遣いなし記録更新！${this.streaks.noWasteStreak}日連続達成！`, 'success');
+        } else {
+            this.showNotification(`🔥 無駄遣いなし ${this.streaks.noWasteStreak}日連続！素晴らしい！`, 'success');
+        }
+
+        // ポイント報酬
+        const bonus = Math.min(this.streaks.noWasteStreak * 5, 50); // 最大50pt
+        this.userData.points += bonus;
+
+        this.updateStreakButtonState();
+        this.updateBadgeProgress();
+        this.updateUI();
+        this.saveData();
+    }
+
+    // お菓子我慢の日を記録
+    recordSnackFreeDay() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (this.streaks.lastSnackFreeDate === today) {
+            this.showNotification('今日はすでに記録済みです', 'error');
+            return;
+        }
+
+        // 連続記録を更新
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        if (this.streaks.lastSnackFreeDate === yesterdayStr) {
+            // 連続記録継続
+            this.streaks.snackFreeStreak++;
+        } else {
+            // 新しい記録スタート
+            this.streaks.snackFreeStreak = 1;
+        }
+
+        this.streaks.lastSnackFreeDate = today;
+        
+        // 最高記録更新チェック
+        if (this.streaks.snackFreeStreak > this.streaks.bestSnackFreeStreak) {
+            this.streaks.bestSnackFreeStreak = this.streaks.snackFreeStreak;
+            this.showNotification(`🎉 お菓子我慢記録更新！${this.streaks.snackFreeStreak}日連続達成！`, 'success');
+        } else {
+            this.showNotification(`🍭 お菓子我慢 ${this.streaks.snackFreeStreak}日連続！頑張ってる！`, 'success');
+        }
+
+        // ポイント報酬
+        const bonus = Math.min(this.streaks.snackFreeStreak * 3, 30); // 最大30pt
+        this.userData.points += bonus;
+
+        this.updateStreakButtonState();
+        this.updateBadgeProgress();
+        this.updateUI();
+        this.saveData();
+    }
+
+    // 連続記録ボタンの状態更新
+    updateStreakButtonState() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const noWasteBtn = document.getElementById('no-waste-btn');
+        const snackFreeBtn = document.getElementById('snack-free-btn');
+
+        if (noWasteBtn) {
+            if (this.streaks.lastNoWasteDate === today) {
+                noWasteBtn.classList.add('recorded');
+                noWasteBtn.textContent = '✅ 今日は記録済み';
+            } else {
+                noWasteBtn.classList.remove('recorded');
+                noWasteBtn.textContent = '🔥 今日は無駄遣いなし！';
+            }
+        }
+
+        if (snackFreeBtn) {
+            if (this.streaks.lastSnackFreeDate === today) {
+                snackFreeBtn.classList.add('recorded');
+                snackFreeBtn.textContent = '✅ 今日は記録済み';
+            } else {
+                snackFreeBtn.classList.remove('recorded');
+                snackFreeBtn.textContent = '🍭 今日はお菓子我慢！';
+            }
+        }
+    }
+
+    // 連続記録の表示更新
+    updateStreakDisplay() {
+        const elements = {
+            'no-waste-streak': this.streaks.noWasteStreak,
+            'best-no-waste-streak': this.streaks.bestNoWasteStreak,
+            'snack-free-streak': this.streaks.snackFreeStreak,
+            'best-snack-free-streak': this.streaks.bestSnackFreeStreak
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        });
+
+        this.updateStreakButtonState();
+    }
+
+    // 連続記録をリセット（無駄遣いした場合）
+    resetStreakIfNeeded(category) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // コンビニ、自販機、お菓子系の出費で連続記録をリセット
+        if (['コンビニ', '自販機'].includes(category)) {
+            if (this.streaks.lastNoWasteDate === today && this.streaks.noWasteStreak > 0) {
+                this.showNotification('無駄遣い記録がリセットされました', 'error');
+                this.streaks.noWasteStreak = 0;
+                this.streaks.lastNoWasteDate = '';
+            }
+            
+            // お菓子系の買い物でスナック我慢記録もリセット
+            if (this.streaks.lastSnackFreeDate === today && this.streaks.snackFreeStreak > 0) {
+                this.showNotification('お菓子我慢記録がリセットされました', 'error');
+                this.streaks.snackFreeStreak = 0;
+                this.streaks.lastSnackFreeDate = '';
+            }
+        }
+    }
+
+    // 節約額で買える物の表示更新
+    updateSavingsEquivalent() {
+        const element = document.getElementById('savings-can-buy-text');
+        if (!element) return;
+
+        const totalSavings = this.userData.totalSavings;
+        
+        if (totalSavings === 0) {
+            element.textContent = '節約を始めて、欲しい物を手に入れよう！';
+            return;
+        }
+
+        // 現在の節約額で買える最も価値の高い物を見つける
+        let bestMatch = null;
+        for (let i = this.savingsEquivalents.length - 1; i >= 0; i--) {
+            if (totalSavings >= this.savingsEquivalents[i].amount) {
+                bestMatch = this.savingsEquivalents[i];
+                break;
+            }
+        }
+
+        if (bestMatch) {
+            const count = Math.floor(totalSavings / bestMatch.amount);
+            if (count === 1) {
+                element.innerHTML = `${bestMatch.icon} <strong>${bestMatch.item}</strong>が買えます！`;
+            } else {
+                element.innerHTML = `${bestMatch.icon} <strong>${bestMatch.item}</strong>が<span style="color: #ff6b6b; font-weight: bold;">${count}個</span>買えます！`;
+            }
+        } else {
+            // 最も安い物まで何円足りないかを表示
+            const cheapest = this.savingsEquivalents[0];
+            const remaining = cheapest.amount - totalSavings;
+            element.innerHTML = `あと¥${remaining.toLocaleString()}で${cheapest.icon}<strong>${cheapest.item}</strong>が買えます！`;
+        }
+    }
+
+    // 貯金目標の進捗更新
+    updateSavingsGoals() {
+        const totalSavings = this.userData.totalSavings;
+        const goals = [
+            { current: 'short-term-current', progress: 'short-term-progress', target: 5000 },
+            { current: 'medium-term-current', progress: 'medium-term-progress', target: 20000 },
+            { current: 'long-term-current', progress: 'long-term-progress', target: 50000 }
+        ];
+
+        goals.forEach(goal => {
+            const currentElement = document.getElementById(goal.current);
+            const progressElement = document.getElementById(goal.progress);
+            
+            if (currentElement) {
+                currentElement.textContent = Math.min(totalSavings, goal.target).toLocaleString();
+            }
+            
+            if (progressElement) {
+                const percentage = Math.min((totalSavings / goal.target) * 100, 100);
+                progressElement.style.width = `${percentage}%`;
+                
+                // 達成時の特別スタイル
+                if (percentage >= 100) {
+                    progressElement.style.background = 'linear-gradient(135deg, #00b894, #00a085)';
+                } else {
+                    progressElement.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                }
+            }
+        });
+    }
+
+    // 節約額推移グラフを追加
+    renderSavingsChart() {
+        const ctx = document.getElementById('savings-chart');
+        if (!ctx) return;
+
+        // 過去30日の節約額推移を計算
+        const dates = [];
+        const cumulativeSavings = [];
+        const today = new Date();
+        let runningTotal = 0;
+        
+        // 初期の貯金額を逆算
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 29);
+        
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            dates.push(date.getDate() + '日');
+            
+            // その日の節約額を加算
+            const daySavings = this.savingsRecords
+                .filter(record => record.date === dateStr)
+                .reduce((sum, record) => sum + record.amount, 0);
+            
+            runningTotal += daySavings;
+            cumulativeSavings.push(runningTotal);
+        }
+
+        if (this.savingsChart) {
+            this.savingsChart.destroy();
+        }
+
+        this.savingsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '累積節約額 (円)',
+                    data: cumulativeSavings,
+                    borderColor: '#00b894',
+                    backgroundColor: 'rgba(0, 184, 148, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        display: true,
+                        maxTicksLimit: 10
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -1695,6 +2094,14 @@ function claimMissionReward(missionId) {
 
 function filterBadgesByCategory(category, button) {
     app.filterBadgesByCategory(category, button);
+}
+
+function recordNoWasteDay() {
+    app.recordNoWasteDay();
+}
+
+function recordSnackFreeDay() {
+    app.recordSnackFreeDay();
 }
 
 // PWA Service Worker登録

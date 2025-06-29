@@ -1626,7 +1626,8 @@ body {
 /* タブボタンの調整（5つ対応） */
 .tab-btn {
     font-size: 0.75rem;
-    padding: 0.8rem 0.2rem;
+    padding: 0.6rem 0.2rem;
+    line-height: 1.2;
 }
 
 @media (max-width: 480px) {
@@ -1655,7 +1656,8 @@ body {
 
     .tab-btn {
         font-size: 0.65rem;
-        padding: 0.6rem 0.1rem;
+        padding: 0.5rem 0.1rem;
+        line-height: 1.1;
     }
 }
 
@@ -1873,5 +1875,227 @@ body {
 
     .badge-progress-text {
         text-align: center;
+    }
+}
+
+/* 連続記録セクション */
+.streak-stats {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #ff7675, #fd79a8);
+    border-radius: 15px;
+    color: white;
+}
+
+.streak-item {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.streak-item:last-child {
+    margin-bottom: 0;
+}
+
+.best-record {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-left: 0.5rem;
+}
+
+.streak-record-section {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.streak-record-section h3 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #333;
+    border-bottom: 2px solid #ff7675;
+    padding-bottom: 0.5rem;
+}
+
+.streak-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.streak-btn {
+    flex: 1;
+    padding: 1rem;
+    border: 2px solid #ff7675;
+    background: white;
+    color: #ff7675;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.streak-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 118, 117, 0.3);
+}
+
+.streak-btn.recorded {
+    background: #ff7675;
+    color: white;
+    cursor: default;
+}
+
+.streak-btn.recorded:hover {
+    transform: none;
+}
+
+.streak-note {
+    text-align: center;
+    color: #666;
+    font-size: 0.85rem;
+    margin: 0;
+    font-style: italic;
+}
+
+@media (max-width: 480px) {
+    .streak-buttons {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .streak-btn {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .streak-stats {
+        padding: 0.8rem;
+    }
+
+    .streak-item {
+        font-size: 0.8rem;
+    }
+}
+
+/* 節約額表示 */
+.savings-equivalent {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #fdcb6e, #e17055);
+    border-radius: 15px;
+    color: white;
+    text-align: center;
+}
+
+.savings-can-buy {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.savings-level {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: #333;
+    text-align: center;
+}
+
+/* 貯金目標セクション */
+.savings-goals-section {
+    margin-bottom: 2rem;
+}
+
+.savings-goals-section h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+    border-bottom: 3px solid #00b894;
+    padding-bottom: 0.5rem;
+}
+
+.savings-goal-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.savings-goal-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.savings-goal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border-color: #00b894;
+}
+
+.savings-goal-card h4 {
+    margin-bottom: 1rem;
+    color: #333;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.savings-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.savings-progress-bar {
+    height: 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.savings-progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    transition: width 0.5s ease;
+    border-radius: 6px;
+}
+
+.savings-progress-text {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+@media (min-width: 768px) {
+    .savings-goal-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .savings-goal-card {
+        padding: 1rem;
+    }
+
+    .savings-goal-card h4 {
+        font-size: 1rem;
+    }
+
+    .savings-equivalent {
+        padding: 0.8rem;
+    }
+
+    .savings-can-buy {
+        font-size: 0.8rem;
     }
 }
