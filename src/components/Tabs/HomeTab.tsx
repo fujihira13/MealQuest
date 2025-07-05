@@ -126,6 +126,32 @@ export const HomeTab: React.FC = () => {
 
   return (
     <section className="tab-content active">
+      {/* 支出記録セクション - 最優先で上部に配置 */}
+      <div className="expense-priority-section">
+        <h3>💰 支出を記録する</h3>
+        <p className="expense-instruction">今日の支出を記録しましょう</p>
+        <div className="category-grid">
+          <button className="category-btn category-supermarket" onClick={() => openInputModal('スーパー')}>
+            🛒<br />スーパー
+          </button>
+          <button className="category-btn category-vending" onClick={() => openInputModal('自販機')}>
+            🥤<br />自販機
+          </button>
+          <button className="category-btn category-convenience" onClick={() => openInputModal('コンビニ')}>
+            🏪<br />コンビニ
+          </button>
+          <button className="category-btn category-drinking" onClick={() => openInputModal('飲み会')}>
+            🍻<br />飲み会
+          </button>
+          <button className="category-btn category-date" onClick={() => openInputModal('デート')}>
+            💕<br />デート
+          </button>
+          <button className="category-btn category-other" onClick={() => openInputModal('その他')}>
+            📝<br />その他
+          </button>
+        </div>
+      </div>
+
       {/* 消費許容ゲージセクション */}
       <div className="gauge-section">
         <h3>今月の消費許容ゲージ</h3>
@@ -135,50 +161,6 @@ export const HomeTab: React.FC = () => {
           </div>
           <div className="gauge-text">
             残り許容額: ¥{remaining.toLocaleString()} / ¥{goals.allowanceGoal.toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      {/* アバター・ステータスセクション */}
-      <div className="avatar-section">
-        <div className="avatar-container">
-          <Avatar />
-          <div className="avatar-info">
-            <div className="points-display">💰 {userData.points.toLocaleString()}pt</div>
-            <div className="level-progress">
-              <div className="level-text">次のレベルまで: {Math.max(0, pointsToNext).toLocaleString()}pt</div>
-              <div className="level-bar">
-                <div className="level-fill" style={{ width: `${Math.min(100, progressPercent)}%` }}></div>
-              </div>
-            </div>
-            <div className="savings-level">
-              💰 節約Lv.{userData.savingsLevel} (次まで: ¥{Math.max(0, userData.savingsLevel * 1000 - userData.totalSavings).toLocaleString()})
-            </div>
-            <div className="savings-bank">
-              <i className="fas fa-coins"></i> 合計貯金: ¥{userData.totalSavings.toLocaleString()}
-            </div>
-            <div className="monthly-savings">
-              <i className="fas fa-calendar-alt"></i> 今月の貯金: ¥{userData.monthlySavings.toLocaleString()}
-            </div>
-            <div className="savings-equivalent">
-              <div className="savings-can-buy">
-                <span>{getSavingsEquivalent()}</span>
-              </div>
-            </div>
-            <div className="monthly-stats">
-              <span>今月の自炊: {userData.cookingCount}回</span>
-              <span>食費: ¥{userData.monthlyExpense.toLocaleString()}</span>
-            </div>
-            <div className="streak-stats">
-              <div className="streak-item">
-                🔥 無駄遣いなし: {streaks.noWasteStreak}日連続
-                <span className="best-record">(最高: {streaks.bestNoWasteStreak}日)</span>
-              </div>
-              <div className="streak-item">
-                🍭 お菓子我慢: {streaks.snackFreeStreak}日連続
-                <span className="best-record">(最高: {streaks.bestSnackFreeStreak}日)</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -251,28 +233,47 @@ export const HomeTab: React.FC = () => {
         <p className="streak-note">毎日記録して連続記録を伸ばそう！</p>
       </div>
 
-      {/* カテゴリ選択ボタン */}
-      <div className="category-section">
-        <h3>支出を記録する</h3>
-        <div className="category-grid">
-          <button className="category-btn category-supermarket" onClick={() => openInputModal('スーパー')}>
-            🛒<br />スーパー
-          </button>
-          <button className="category-btn category-vending" onClick={() => openInputModal('自販機')}>
-            🥤<br />自販機
-          </button>
-          <button className="category-btn category-convenience" onClick={() => openInputModal('コンビニ')}>
-            🏪<br />コンビニ
-          </button>
-          <button className="category-btn category-drinking" onClick={() => openInputModal('飲み会')}>
-            🍻<br />飲み会
-          </button>
-          <button className="category-btn category-date" onClick={() => openInputModal('デート')}>
-            💕<br />デート
-          </button>
-          <button className="category-btn category-other" onClick={() => openInputModal('その他')}>
-            📝<br />その他
-          </button>
+      {/* アバター・ステータスセクション */}
+      <div className="avatar-section">
+        <div className="avatar-container">
+          <Avatar />
+          <div className="avatar-info">
+            <div className="points-display">💰 {userData.points.toLocaleString()}pt</div>
+            <div className="level-progress">
+              <div className="level-text">次のレベルまで: {Math.max(0, pointsToNext).toLocaleString()}pt</div>
+              <div className="level-bar">
+                <div className="level-fill" style={{ width: `${Math.min(100, progressPercent)}%` }}></div>
+              </div>
+            </div>
+            <div className="savings-level">
+              💰 節約Lv.{userData.savingsLevel} (次まで: ¥{Math.max(0, userData.savingsLevel * 1000 - userData.totalSavings).toLocaleString()})
+            </div>
+            <div className="savings-bank">
+              <i className="fas fa-coins"></i> 合計貯金: ¥{userData.totalSavings.toLocaleString()}
+            </div>
+            <div className="monthly-savings">
+              <i className="fas fa-calendar-alt"></i> 今月の貯金: ¥{userData.monthlySavings.toLocaleString()}
+            </div>
+            <div className="savings-equivalent">
+              <div className="savings-can-buy">
+                <span>{getSavingsEquivalent()}</span>
+              </div>
+            </div>
+            <div className="monthly-stats">
+              <span>今月の自炊: {userData.cookingCount}回</span>
+              <span>食費: ¥{userData.monthlyExpense.toLocaleString()}</span>
+            </div>
+            <div className="streak-stats">
+              <div className="streak-item">
+                🔥 無駄遣いなし: {streaks.noWasteStreak}日連続
+                <span className="best-record">(最高: {streaks.bestNoWasteStreak}日)</span>
+              </div>
+              <div className="streak-item">
+                🍭 お菓子我慢: {streaks.snackFreeStreak}日連続
+                <span className="best-record">(最高: {streaks.bestSnackFreeStreak}日)</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

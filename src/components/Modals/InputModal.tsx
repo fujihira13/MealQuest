@@ -31,7 +31,7 @@ export const InputModal: React.FC = () => {
       setDisplayAmount(editingRecord.amount.toLocaleString());
     } else if (isInputModalOpen) {
       setAmount('');
-      setSelectedMeal(null);
+      setSelectedMeal('lunch');
       setDisplayAmount('');
     }
   }, [editingRecord, isInputModalOpen, setAmount, setSelectedMeal]);

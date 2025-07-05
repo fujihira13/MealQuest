@@ -328,14 +328,6 @@ export const StatsTab: React.FC = () => {
     );
   };
 
-  const handleGoalUpdate = (type: 'expense' | 'allowance' | 'cooking', value: string) => {
-    const numValue = parseInt(value);
-    if (isNaN(numValue) || numValue <= 0) return;
-    
-    updateGoals(type, numValue);
-    updateMonthlyData();
-    showNotification('success', '目標を更新しました');
-  };
 
   const getCategoryIcon = (category: string) => {
     const icons: {[key: string]: string} = {
@@ -359,13 +351,6 @@ export const StatsTab: React.FC = () => {
   };
 
   const { dayExpenses, dayCooking } = loadRecordsForDate();
-
-  // 貯金目標の進捗計算
-  const savingsGoals = [
-    { current: Math.min(userData.totalSavings, 5000), target: 5000, title: '短期目標' },
-    { current: Math.min(userData.totalSavings, 20000), target: 20000, title: '中期目標' },
-    { current: Math.min(userData.totalSavings, 50000), target: 50000, title: '長期目標' }
-  ];
 
   return (
     <section className="tab-content active">
@@ -391,33 +376,6 @@ export const StatsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 貯金目標セクション */}
-      <div className="savings-goals-section">
-        <h3>💰 貯金目標</h3>
-        <div className="savings-goal-cards">
-          {savingsGoals.map((goal, index) => (
-            <div key={index} className="savings-goal-card">
-              <h4>{goal.title} (¥{goal.target.toLocaleString()})</h4>
-              <div className="savings-progress">
-                <div className="savings-progress-bar">
-                  <div 
-                    className="savings-progress-fill" 
-                    style={{ 
-                      width: `${Math.min((goal.current / goal.target) * 100, 100)}%`,
-                      background: goal.current >= goal.target 
-                        ? 'linear-gradient(135deg, #00b894, #00a085)' 
-                        : 'linear-gradient(135deg, #667eea, #764ba2)'
-                    }}
-                  ></div>
-                </div>
-                <div className="savings-progress-text">
-                  ¥{goal.current.toLocaleString()} / ¥{goal.target.toLocaleString()}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* グラフエリア */}
       <div className="charts-section">
@@ -498,36 +456,6 @@ export const StatsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 設定セクション */}
-      <div className="settings-section">
-        <h3>月間目標設定</h3>
-        <div className="setting-items">
-          <div className="setting-item">
-            <label>食費目標 (円)</label>
-            <input 
-              type="number" 
-              defaultValue={goals.monthlyExpenseGoal}
-              onChange={(e) => handleGoalUpdate('expense', e.target.value)}
-            />
-          </div>
-          <div className="setting-item">
-            <label>消費許容額 (円)</label>
-            <input 
-              type="number" 
-              defaultValue={goals.allowanceGoal}
-              onChange={(e) => handleGoalUpdate('allowance', e.target.value)}
-            />
-          </div>
-          <div className="setting-item">
-            <label>自炊回数目標 (回)</label>
-            <input 
-              type="number" 
-              defaultValue={goals.cookingGoal}
-              onChange={(e) => handleGoalUpdate('cooking', e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
     </section>
   );
 };

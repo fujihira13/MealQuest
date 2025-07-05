@@ -172,7 +172,7 @@ export interface AppState {
 }
 
 // タブ型定義
-export type TabType = 'home' | 'stats' | 'missions' | 'badges' | 'collection';
+export type TabType = 'home' | 'stats' | 'missions' | 'badges' | 'collection' | 'settings';
 
 // 通知型定義
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';

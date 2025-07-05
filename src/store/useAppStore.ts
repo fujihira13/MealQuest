@@ -460,7 +460,7 @@ export const useAppStore = create<AppStore>()(
             description: '誘惑に負けず節約を記録する',
             target: 1,
             reward: 25,
-            type: 'savings',
+            type: 'savings' as MissionType,
             icon: '💰'
           }
         ];
@@ -512,7 +512,7 @@ export const useAppStore = create<AppStore>()(
             description: '1週間で1000円節約する',
             target: 1000,
             reward: 120,
-            type: 'total_savings',
+            type: 'total_savings' as MissionType,
             icon: '🏆'
           }
         ];
@@ -820,7 +820,6 @@ export const useAppStore = create<AppStore>()(
       },
 
       resetStreakIfNeeded: (category) => {
-        const today = new Date().toISOString().split('T')[0];
         
         if (['コンビニ', '自販機'].includes(category)) {
           set((state) => ({

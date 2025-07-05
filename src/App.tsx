@@ -6,6 +6,7 @@ import { StatsTab } from '@/components/Tabs/StatsTab';
 import { MissionsTab } from '@/components/Tabs/MissionsTab';
 import { BadgesTab } from '@/components/Tabs/BadgesTab';
 import { CollectionTab } from '@/components/Tabs/CollectionTab';
+import { SettingsTab } from '@/components/Tabs/SettingsTab';
 import { InputModal } from '@/components/Modals/InputModal';
 import { Notification } from '@/components/Common/Notification';
 import { ConfirmDialog } from '@/components/Common/ConfirmDialog';
@@ -51,6 +52,8 @@ function App() {
         return <BadgesTab />;
       case 'collection':
         return <CollectionTab />;
+      case 'settings':
+        return <SettingsTab />;
       default:
         return <HomeTab />;
     }
