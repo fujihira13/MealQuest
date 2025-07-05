@@ -136,6 +136,8 @@ interface AppStore extends AppState {
   checkSavingsLevelUp: () => boolean;
   
   // ミッション
+  generateDailyMissions: () => void;
+  generateWeeklyMissions: () => void;
   updateMissionProgress: (actionType: string, value?: number) => void;
   claimMissionReward: (missionId: string) => boolean;
   resetDailyMissions: () => void;
@@ -235,6 +237,7 @@ export const useAppStore = create<AppStore>()(
         
         get().resetStreakIfNeeded(category);
         get().updateMissionProgress('expense_record');
+        get().checkBadgeProgress();
       },
 
       updateExpenseRecord: (id, category, amount, meal) => {
@@ -288,6 +291,7 @@ export const useAppStore = create<AppStore>()(
           }));
           
           get().updateMissionProgress('cooking');
+          get().checkBadgeProgress();
         }
         
         get().updateMonthlyData();
@@ -319,6 +323,7 @@ export const useAppStore = create<AppStore>()(
 
         get().updateMissionProgress('savings');
         get().updateMissionProgress('total_savings', amount);
+        get().checkBadgeProgress();
         get().updateMonthlyData();
       },
 
@@ -429,27 +434,321 @@ export const useAppStore = create<AppStore>()(
         return false;
       },
 
+      generateDailyMissions: () => {
+        const dailyMissionTemplates = [
+          {
+            id: 'daily_cooking_1',
+            title: '自炊チャレンジ',
+            description: '今日1回自炊する',
+            target: 1,
+            reward: 30,
+            type: 'cooking',
+            icon: '🍳'
+          },
+          {
+            id: 'daily_expenses_record',
+            title: '記録の習慣',
+            description: '支出を1回記録する',
+            target: 1,
+            reward: 20,
+            type: 'expense_record',
+            icon: '📝'
+          },
+          {
+            id: 'daily_savings',
+            title: '節約成功',
+            description: '誘惑に負けず節約を記録する',
+            target: 1,
+            reward: 25,
+            type: 'savings',
+            icon: '💰'
+          }
+        ];
+
+        set((state) => {
+          const newDaily: {[key: string]: Mission} = {};
+          dailyMissionTemplates.forEach(template => {
+            newDaily[template.id] = {
+              ...template,
+              progress: 0,
+              completed: false,
+              claimed: false
+            };
+          });
+          
+          return {
+            missions: {
+              ...state.missions,
+              daily: newDaily,
+              lastDailyReset: new Date().toISOString().split('T')[0]
+            }
+          };
+        });
+      },
+
+      generateWeeklyMissions: () => {
+        const weeklyMissionTemplates = [
+          {
+            id: 'weekly_cooking_goal',
+            title: '週間自炊マスター',
+            description: '1週間で10回自炊する',
+            target: 10,
+            reward: 100,
+            type: 'cooking',
+            icon: '👨‍🍳'
+          },
+          {
+            id: 'weekly_expense_goal',
+            title: '支出管理上手',
+            description: '1週間で食費を目標以下に抑える',
+            target: 1,
+            reward: 80,
+            type: 'expense_control',
+            icon: '📊'
+          },
+          {
+            id: 'weekly_savings_goal',
+            title: '節約チャンピオン',
+            description: '1週間で1000円節約する',
+            target: 1000,
+            reward: 120,
+            type: 'total_savings',
+            icon: '🏆'
+          }
+        ];
+
+        set((state) => {
+          const newWeekly: {[key: string]: Mission} = {};
+          weeklyMissionTemplates.forEach(template => {
+            newWeekly[template.id] = {
+              ...template,
+              progress: 0,
+              completed: false,
+              claimed: false
+            };
+          });
+          
+          const now = new Date();
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          
+          return {
+            missions: {
+              ...state.missions,
+              weekly: newWeekly,
+              lastWeeklyReset: startOfWeek.toISOString().split('T')[0]
+            }
+          };
+        });
+      },
+
       updateMissionProgress: (actionType, value = 1) => {
-        // ミッション進捗更新の実装
-        // 実際の実装はより複雑になりますが、ここでは簡略化
+        set((state) => {
+          const newMissions = { ...state.missions };
+          let updated = false;
+
+          // デイリーミッション更新
+          Object.keys(newMissions.daily).forEach(missionId => {
+            const mission = newMissions.daily[missionId];
+            if (!mission.completed && mission.type === actionType) {
+              mission.progress = Math.min(mission.progress + value, mission.target);
+              if (mission.progress >= mission.target) {
+                mission.completed = true;
+              }
+              updated = true;
+            }
+          });
+
+          // ウィークリーミッション更新
+          Object.keys(newMissions.weekly).forEach(missionId => {
+            const mission = newMissions.weekly[missionId];
+            if (!mission.completed && mission.type === actionType) {
+              if (actionType === 'total_savings') {
+                // 週間節約額を計算
+                const weekStart = newMissions.lastWeeklyReset;
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+                
+                const weekSavings = state.savingsRecords
+                  .filter(record => record.date >= weekStart && record.date < weekEnd.toISOString().split('T')[0])
+                  .reduce((sum, record) => sum + record.amount, 0);
+                
+                mission.progress = weekSavings;
+              } else if (actionType === 'cooking') {
+                // 週間自炊回数を計算
+                const weekStart = newMissions.lastWeeklyReset;
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+                
+                const weekCooking = state.cookingRecords
+                  .filter(record => record.date >= weekStart && record.date < weekEnd.toISOString().split('T')[0])
+                  .length;
+                
+                mission.progress = weekCooking;
+              } else {
+                mission.progress = Math.min(mission.progress + value, mission.target);
+              }
+              
+              if (mission.progress >= mission.target) {
+                mission.completed = true;
+              }
+              updated = true;
+            }
+          });
+
+          return updated ? { missions: newMissions } : state;
+        });
       },
 
       claimMissionReward: (missionId) => {
-        // ミッション報酬受取の実装
-        return false;
+        const state = get();
+        const mission = state.missions.daily[missionId] || state.missions.weekly[missionId];
+        
+        if (!mission || !mission.completed || mission.claimed) {
+          return false;
+        }
+
+        set((state) => {
+          const newMissions = { ...state.missions };
+          
+          if (newMissions.daily[missionId]) {
+            newMissions.daily[missionId].claimed = true;
+          } else if (newMissions.weekly[missionId]) {
+            newMissions.weekly[missionId].claimed = true;
+          }
+
+          newMissions.completedHistory.push({
+            id: missionId,
+            title: mission.title,
+            reward: mission.reward,
+            claimedAt: new Date().toISOString(),
+            type: state.missions.daily[missionId] ? 'daily' : 'weekly'
+          });
+
+          return {
+            missions: newMissions,
+            userData: {
+              ...state.userData,
+              points: state.userData.points + mission.reward
+            }
+          };
+        });
+
+        return true;
       },
 
       resetDailyMissions: () => {
-        // デイリーミッションリセットの実装
+        const today = new Date().toISOString().split('T')[0];
+        const state = get();
+        
+        if (state.missions.lastDailyReset !== today) {
+          set((state) => ({
+            missions: {
+              ...state.missions,
+              daily: {},
+              lastDailyReset: today
+            }
+          }));
+        }
       },
 
       resetWeeklyMissions: () => {
-        // ウィークリーミッションリセットの実装
+        const now = new Date();
+        const thisWeek = new Date(now);
+        thisWeek.setDate(now.getDate() - now.getDay());
+        const weekKey = thisWeek.toISOString().split('T')[0];
+        
+        const state = get();
+        
+        if (state.missions.lastWeeklyReset !== weekKey) {
+          set((state) => ({
+            missions: {
+              ...state.missions,
+              weekly: {},
+              lastWeeklyReset: weekKey
+            }
+          }));
+        }
       },
 
       checkBadgeProgress: () => {
-        // バッジ進捗チェックの実装
-        return [];
+        const state = get();
+        const newBadges: string[] = [];
+        
+        badgeDefinitions.forEach(badge => {
+          if (!state.badges.earned.includes(badge.id)) {
+            const req = badge.requirement;
+            let shouldEarn = false;
+            
+            switch (req.type) {
+              case 'cooking_count':
+                shouldEarn = state.cookingRecords.length >= req.value;
+                break;
+              case 'total_savings':
+                shouldEarn = state.userData.totalSavings >= req.value;
+                break;
+              case 'savings_count':
+                shouldEarn = state.savingsRecords.length >= req.value;
+                break;
+              case 'level':
+                shouldEarn = state.userData.level >= req.value;
+                break;
+              case 'savings_level':
+                shouldEarn = state.userData.savingsLevel >= req.value;
+                break;
+              case 'no_waste_streak':
+                shouldEarn = state.streaks.noWasteStreak >= req.value;
+                break;
+              case 'consecutive_days':
+                // 連続記録日数計算（簡略化）
+                shouldEarn = state.expenses.length > 0 || state.cookingRecords.length > 0;
+                break;
+              case 'monthly_goal_achieved':
+                shouldEarn = state.userData.monthlyExpense <= 25000 && 
+                            state.userData.cookingCount >= 20 && 
+                            state.userData.allowanceUsed <= 15000;
+                break;
+              case 'gacha_items':
+                shouldEarn = state.collection.length >= req.value;
+                break;
+              case 'missions_completed':
+                shouldEarn = state.missions.completedHistory.length >= req.value;
+                break;
+            }
+            
+            if (shouldEarn) {
+              newBadges.push(badge.id);
+            }
+          }
+        });
+
+        if (newBadges.length > 0) {
+          set((state) => {
+            const earnedBadges = [...state.badges.earned, ...newBadges];
+            
+            // 現在の称号を更新（最新の称号を設定）
+            const priorities = { special: 4, level: 3, cooking: 2, savings: 1 };
+            const earnedBadgeObjects = badgeDefinitions.filter(b => earnedBadges.includes(b.id));
+            earnedBadgeObjects.sort((a, b) => {
+              const priorityDiff = priorities[b.category] - priorities[a.category];
+              if (priorityDiff !== 0) return priorityDiff;
+              return earnedBadges.indexOf(b.id) - earnedBadges.indexOf(a.id);
+            });
+            
+            const currentTitle = earnedBadgeObjects.length > 0 
+              ? earnedBadgeObjects[0].id 
+              : 'beginner';
+
+            return {
+              badges: {
+                earned: earnedBadges,
+                currentTitle
+              }
+            };
+          });
+        }
+
+        return newBadges;
       },
 
       recordNoWasteDay: () => {

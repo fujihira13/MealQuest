@@ -8,7 +8,9 @@
       "Bash(pkill:*)",
       "Bash(npm install:*)",
       "Bash(rm:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(cp:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

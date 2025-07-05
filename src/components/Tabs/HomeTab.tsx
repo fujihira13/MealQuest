@@ -1,13 +1,13 @@
 import React from 'react';
 import { useAppStore, useUIStore } from '@/store/useAppStore';
 import { Avatar } from '@/components/Common/Avatar';
-import type { ExpenseCategory, MealTime } from '@/types';
+import type { MealTime } from '@/types';
 
 export const HomeTab: React.FC = () => {
   const {
     userData,
     goals,
-    gachaItems,
+    cookingRecords,
     toggleCookingRecord,
     addSavingsRecord,
     playGacha,
@@ -117,6 +117,13 @@ export const HomeTab: React.FC = () => {
   const pointsToNext = (userData.level * 100) - userData.points;
   const progressPercent = (userData.points / (userData.level * 100)) * 100;
 
+  // 今日の自炊記録をチェック
+  const today = new Date().toISOString().split('T')[0];
+  const todayCooking = cookingRecords.filter(r => r.date === today);
+  const isCookingRecorded = (meal: MealTime) => {
+    return todayCooking.some(r => r.meal === meal);
+  };
+
   return (
     <section className="tab-content active">
       {/* 消費許容ゲージセクション */}
@@ -181,19 +188,19 @@ export const HomeTab: React.FC = () => {
         <h3>今日の自炊記録</h3>
         <div className="cooking-buttons">
           <button 
-            className="cooking-btn" 
+            className={`cooking-btn ${isCookingRecorded('morning') ? 'active' : ''}`}
             onClick={() => handleCookingRecord('morning')}
           >
             朝
           </button>
           <button 
-            className="cooking-btn" 
+            className={`cooking-btn ${isCookingRecorded('lunch') ? 'active' : ''}`}
             onClick={() => handleCookingRecord('lunch')}
           >
             昼
           </button>
           <button 
-            className="cooking-btn" 
+            className={`cooking-btn ${isCookingRecorded('dinner') ? 'active' : ''}`}
             onClick={() => handleCookingRecord('dinner')}
           >
             夜
