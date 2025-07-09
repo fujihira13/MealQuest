@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAppStore, useUIStore } from '@/store/useAppStore';
-import { Avatar } from '@/components/Common/Avatar';
 import type { MealTime } from '@/types';
 
 export const HomeTab: React.FC = () => {
@@ -144,7 +143,7 @@ export const HomeTab: React.FC = () => {
             🍻<br />飲み会
           </button>
           <button className="category-btn category-date" onClick={() => openInputModal('デート')}>
-            💕<br />デート
+            💕<br />交際費
           </button>
           <button className="category-btn category-other" onClick={() => openInputModal('その他')}>
             📝<br />その他
@@ -233,46 +232,41 @@ export const HomeTab: React.FC = () => {
         <p className="streak-note">毎日記録して連続記録を伸ばそう！</p>
       </div>
 
-      {/* アバター・ステータスセクション */}
-      <div className="avatar-section">
-        <div className="avatar-container">
-          <Avatar />
-          <div className="avatar-info">
-            <div className="points-display">💰 {userData.points.toLocaleString()}pt</div>
-            <div className="level-progress">
-              <div className="level-text">次のレベルまで: {Math.max(0, pointsToNext).toLocaleString()}pt</div>
-              <div className="level-bar">
-                <div className="level-fill" style={{ width: `${Math.min(100, progressPercent)}%` }}></div>
-              </div>
-            </div>
-            <div className="savings-level">
-              💰 節約Lv.{userData.savingsLevel} (次まで: ¥{Math.max(0, userData.savingsLevel * 1000 - userData.totalSavings).toLocaleString()})
-            </div>
-            <div className="savings-bank">
-              <i className="fas fa-coins"></i> 合計貯金: ¥{userData.totalSavings.toLocaleString()}
-            </div>
-            <div className="monthly-savings">
-              <i className="fas fa-calendar-alt"></i> 今月の貯金: ¥{userData.monthlySavings.toLocaleString()}
-            </div>
-            <div className="savings-equivalent">
-              <div className="savings-can-buy">
-                <span>{getSavingsEquivalent()}</span>
-              </div>
-            </div>
-            <div className="monthly-stats">
-              <span>今月の自炊: {userData.cookingCount}回</span>
-              <span>食費: ¥{userData.monthlyExpense.toLocaleString()}</span>
-            </div>
-            <div className="streak-stats">
-              <div className="streak-item">
-                🔥 無駄遣いなし: {streaks.noWasteStreak}日連続
-                <span className="best-record">(最高: {streaks.bestNoWasteStreak}日)</span>
-              </div>
-              <div className="streak-item">
-                🍭 お菓子我慢: {streaks.snackFreeStreak}日連続
-                <span className="best-record">(最高: {streaks.bestSnackFreeStreak}日)</span>
-              </div>
-            </div>
+      {/* ユーザー情報セクション */}
+      <div className="user-info-section">
+        <div className="points-display">💰 {userData.points.toLocaleString()}pt</div>
+        <div className="level-progress">
+          <div className="level-text">次のレベルまで: {Math.max(0, pointsToNext).toLocaleString()}pt</div>
+          <div className="level-bar">
+            <div className="level-fill" style={{ width: `${Math.min(100, progressPercent)}%` }}></div>
+          </div>
+        </div>
+        <div className="savings-level">
+          💰 節約Lv.{userData.savingsLevel} (次まで: ¥{Math.max(0, userData.savingsLevel * 1000 - userData.totalSavings).toLocaleString()})
+        </div>
+        <div className="savings-bank">
+          <i className="fas fa-coins"></i> 合計貯金: ¥{userData.totalSavings.toLocaleString()}
+        </div>
+        <div className="monthly-savings">
+          <i className="fas fa-calendar-alt"></i> 今月の貯金: ¥{userData.monthlySavings.toLocaleString()}
+        </div>
+        <div className="savings-equivalent">
+          <div className="savings-can-buy">
+            <span>{getSavingsEquivalent()}</span>
+          </div>
+        </div>
+        <div className="monthly-stats">
+          <span>今月の自炊: {userData.cookingCount}回</span>
+          <span>食費: ¥{userData.monthlyExpense.toLocaleString()}</span>
+        </div>
+        <div className="streak-stats">
+          <div className="streak-item">
+            🔥 無駄遣いなし: {streaks.noWasteStreak}日連続
+            <span className="best-record">(最高: {streaks.bestNoWasteStreak}日)</span>
+          </div>
+          <div className="streak-item">
+            🍭 お菓子我慢: {streaks.snackFreeStreak}日連続
+            <span className="best-record">(最高: {streaks.bestSnackFreeStreak}日)</span>
           </div>
         </div>
       </div>

@@ -12,9 +12,7 @@ export const StatsTab: React.FC = () => {
     cookingRecords,
     savingsRecords,
     deleteExpenseRecord,
-    deleteCookingRecord,
-    updateGoals,
-    updateMonthlyData
+    deleteCookingRecord
   } = useAppStore();
 
   const { showNotification, showConfirmDialog } = useUIStore();

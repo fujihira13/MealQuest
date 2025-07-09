@@ -15,7 +15,8 @@ import type {
   TabType,
   NotificationType,
   GachaItem,
-  SavingsEquivalent
+  SavingsEquivalent,
+  MissionType
 } from '@/types';
 
 // 初期データ定義
@@ -442,7 +443,7 @@ export const useAppStore = create<AppStore>()(
             description: '今日1回自炊する',
             target: 1,
             reward: 30,
-            type: 'cooking',
+            type: 'cooking' as MissionType,
             icon: '🍳'
           },
           {
@@ -451,7 +452,7 @@ export const useAppStore = create<AppStore>()(
             description: '支出を1回記録する',
             target: 1,
             reward: 20,
-            type: 'expense_record',
+            type: 'expense_record' as MissionType,
             icon: '📝'
           },
           {
@@ -494,7 +495,7 @@ export const useAppStore = create<AppStore>()(
             description: '1週間で10回自炊する',
             target: 10,
             reward: 100,
-            type: 'cooking',
+            type: 'cooking' as MissionType,
             icon: '👨‍🍳'
           },
           {
@@ -503,7 +504,7 @@ export const useAppStore = create<AppStore>()(
             description: '1週間で食費を目標以下に抑える',
             target: 1,
             reward: 80,
-            type: 'expense_control',
+            type: 'expense_control' as MissionType,
             icon: '📊'
           },
           {

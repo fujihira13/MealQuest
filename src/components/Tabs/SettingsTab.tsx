@@ -55,7 +55,6 @@ export const SettingsTab: React.FC = () => {
         </button>
         <div className="settings-title">
           <h3>⚙️ 設定</h3>
-          <p>アプリの設定と目標を管理できます</p>
         </div>
         <div className="header-spacer"></div>
       </div>
@@ -119,28 +118,6 @@ export const SettingsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* アプリ情報 */}
-      <div className="app-info-section">
-        <h3>📱 アプリ情報</h3>
-        <div className="info-items">
-          <div className="info-item">
-            <label>アプリ名</label>
-            <span>食費管理アプリ - 節約マスター</span>
-          </div>
-          <div className="info-item">
-            <label>バージョン</label>
-            <span>1.0.0</span>
-          </div>
-          <div className="info-item">
-            <label>現在のレベル</label>
-            <span>Lv.{userData.level}</span>
-          </div>
-          <div className="info-item">
-            <label>総ポイント</label>
-            <span>{userData.points.toLocaleString()}pt</span>
-          </div>
-        </div>
-      </div>
 
       {/* データ管理 */}
       <div className="data-management-section">
