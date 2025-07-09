@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore, useUIStore } from '@/store/useAppStore';
 import { Chart, registerables } from 'chart.js';
+import type { ExpenseRecord } from '@/types';
 
 Chart.register(...registerables);
 
@@ -12,10 +13,10 @@ export const StatsTab: React.FC = () => {
     cookingRecords,
     savingsRecords,
     deleteExpenseRecord,
-    deleteCookingRecord
+    deleteCookingRecord,
   } = useAppStore();
 
-  const { showNotification, showConfirmDialog } = useUIStore();
+  const { showNotification, showConfirmDialog, openInputModal, setEditingRecord } = useUIStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   
@@ -326,6 +327,11 @@ export const StatsTab: React.FC = () => {
     );
   };
 
+  const handleEditExpense = (expense: ExpenseRecord) => {
+    setEditingRecord(expense);
+    openInputModal(expense.category);
+  };
+
 
   const getCategoryIcon = (category: string) => {
     const icons: {[key: string]: string} = {
@@ -421,6 +427,12 @@ export const StatsTab: React.FC = () => {
                     <span className="record-time">{getMealName(expense.meal)}</span>
                   </div>
                   <div className="record-actions">
+                    <button 
+                      className="edit-btn" 
+                      onClick={() => handleEditExpense(expense)}
+                    >
+                      編集
+                    </button>
                     <button 
                       className="delete-btn" 
                       onClick={() => handleDeleteExpense(expense.id)}

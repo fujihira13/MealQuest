@@ -1,12 +1,12 @@
-import React from 'react';
-import { useAppStore, useUIStore } from '@/store/useAppStore';
+import React from "react";
+import { useAppStore, useUIStore } from "@/store/useAppStore";
 
 export const Header: React.FC = () => {
   const userData = useAppStore((state) => state.userData);
   const { setCurrentTab } = useUIStore();
 
   const handleSettingsClick = () => {
-    setCurrentTab('settings');
+    setCurrentTab("settings");
   };
 
   return (
@@ -18,12 +18,12 @@ export const Header: React.FC = () => {
         <div className="level-badge">
           Lv.<span>{userData.level}</span>
         </div>
-        <button 
+        <button
           className="settings-btn"
           onClick={handleSettingsClick}
           title="設定"
         >
-          <i className="fas fa-cog"></i>
+          <i className="fas fa-gear"></i>
         </button>
       </div>
     </header>

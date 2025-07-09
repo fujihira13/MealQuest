@@ -99,7 +99,7 @@ export const InputModal: React.FC = () => {
           <button className="back-btn" onClick={closeInputModal}>
             <i className="fas fa-arrow-left"></i> 戻る
           </button>
-          <h2>{currentInputCategory}</h2>
+          <h2>{editingRecord ? `${currentInputCategory} を編集` : currentInputCategory}</h2>
           <div className="spacer"></div>
         </div>
 
@@ -162,7 +162,7 @@ export const InputModal: React.FC = () => {
             onClick={handleSave}
             disabled={!currentAmount || !selectedMeal}
           >
-            <i className="fas fa-save"></i> 記録する
+            <i className="fas fa-save"></i> {editingRecord ? '更新する' : '記録する'}
           </button>
         </div>
       </div>
