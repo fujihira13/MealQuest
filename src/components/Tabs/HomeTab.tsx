@@ -15,7 +15,6 @@ export const HomeTab: React.FC = () => {
     streaks,
     checkLevelUp,
     checkSavingsLevelUp,
-    savingsEquivalents,
   } = useAppStore();
 
   const { openInputModal, showNotification } = useUIStore();
@@ -97,7 +96,7 @@ export const HomeTab: React.FC = () => {
     recordNoWasteDay();
     showNotification(
       "success",
-      `🔥 無駄遣いなし ${streaks.noWasteStreak}日連続！素晴らしい！`
+      `🔥 無駄遣いなし ${streaks.noWasteStreak + 1}日連続！素晴らしい！`
     );
   };
 
@@ -105,44 +104,12 @@ export const HomeTab: React.FC = () => {
     recordSnackFreeDay();
     showNotification(
       "success",
-      `🍭 お菓子我慢 ${streaks.snackFreeStreak}日連続！頑張ってる！`
+      `🍭 お菓子我慢 ${streaks.snackFreeStreak + 1}日連続！頑張ってる！`
     );
-  };
-
-  // 節約額で買える物を計算
-  const getSavingsEquivalent = () => {
-    const totalSavings = userData.totalSavings;
-
-    if (totalSavings === 0) {
-      return "節約を始めて、欲しい物を手に入れよう！";
-    }
-
-    let bestMatch = null;
-    for (let i = savingsEquivalents.length - 1; i >= 0; i--) {
-      if (totalSavings >= savingsEquivalents[i].amount) {
-        bestMatch = savingsEquivalents[i];
-        break;
-      }
-    }
-
-    if (bestMatch) {
-      const count = Math.floor(totalSavings / bestMatch.amount);
-      return count === 1
-        ? `${bestMatch.icon} ${bestMatch.item}が買えます！`
-        : `${bestMatch.icon} ${bestMatch.item}が${count}個買えます！`;
-    } else {
-      const cheapest = savingsEquivalents[0];
-      const remaining = cheapest.amount - totalSavings;
-      return `あと¥${remaining.toLocaleString()}で${cheapest.icon}${
-        cheapest.item
-      }が買えます！`;
-    }
   };
 
   const remaining = Math.max(0, goals.allowanceGoal - userData.allowanceUsed);
   const gaugePercent = Math.max(0, (remaining / goals.allowanceGoal) * 100);
-  const pointsToNext = userData.level * 100 - userData.points;
-  const progressPercent = (userData.points / (userData.level * 100)) * 100;
 
   // 今日の自炊記録をチェック
   const today = new Date().toISOString().split("T")[0];
@@ -155,7 +122,7 @@ export const HomeTab: React.FC = () => {
     <section className="tab-content active">
       {/* 支出記録セクション - 最優先で上部に配置 */}
       <div className="expense-priority-section">
-        <h3>💰 支出を記録する</h3>
+        <h3>💰 今日の支出を記録する</h3>
         <p className="expense-instruction">今日の支出を記録しましょう</p>
         <div className="category-grid">
           <button
@@ -209,9 +176,9 @@ export const HomeTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 消費許容ゲージセクション */}
+      {/* 今月の消費許容ゲージ - 重要な進捗情報 */}
       <div className="gauge-section">
-        <h3>今月の消費許容ゲージ</h3>
+        <h3>📊 今月の予算状況</h3>
         <div className="gauge-container">
           <div className="gauge-bar">
             <div
@@ -220,15 +187,15 @@ export const HomeTab: React.FC = () => {
             ></div>
           </div>
           <div className="gauge-text">
-            残り許容額: ¥{remaining.toLocaleString()} / ¥
+            残り予算: ¥{remaining.toLocaleString()} / ¥
             {goals.allowanceGoal.toLocaleString()}
           </div>
         </div>
       </div>
 
-      {/* 自炊記録セクション */}
+      {/* 今日の自炊記録セクション */}
       <div className="cooking-section">
-        <h3>今日の自炊記録</h3>
+        <h3>🍳 今日の自炊記録</h3>
         <div className="cooking-buttons">
           <button
             className={`cooking-btn ${
@@ -257,123 +224,92 @@ export const HomeTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 節約成功記録セクション */}
-      <div className="savings-record-section">
-        <h3>節約成功記録</h3>
-        <p>誘惑に負けずに節約できましたか？</p>
+      {/* 今日のチャレンジセクション */}
+      <div className="daily-challenge-section">
+        <h3>💪 今日のチャレンジ</h3>
+        <div className="challenge-buttons">
+          <button
+            className={`challenge-btn ${
+              streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+                ? "completed"
+                : ""
+            }`}
+            onClick={handleNoWasteDay}
+            disabled={
+              streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+            }
+          >
+            {streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+              ? "✅ 無駄遣いなし達成！"
+              : "🔥 無駄遣いなし"}
+          </button>
+          <button
+            className={`challenge-btn ${
+              streaks.lastSnackFreeDate ===
+              new Date().toISOString().split("T")[0]
+                ? "completed"
+                : ""
+            }`}
+            onClick={handleSnackFreeDay}
+            disabled={
+              streaks.lastSnackFreeDate ===
+              new Date().toISOString().split("T")[0]
+            }
+          >
+            {streaks.lastSnackFreeDate ===
+            new Date().toISOString().split("T")[0]
+              ? "✅ お菓子我慢達成！"
+              : "🍭 お菓子我慢"}
+          </button>
+        </div>
+        <p className="challenge-note">毎日チャレンジして連続記録を伸ばそう！</p>
+      </div>
+
+      {/* 簡潔な節約記録セクション */}
+      <div className="quick-savings-section">
+        <h3>💡 節約できました！</h3>
         <div className="savings-buttons">
           <button
             className="savings-quick-btn"
             onClick={() => handleSavingsRecord(500)}
           >
-            コンビニでの買い食い
+            🏪 コンビニ買い食い
             <br />
-            ¥500
+            ¥500節約
           </button>
           <button
             className="savings-quick-btn"
             onClick={() => handleSavingsRecord(120)}
           >
-            自販機での飲み物
+            🥤 自販機飲み物
             <br />
-            ¥120
+            ¥120節約
           </button>
           <button className="savings-custom-btn" onClick={handleCustomSavings}>
-            その他
+            📝 その他
             <br />
             自由入力
           </button>
         </div>
       </div>
 
-      {/* 連続記録セクション */}
-      <div className="streak-record-section">
-        <h3>今日の連続記録</h3>
-        <div className="streak-buttons">
-          <button
-            className={`streak-btn ${
-              streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
-                ? "recorded"
-                : ""
-            }`}
-            onClick={handleNoWasteDay}
-          >
-            {streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
-              ? "✅ 今日は記録済み"
-              : "🔥 今日は無駄遣いなし！"}
-          </button>
-          <button
-            className={`streak-btn ${
-              streaks.lastSnackFreeDate ===
-              new Date().toISOString().split("T")[0]
-                ? "recorded"
-                : ""
-            }`}
-            onClick={handleSnackFreeDay}
-          >
-            {streaks.lastSnackFreeDate ===
-            new Date().toISOString().split("T")[0]
-              ? "✅ 今日は記録済み"
-              : "🍭 今日はお菓子我慢！"}
-          </button>
+      {/* 簡潔なステータス表示 */}
+      <div className="status-summary">
+        <div className="status-item">
+          <span className="status-icon">💰</span>
+          <span className="status-text">
+            {userData.points.toLocaleString()}pt
+          </span>
         </div>
-        <p className="streak-note">毎日記録して連続記録を伸ばそう！</p>
-      </div>
-
-      {/* ユーザー情報セクション */}
-      <div className="user-info-section">
-        <div className="points-display">
-          💰 {userData.points.toLocaleString()}pt
+        <div className="status-item">
+          <span className="status-icon">🏆</span>
+          <span className="status-text">Lv.{userData.level}</span>
         </div>
-        <div className="level-progress">
-          <div className="level-text">
-            次のレベルまで: {Math.max(0, pointsToNext).toLocaleString()}pt
-          </div>
-          <div className="level-bar">
-            <div
-              className="level-fill"
-              style={{ width: `${Math.min(100, progressPercent)}%` }}
-            ></div>
-          </div>
-        </div>
-        <div className="savings-level">
-          💰 節約Lv.{userData.savingsLevel} (次まで: ¥
-          {Math.max(
-            0,
-            userData.savingsLevel * 1000 - userData.totalSavings
-          ).toLocaleString()}
-          )
-        </div>
-        <div className="savings-bank">
-          <i className="fas fa-coins"></i> 合計貯金: ¥
-          {userData.totalSavings.toLocaleString()}
-        </div>
-        <div className="monthly-savings">
-          <i className="fas fa-calendar-alt"></i> 今月の貯金: ¥
-          {userData.monthlySavings.toLocaleString()}
-        </div>
-        <div className="savings-equivalent">
-          <div className="savings-can-buy">
-            <span>{getSavingsEquivalent()}</span>
-          </div>
-        </div>
-        <div className="monthly-stats">
-          <span>今月の自炊: {userData.cookingCount}回</span>
-          <span>食費: ¥{userData.monthlyExpense.toLocaleString()}</span>
-        </div>
-        <div className="streak-stats">
-          <div className="streak-item">
-            🔥 無駄遣いなし: {streaks.noWasteStreak}日連続
-            <span className="best-record">
-              (最高: {streaks.bestNoWasteStreak}日)
-            </span>
-          </div>
-          <div className="streak-item">
-            🍭 お菓子我慢: {streaks.snackFreeStreak}日連続
-            <span className="best-record">
-              (最高: {streaks.bestSnackFreeStreak}日)
-            </span>
-          </div>
+        <div className="status-item">
+          <span className="status-icon">🔥</span>
+          <span className="status-text">
+            無駄遣いなし {streaks.noWasteStreak}日
+          </span>
         </div>
       </div>
 
