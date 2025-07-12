@@ -23,7 +23,7 @@ export const Header: React.FC = () => {
           onClick={handleSettingsClick}
           title="設定"
         >
-          <i className="fas fa-gear"></i>
+          <i className="fas fa-cog"></i>
         </button>
       </div>
     </header>
