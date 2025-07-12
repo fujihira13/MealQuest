@@ -97,9 +97,9 @@ export const SettingsTab: React.FC = () => {
             </p>
           </div>
           <div className="guide-item">
-            <h4>🎯 ミッション</h4>
+            <h4>🎯 クエスト</h4>
             <p>
-              デイリー・ウィークリーミッションを達成してポイントを稼ぎましょう
+              デイリー・ウィークリークエストを達成してポイントを稼ぎましょう
             </p>
           </div>
         </div>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { useUIStore } from '@/store/useAppStore';
-import type { TabType } from '@/types';
+import React from "react";
+import { useUIStore } from "@/store/useAppStore";
+import type { TabType } from "@/types";
 
 interface TabButton {
   key: TabType;
@@ -9,11 +9,11 @@ interface TabButton {
 }
 
 const tabs: TabButton[] = [
-  { key: 'home', icon: '🏠', label: 'ホーム' },
-  { key: 'stats', icon: '📊', label: '統計' },
-  { key: 'missions', icon: '🎯', label: 'ミッション' },
-  { key: 'badges', icon: '🏆', label: '称号' },
-  { key: 'collection', icon: '🎁', label: 'コレクション' }
+  { key: "home", icon: "🏠", label: "ホーム" },
+  { key: "stats", icon: "📊", label: "統計" },
+  { key: "missions", icon: "🎯", label: "クエスト" },
+  { key: "badges", icon: "🏆", label: "称号" },
+  { key: "collection", icon: "🎁", label: "コレクション" },
 ];
 
 export const TabNavigation: React.FC = () => {
@@ -24,7 +24,7 @@ export const TabNavigation: React.FC = () => {
       {tabs.map((tab) => (
         <button
           key={tab.key}
-          className={`tab-btn ${currentTab === tab.key ? 'active' : ''}`}
+          className={`tab-btn ${currentTab === tab.key ? "active" : ""}`}
           onClick={() => setCurrentTab(tab.key)}
         >
           {tab.icon} {tab.label}

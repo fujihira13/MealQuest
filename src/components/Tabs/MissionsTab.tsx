@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useAppStore, useUIStore } from '@/store/useAppStore';
-import type { Mission } from '@/types';
+import React, { useEffect, useState } from "react";
+import { useAppStore, useUIStore } from "@/store/useAppStore";
+import type { Mission } from "@/types";
 
 export const MissionsTab: React.FC = () => {
   const {
@@ -12,8 +12,8 @@ export const MissionsTab: React.FC = () => {
 
   const { showNotification } = useUIStore();
 
-  const [dailyResetTimer, setDailyResetTimer] = useState('--:--:--');
-  const [weeklyResetTimer, setWeeklyResetTimer] = useState('--日--時間');
+  const [dailyResetTimer, setDailyResetTimer] = useState("--:--:--");
+  const [weeklyResetTimer, setWeeklyResetTimer] = useState("--日--時間");
 
   useEffect(() => {
     // ミッションタイマーを開始
@@ -27,23 +27,29 @@ export const MissionsTab: React.FC = () => {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    
+
     const timeToReset = tomorrow.getTime() - now.getTime();
     const hours = Math.floor(timeToReset / (1000 * 60 * 60));
     const minutes = Math.floor((timeToReset % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeToReset % (1000 * 60)) / 1000);
-    
-    setDailyResetTimer(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+
+    setDailyResetTimer(
+      `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+    );
 
     // ウィークリーリセットタイマー
     const nextWeek = new Date(now);
     nextWeek.setDate(nextWeek.getDate() + (7 - nextWeek.getDay()));
     nextWeek.setHours(0, 0, 0, 0);
-    
+
     const timeToWeekReset = nextWeek.getTime() - now.getTime();
     const days = Math.floor(timeToWeekReset / (1000 * 60 * 60 * 24));
-    const weekHours = Math.floor((timeToWeekReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
+    const weekHours = Math.floor(
+      (timeToWeekReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+
     setWeeklyResetTimer(`${days}日${weekHours}時間`);
   };
 
@@ -51,17 +57,25 @@ export const MissionsTab: React.FC = () => {
     const success = claimMissionReward(missionId);
     if (success) {
       const mission = missions.daily[missionId] || missions.weekly[missionId];
-      showNotification('success', `🎁 報酬を受け取りました: ${mission?.reward}pt!`);
+      showNotification(
+        "success",
+        `🎁 報酬を受け取りました: ${mission?.reward}pt!`
+      );
     }
   };
 
   const renderMissionCard = (mission: Mission & { id: string }) => {
-    const progressPercent = Math.min((mission.progress / mission.target) * 100, 100);
-    
+    const progressPercent = Math.min(
+      (mission.progress / mission.target) * 100,
+      100
+    );
+
     return (
-      <div 
+      <div
         key={mission.id}
-        className={`mission-card ${mission.completed ? 'completed' : ''} ${mission.claimed ? 'claimed' : ''}`}
+        className={`mission-card ${mission.completed ? "completed" : ""} ${
+          mission.claimed ? "claimed" : ""
+        }`}
       >
         <div className="mission-icon">{mission.icon}</div>
         <div className="mission-content">
@@ -69,16 +83,21 @@ export const MissionsTab: React.FC = () => {
           <p>{mission.description}</p>
           <div className="mission-progress">
             <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${progressPercent}%` }}></div>
+              <div
+                className="progress-fill"
+                style={{ width: `${progressPercent}%` }}
+              ></div>
             </div>
-            <span className="progress-text">{mission.progress}/{mission.target}</span>
+            <span className="progress-text">
+              {mission.progress}/{mission.target}
+            </span>
           </div>
           <div className="mission-reward">報酬: {mission.reward}pt</div>
         </div>
         <div className="mission-action">
           {mission.completed && !mission.claimed ? (
-            <button 
-              className="claim-btn" 
+            <button
+              className="claim-btn"
               onClick={() => handleClaimReward(mission.id)}
             >
               受取
@@ -94,15 +113,15 @@ export const MissionsTab: React.FC = () => {
   // 獲得可能ポイントを計算
   const availablePoints = [
     ...Object.values(missions.daily),
-    ...Object.values(missions.weekly)
+    ...Object.values(missions.weekly),
   ]
-    .filter(m => m.completed && !m.claimed)
+    .filter((m) => m.completed && !m.claimed)
     .reduce((sum, m) => sum + m.reward, 0);
 
   return (
     <section className="tab-content active">
       <div className="missions-header">
-        <h3>🎯 デイリー・ウィークリーミッション</h3>
+        <h3>🎯 デイリー・ウィークリークエスト</h3>
         <div className="missions-stats">
           <span>獲得可能ポイント: {availablePoints}pt</span>
         </div>
@@ -110,22 +129,19 @@ export const MissionsTab: React.FC = () => {
 
       {/* デイリーミッション */}
       <div className="missions-section">
-        <h4>📅 今日のミッション</h4>
+        <h4>📅 今日のクエスト</h4>
         <div className="mission-reset-timer">
           リセットまで: {dailyResetTimer}
         </div>
         <div className="missions-grid">
-          {Object.entries(missions.daily).map(([id, mission]) => 
+          {Object.entries(missions.daily).map(([id, mission]) =>
             renderMissionCard({ ...mission, id })
           )}
           {Object.keys(missions.daily).length === 0 && (
             <div className="no-missions">
-              <p>デイリーミッションがありません</p>
-              <button 
-                className="generate-btn"
-                onClick={generateDailyMissions}
-              >
-                ミッションを生成
+              <p>デイリークエストがありません</p>
+              <button className="generate-btn" onClick={generateDailyMissions}>
+                クエストを生成
               </button>
             </div>
           )}
@@ -134,22 +150,19 @@ export const MissionsTab: React.FC = () => {
 
       {/* ウィークリーミッション */}
       <div className="missions-section">
-        <h4>📊 今週のミッション</h4>
+        <h4>📊 今週のクエスト</h4>
         <div className="mission-reset-timer">
           リセットまで: {weeklyResetTimer}
         </div>
         <div className="missions-grid">
-          {Object.entries(missions.weekly).map(([id, mission]) => 
+          {Object.entries(missions.weekly).map(([id, mission]) =>
             renderMissionCard({ ...mission, id })
           )}
           {Object.keys(missions.weekly).length === 0 && (
             <div className="no-missions">
-              <p>ウィークリーミッションがありません</p>
-              <button 
-                className="generate-btn"
-                onClick={generateWeeklyMissions}
-              >
-                ミッションを生成
+              <p>ウィークリークエストがありません</p>
+              <button className="generate-btn" onClick={generateWeeklyMissions}>
+                クエストを生成
               </button>
             </div>
           )}
@@ -161,7 +174,7 @@ export const MissionsTab: React.FC = () => {
         <h4>🏆 今週の達成履歴</h4>
         <div className="mission-history">
           {missions.completedHistory.length === 0 ? (
-            <p className="no-history">まだ達成したミッションはありません</p>
+            <p className="no-history">まだ達成したクエストはありません</p>
           ) : (
             missions.completedHistory
               .slice(-10) // 最新10件
