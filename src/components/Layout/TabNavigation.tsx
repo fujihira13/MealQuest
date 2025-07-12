@@ -13,7 +13,7 @@ const tabs: TabButton[] = [
   { key: "stats", icon: "📊", label: "統計" },
   { key: "missions", icon: "🎯", label: "クエスト" },
   { key: "badges", icon: "🏆", label: "称号" },
-  { key: "collection", icon: "🎁", label: "コレクション" },
+  { key: "collection", icon: "🎁", label: "リスト" },
 ];
 
 export const TabNavigation: React.FC = () => {
