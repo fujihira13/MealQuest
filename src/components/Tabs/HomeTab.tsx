@@ -120,7 +120,44 @@ export const HomeTab: React.FC = () => {
 
   return (
     <section className="tab-content active">
-      {/* 支出記録セクション - 最優先で上部に配置 */}
+      {/* 簡潔なステータス表示 - 最上部に移動 */}
+      <div className="status-summary">
+        <div className="status-item">
+          <span className="status-icon">💰</span>
+          <span className="status-text">
+            {userData.points.toLocaleString()}pt
+          </span>
+        </div>
+        <div className="status-item">
+          <span className="status-icon">🏆</span>
+          <span className="status-text">Lv.{userData.level}</span>
+        </div>
+        <div className="status-item">
+          <span className="status-icon">🔥</span>
+          <span className="status-text">
+            無駄遣いなし {streaks.noWasteStreak}日
+          </span>
+        </div>
+      </div>
+
+      {/* 今月の消費許容ゲージ - 重要な進捗情報 */}
+      <div className="gauge-section">
+        <h3>📊 今月の予算状況</h3>
+        <div className="gauge-container">
+          <div className="gauge-bar">
+            <div
+              className="gauge-fill"
+              style={{ width: `${gaugePercent}%` }}
+            ></div>
+          </div>
+          <div className="gauge-text">
+            残り予算: ¥{remaining.toLocaleString()} / ¥
+            {goals.allowanceGoal.toLocaleString()}
+          </div>
+        </div>
+      </div>
+
+      {/* 支出記録セクション - 主要機能 */}
       <div className="expense-priority-section">
         <h3>💰 今日の支出を記録する</h3>
         <p className="expense-instruction">今日の支出を記録しましょう</p>
@@ -176,93 +213,79 @@ export const HomeTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 今月の消費許容ゲージ - 重要な進捗情報 */}
-      <div className="gauge-section">
-        <h3>📊 今月の予算状況</h3>
-        <div className="gauge-container">
-          <div className="gauge-bar">
-            <div
-              className="gauge-fill"
-              style={{ width: `${gaugePercent}%` }}
-            ></div>
+      {/* 今日の自炊記録と今日のチャレンジを並列配置 */}
+      <div className="daily-activities-row">
+        {/* 今日の自炊記録セクション */}
+        <div className="cooking-section">
+          <h3>🍳 今日の自炊記録</h3>
+          <div className="cooking-buttons">
+            <button
+              className={`cooking-btn ${
+                isCookingRecorded("morning") ? "active" : ""
+              }`}
+              onClick={() => handleCookingRecord("morning")}
+            >
+              朝
+            </button>
+            <button
+              className={`cooking-btn ${
+                isCookingRecorded("lunch") ? "active" : ""
+              }`}
+              onClick={() => handleCookingRecord("lunch")}
+            >
+              昼
+            </button>
+            <button
+              className={`cooking-btn ${
+                isCookingRecorded("dinner") ? "active" : ""
+              }`}
+              onClick={() => handleCookingRecord("dinner")}
+            >
+              夜
+            </button>
           </div>
-          <div className="gauge-text">
-            残り予算: ¥{remaining.toLocaleString()} / ¥
-            {goals.allowanceGoal.toLocaleString()}
+        </div>
+
+        {/* 今日のチャレンジセクション */}
+        <div className="daily-challenge-section">
+          <h3>💪 今日のチャレンジ</h3>
+          <div className="challenge-buttons">
+            <button
+              className={`challenge-btn ${
+                streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+                  ? "completed"
+                  : ""
+              }`}
+              onClick={handleNoWasteDay}
+              disabled={
+                streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+              }
+            >
+              {streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+                ? "✅ 無駄遣いなし達成！"
+                : "🔥 無駄遣いなし"}
+            </button>
+            <button
+              className={`challenge-btn ${
+                streaks.lastSnackFreeDate ===
+                new Date().toISOString().split("T")[0]
+                  ? "completed"
+                  : ""
+              }`}
+              onClick={handleSnackFreeDay}
+              disabled={
+                streaks.lastSnackFreeDate ===
+                new Date().toISOString().split("T")[0]
+              }
+            >
+              {streaks.lastSnackFreeDate ===
+              new Date().toISOString().split("T")[0]
+                ? "✅ お菓子我慢達成！"
+                : "🍭 お菓子我慢"}
+            </button>
           </div>
+          <p className="challenge-note">毎日チャレンジして連続記録を伸ばそう！</p>
         </div>
-      </div>
-
-      {/* 今日の自炊記録セクション */}
-      <div className="cooking-section">
-        <h3>🍳 今日の自炊記録</h3>
-        <div className="cooking-buttons">
-          <button
-            className={`cooking-btn ${
-              isCookingRecorded("morning") ? "active" : ""
-            }`}
-            onClick={() => handleCookingRecord("morning")}
-          >
-            朝
-          </button>
-          <button
-            className={`cooking-btn ${
-              isCookingRecorded("lunch") ? "active" : ""
-            }`}
-            onClick={() => handleCookingRecord("lunch")}
-          >
-            昼
-          </button>
-          <button
-            className={`cooking-btn ${
-              isCookingRecorded("dinner") ? "active" : ""
-            }`}
-            onClick={() => handleCookingRecord("dinner")}
-          >
-            夜
-          </button>
-        </div>
-      </div>
-
-      {/* 今日のチャレンジセクション */}
-      <div className="daily-challenge-section">
-        <h3>💪 今日のチャレンジ</h3>
-        <div className="challenge-buttons">
-          <button
-            className={`challenge-btn ${
-              streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
-                ? "completed"
-                : ""
-            }`}
-            onClick={handleNoWasteDay}
-            disabled={
-              streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
-            }
-          >
-            {streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
-              ? "✅ 無駄遣いなし達成！"
-              : "🔥 無駄遣いなし"}
-          </button>
-          <button
-            className={`challenge-btn ${
-              streaks.lastSnackFreeDate ===
-              new Date().toISOString().split("T")[0]
-                ? "completed"
-                : ""
-            }`}
-            onClick={handleSnackFreeDay}
-            disabled={
-              streaks.lastSnackFreeDate ===
-              new Date().toISOString().split("T")[0]
-            }
-          >
-            {streaks.lastSnackFreeDate ===
-            new Date().toISOString().split("T")[0]
-              ? "✅ お菓子我慢達成！"
-              : "🍭 お菓子我慢"}
-          </button>
-        </div>
-        <p className="challenge-note">毎日チャレンジして連続記録を伸ばそう！</p>
       </div>
 
       {/* 簡潔な節約記録セクション */}
@@ -290,26 +313,6 @@ export const HomeTab: React.FC = () => {
             <br />
             自由入力
           </button>
-        </div>
-      </div>
-
-      {/* 簡潔なステータス表示 */}
-      <div className="status-summary">
-        <div className="status-item">
-          <span className="status-icon">💰</span>
-          <span className="status-text">
-            {userData.points.toLocaleString()}pt
-          </span>
-        </div>
-        <div className="status-item">
-          <span className="status-icon">🏆</span>
-          <span className="status-text">Lv.{userData.level}</span>
-        </div>
-        <div className="status-item">
-          <span className="status-icon">🔥</span>
-          <span className="status-text">
-            無駄遣いなし {streaks.noWasteStreak}日
-          </span>
         </div>
       </div>
 

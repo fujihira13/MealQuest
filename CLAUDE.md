@@ -4,136 +4,141 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **gamified household expense tracking web application** focused specifically on food expense management. The app is designed as a Progressive Web App (PWA) using vanilla HTML, CSS, and JavaScript to help users reduce wasteful spending and encourage home cooking through game mechanics.
+This is a **gamified household expense tracking web application** focused specifically on food expense management. The app is designed as a Progressive Web App (PWA) using React + TypeScript to help users reduce wasteful spending and encourage home cooking through game mechanics.
 
 **Key Features:**
-- Food expense tracking with categorization (cooking, eating out, snacks, vending machine, grocery, other)
-- Gamification elements including character stats, points, levels, missions, and gacha system
-- Recipe collection that unlocks through cooking activities
-- Badge system and achievements
+- Food expense tracking with categorization (スーパー, 自販機, コンビニ, 飲み会, デート, その他)
+- Gamification elements including user levels, points, missions, and gacha collection system
+- Badge system and achievements tracking
 - Mission/challenge system with daily and weekly goals
-- Data visualization for spending patterns
+- Data visualization for spending patterns with Chart.js
+- Meal time tracking including new "間食" (snack) option
+- Statistics with visual progress gauges
 
 ## Architecture
 
 The application follows a **Progressive Web App (PWA)** pattern with modern React + TypeScript:
 
-- **React Components**: Modular component-based architecture
-- **TypeScript**: Full type safety and intellisense support
-- **State Management**: Zustand for efficient state management
-- **Styling**: CSS with responsive design and animations
-- **PWA Manifest**: Vite PWA plugin for automatic PWA generation
-- **Service Worker**: Automatic service worker via Vite PWA plugin
-- **Data Storage**: LocalStorage with Zustand persistence
-- **Build System**: Vite for fast development and optimized builds
+- **React Components**: Modular component-based architecture with functional components and hooks
+- **TypeScript**: Full type safety and IntelliSense support
+- **State Management**: Zustand for efficient state management with persistence
+- **Styling**: Single CSS file with responsive design and extensive animations
+- **PWA Features**: Vite PWA plugin with automatic service worker generation
+- **Data Storage**: LocalStorage with Zustand persistence middleware
+- **Build System**: Vite with SWC for fast development and optimized builds
 
 ### Core Architecture Components
 
-- **App.tsx**: Main application component with tab routing
-- **Store (Zustand)**: Centralized state management
-  - AppStore: Application data (expenses, savings, missions, etc.)
-  - UIStore: UI state (modals, notifications, current tab)
-- **Components**: Modular React components
-  - Layout components (Header, TabNavigation)
-  - Tab components (HomeTab, StatsTab, etc.)
-  - Common components (Avatar, Notification, ConfirmDialog)
-  - Modal components (InputModal)
-- **Types**: Comprehensive TypeScript type definitions
+**State Management (Zustand):**
+- `AppStore`: Main application data (expenses, savings, missions, user data, badges, etc.)
+- `UIStore`: UI-specific state (modals, notifications, current tab)
+- All state persisted to LocalStorage automatically
 
-### Key Data Models
+**Component Structure:**
+- `App.tsx`: Main application with tab routing system
+- `Layout/`: Header and TabNavigation components
+- `Tabs/`: Five main tab components (HomeTab, StatsTab, MissionsTab, BadgesTab, CollectionTab, SettingsTab)
+- `Common/`: Reusable components (Avatar, Notification, ConfirmDialog)
+- `Modals/`: InputModal for expense entry
 
-- **User Data**: Level, points, HP, cooking skill, monthly savings, cooking count
-- **Expenses**: Amount, category, description, points, date
-- **Missions**: Daily and weekly challenges with completion tracking
-- **Recipes**: Unlockable cooking recipes with difficulty and savings info
-- **Gacha System**: Collectible items with rarity levels
+**Key Data Models:**
+- `UserData`: Level, points, savings, cooking count, streaks
+- `ExpenseRecord`: Amount, category, meal time, date tracking
+- `Mission`: Daily/weekly challenges with progress and rewards
+- `Badge`: Achievement system with requirements and progress
+- `GachaItem`: Collectible items with rarity system
 
 ## Development Commands
 
-This application now uses React + TypeScript with Vite:
+**Essential Commands:**
+```bash
+npm install          # Install dependencies
+npm run dev          # Start development server (localhost:3000)
+npm run build        # Production build (TypeScript compile + Vite build)
+npm run typecheck    # TypeScript type checking without emit
+npm run lint         # ESLint checking
+npm run preview      # Preview production build locally
+```
 
-1. **Local Development**: 
-   - Install dependencies: `npm install`
-   - Start development server: `npm run dev`
-   - Access at `http://localhost:3000`
-2. **Production Build**: `npm run build`
-3. **Type Checking**: `npm run typecheck`
-4. **Linting**: `npm run lint`
-5. **Preview Build**: `npm run preview`
-6. **Testing**: Manual testing in browser - no automated test framework configured
-7. **PWA Testing**: Use browser dev tools to test offline functionality and service worker
-8. **Deployment**: Static hosting of the built files from `dist/` directory
+**Development Workflow:**
+1. Always run `npm run typecheck` before committing
+2. Run `npm run lint` to check code quality
+3. Use `npm run dev` for development with hot reload
+4. Test PWA features using browser dev tools
+5. No automated test framework - manual testing required
 
-## Current Development State
+## Key Implementation Patterns
 
-**Current active version**: React + TypeScript application in `src/` directory
+**Input Modal System:**
+- スーパー category disables meal time selection (defaults to 'lunch')
+- All other categories require meal time selection including new '間食' option
+- Centralized expense recording through InputModal component
 
-The application has been migrated from vanilla JavaScript to React + TypeScript with the following structure:
-- `src/App.tsx` - Main application component
-- `src/components/` - Reusable UI components
-- `src/store/` - Zustand state management
-- `src/types/` - TypeScript type definitions
-- Modern development tooling with Vite, ESLint, TypeScript
+**State Updates:**
+- All data modifications go through Zustand actions
+- Automatic level-up checking after point-earning actions
+- Mission progress automatically updates based on user actions
+- Badge progress calculated dynamically from current state
 
-**Legacy files**: `new-household-app.html`, `new-household-script.js`, `new-household-style.css` are kept for reference but are no longer the active development files.
+**UI/UX Flow:**
+- Tab-based navigation optimized for mobile
+- Status summary displayed prominently at top of HomeTab
+- Expense recording as primary action
+- Daily activities (cooking + challenges) in side-by-side layout
+- Statistics with visual progress gauges for key metrics
 
-## Key Implementation Notes
+**Gamification System:**
+- Points earned for positive actions (cooking, saving)
+- Mission system with daily/weekly reset timers
+- Badge progression with various requirement types
+- Gacha collection system (100pt per pull)
+- Streak tracking for consecutive behaviors
 
-- **Data Persistence**: All data stored in browser LocalStorage with Zustand persistence middleware
-- **Build Process**: Vite for fast development and optimized production builds
-- **Mobile-First**: Responsive design optimized for mobile devices
-- **PWA Features**: Full offline capability via Vite PWA plugin with automatic service worker
-- **External Dependencies**: Font Awesome 6.0.0 for icons, Chart.js for data visualization
-- **Component Architecture**: React functional components with hooks
-- **State Management**: Zustand stores with TypeScript for type-safe state management
-- **Service Worker**: Automatically generated by Vite PWA plugin with cache-first strategy
+## Data Persistence
 
-## Data Structure
+**LocalStorage Schema:**
+- All application state persisted via Zustand persistence middleware
+- Data automatically saved on state changes
+- Manual data reset available in SettingsTab
+- No external database - fully client-side application
 
-The main application state includes:
-- `userData`: User level, points, HP, cooking skill, streaks
-- `expenses`: Array of expense entries with category, amount, points, date
-- `missions`: Daily/weekly challenge completion status
-- `recipes`: Recipe collection with unlock status and metadata
-- `badges`: Achievement tracking system
-- `gachaItems`: Collectible items with rarity system
+**Key Data Relationships:**
+- Expenses linked to categories and meal times
+- Missions track various user behaviors automatically
+- Badge progress calculated from accumulated user data
+- Gacha collection maintains count and obtain dates
 
-## File Structure
+## Styling and Responsive Design
 
-**Active Application Files:**
-- `src/App.tsx` - Main React application component
-- `src/main.tsx` - Application entry point
-- `src/index.css` - Global styles and animations
-- `src/components/` - React components directory
-  - `Layout/` - Header, TabNavigation
-  - `Tabs/` - HomeTab, StatsTab, etc.
-  - `Common/` - Avatar, Notification, ConfirmDialog
-  - `Modals/` - InputModal
-- `src/store/useAppStore.ts` - Zustand state management
-- `src/types/index.ts` - TypeScript type definitions
-- `index.html` - HTML template
-- `package.json` - Dependencies and scripts
-- `vite.config.ts` - Vite configuration with PWA plugin
+**CSS Architecture:**
+- Single `src/index.css` file with all styles
+- Mobile-first responsive design
+- Extensive use of CSS Grid and Flexbox
+- Custom animations and transitions
+- Color-coded category system for expenses
+- Recently improved for better readability and contrast
 
-**Legacy Files (reference only):**
-- `new-household-app.html` - Original vanilla JS application
-- `new-household-script.js` - Original application logic
-- `new-household-style.css` - Original styles
-
-**Documentation and Requirements:**
-- `requirements_doc.md` - Detailed Japanese requirements document
-- `aidea.txt` - Additional feature ideas and concepts (in Japanese)
-- `CLAUDE.md` - Development guidance (this file)
-
-## UI/UX Patterns
-
-- **Tab Navigation**: Home, Stats, Missions, Badges, Collection
-- **Character System**: Animated character with mood changes based on user behavior  
-- **Point System**: Positive points for cooking/grocery, negative for eating out/snacks
-- **Mission Completion**: Daily and weekly challenges with rewards
-- **Collection Elements**: Recipe unlocking, badge earning, gacha items
-- **Data Visualization**: Chart.js integration for expense tracking and trends
+**Component Styling Patterns:**
+- BEM-like class naming convention
+- Gradient backgrounds for visual appeal
+- Hover and active states for interactive elements
+- Consistent spacing and typography scale
+- PWA-optimized touch targets
 
 ## Localization
 
-The application is entirely in Japanese and designed for Japanese users focused on food expense management and cooking encouragement.
+The application is entirely in Japanese and designed for Japanese users focused on food expense management and cooking encouragement. All UI text, categories, and user-facing content use Japanese language.
+
+## Current Development State
+
+**Active Implementation:**
+- React + TypeScript application in `src/` directory
+- Fully migrated from vanilla JavaScript (legacy files preserved for reference)
+- Recent UI improvements for better readability and layout optimization
+- Enhanced meal time tracking with snack option
+- Improved statistics display with visual gauges
+
+**Legacy Reference Files:**
+- `new-household-*` files are the original vanilla implementation
+- Keep for reference but no longer active development targets
+- All new features should be implemented in React components
