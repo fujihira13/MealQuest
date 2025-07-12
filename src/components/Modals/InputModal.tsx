@@ -31,10 +31,15 @@ export const InputModal: React.FC = () => {
       setDisplayAmount(editingRecord.amount.toLocaleString());
     } else if (isInputModalOpen) {
       setAmount('');
-      setSelectedMeal('lunch');
+      // スーパーの場合は時間帯選択を無効化
+      if (currentInputCategory === 'スーパー') {
+        setSelectedMeal('lunch'); // デフォルト値
+      } else {
+        setSelectedMeal('lunch');
+      }
       setDisplayAmount('');
     }
-  }, [editingRecord, isInputModalOpen, setAmount, setSelectedMeal]);
+  }, [editingRecord, isInputModalOpen, setAmount, setSelectedMeal, currentInputCategory]);
 
   useEffect(() => {
     const formatted = currentAmount ? parseInt(currentAmount).toLocaleString() : '';
@@ -60,18 +65,26 @@ export const InputModal: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (!currentAmount || !selectedMeal || !currentInputCategory) {
-      showNotification('error', '金額と時間帯を選択してください');
+    if (!currentAmount || !currentInputCategory) {
+      showNotification('error', '金額を入力してください');
+      return;
+    }
+    
+    // スーパー以外で時間帯が選択されていない場合はエラー
+    if (currentInputCategory !== 'スーパー' && !selectedMeal) {
+      showNotification('error', '時間帯を選択してください');
       return;
     }
 
     const amount = parseInt(currentAmount);
 
     if (editingRecord) {
-      updateExpenseRecord(editingRecord.id, currentInputCategory, amount, selectedMeal);
+      updateExpenseRecord(editingRecord.id, currentInputCategory, amount, selectedMeal!);
       showNotification('success', '支出記録を更新しました');
     } else {
-      addExpenseRecord(currentInputCategory, amount, selectedMeal);
+      // スーパーの場合はmealを'lunch'でデフォルト設定
+      const finalMeal = currentInputCategory === 'スーパー' ? 'lunch' : selectedMeal!;
+      addExpenseRecord(currentInputCategory, amount, finalMeal);
       showNotification('success', `${currentInputCategory}の支出を記録しました: ¥${amount.toLocaleString()}`);
     }
 
@@ -131,36 +144,44 @@ export const InputModal: React.FC = () => {
             <button className="key-btn delete-btn" onClick={handleDelete}>⌫</button>
           </div>
 
-          {/* 時間帯選択 */}
-          <div className="meal-selection">
-            <h4>食事の時間帯</h4>
-            <div className="meal-buttons">
-              <button 
-                className={`meal-btn ${selectedMeal === 'morning' ? 'selected' : ''}`}
-                onClick={() => handleMealSelect('morning')}
-              >
-                朝
-              </button>
-              <button 
-                className={`meal-btn ${selectedMeal === 'lunch' ? 'selected' : ''}`}
-                onClick={() => handleMealSelect('lunch')}
-              >
-                昼
-              </button>
-              <button 
-                className={`meal-btn ${selectedMeal === 'dinner' ? 'selected' : ''}`}
-                onClick={() => handleMealSelect('dinner')}
-              >
-                夜
-              </button>
+          {/* 時間帯選択 - スーパー以外で表示 */}
+          {currentInputCategory !== 'スーパー' && (
+            <div className="meal-selection">
+              <h4>食事の時間帯</h4>
+              <div className="meal-buttons">
+                <button 
+                  className={`meal-btn ${selectedMeal === 'morning' ? 'selected' : ''}`}
+                  onClick={() => handleMealSelect('morning')}
+                >
+                  朝
+                </button>
+                <button 
+                  className={`meal-btn ${selectedMeal === 'lunch' ? 'selected' : ''}`}
+                  onClick={() => handleMealSelect('lunch')}
+                >
+                  昼
+                </button>
+                <button 
+                  className={`meal-btn ${selectedMeal === 'dinner' ? 'selected' : ''}`}
+                  onClick={() => handleMealSelect('dinner')}
+                >
+                  夜
+                </button>
+                <button 
+                  className={`meal-btn ${selectedMeal === 'snack' ? 'selected' : ''}`}
+                  onClick={() => handleMealSelect('snack')}
+                >
+                  間食
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 保存ボタン */}
           <button 
             className="save-btn" 
             onClick={handleSave}
-            disabled={!currentAmount || !selectedMeal}
+            disabled={!currentAmount || (currentInputCategory !== 'スーパー' && !selectedMeal)}
           >
             <i className="fas fa-save"></i> {editingRecord ? '更新する' : '記録する'}
           </button>

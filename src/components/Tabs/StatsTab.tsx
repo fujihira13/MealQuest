@@ -349,7 +349,8 @@ export const StatsTab: React.FC = () => {
     const names: {[key: string]: string} = {
       'morning': '朝',
       'lunch': '昼',
-      'dinner': '夜'
+      'dinner': '夜',
+      'snack': '間食'
     };
     return names[meal] || meal;
   };
@@ -366,16 +367,49 @@ export const StatsTab: React.FC = () => {
             <h4>総支出</h4>
             <div className="stat-value">¥{userData.monthlyExpense.toLocaleString()}</div>
             <div className="stat-detail">目標: ¥{goals.monthlyExpenseGoal.toLocaleString()}</div>
+            <div className="gauge-container">
+              <div className="gauge-background">
+                <div 
+                  className="gauge-fill expense-gauge"
+                  style={{ width: `${Math.min((userData.monthlyExpense / goals.monthlyExpenseGoal) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <div className="gauge-text">
+                {((userData.monthlyExpense / goals.monthlyExpenseGoal) * 100).toFixed(1)}%
+              </div>
+            </div>
           </div>
           <div className="stat-card">
             <h4>節約額</h4>
             <div className="stat-value">¥{userData.totalSavings.toLocaleString()}</div>
             <div className="stat-detail">今月: ¥{userData.monthlySavings.toLocaleString()}</div>
+            <div className="gauge-container">
+              <div className="gauge-background">
+                <div 
+                  className="gauge-fill savings-gauge"
+                  style={{ width: `${Math.min((userData.monthlySavings / 10000) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <div className="gauge-text">
+                ¥{userData.monthlySavings.toLocaleString()}
+              </div>
+            </div>
           </div>
           <div className="stat-card">
             <h4>自炊回数</h4>
             <div className="stat-value">{userData.cookingCount}回</div>
             <div className="stat-detail">目標: {goals.cookingGoal}回</div>
+            <div className="gauge-container">
+              <div className="gauge-background">
+                <div 
+                  className="gauge-fill cooking-gauge"
+                  style={{ width: `${Math.min((userData.cookingCount / goals.cookingGoal) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <div className="gauge-text">
+                {((userData.cookingCount / goals.cookingGoal) * 100).toFixed(1)}%
+              </div>
+            </div>
           </div>
         </div>
       </div>

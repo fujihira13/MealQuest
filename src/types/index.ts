@@ -15,7 +15,7 @@ export interface UserData {
 export type ExpenseCategory = 'スーパー' | '自販機' | 'コンビニ' | '飲み会' | 'デート' | 'その他';
 
 // 食事時間帯型定義
-export type MealTime = 'morning' | 'lunch' | 'dinner';
+export type MealTime = 'morning' | 'lunch' | 'dinner' | 'snack';
 
 // 支出記録型定義
 export interface ExpenseRecord {
