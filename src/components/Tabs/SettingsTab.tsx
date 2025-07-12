@@ -2,14 +2,9 @@ import React from "react";
 import { useAppStore, useUIStore } from "@/store/useAppStore";
 
 export const SettingsTab: React.FC = () => {
-  const { goals, userData, updateGoals, updateMonthlyData, resetAllData } =
-    useAppStore();
+  const { goals, updateGoals, updateMonthlyData, resetAllData } = useAppStore();
 
-  const { showNotification, showConfirmDialog, setCurrentTab } = useUIStore();
-
-  const handleBackToHome = () => {
-    setCurrentTab("home");
-  };
+  const { showNotification, showConfirmDialog } = useUIStore();
 
   const handleGoalUpdate = (
     type: "expense" | "allowance" | "cooking",
