@@ -1,36 +1,36 @@
-import { useEffect } from 'react';
-import { Header } from '@/components/Layout/Header';
-import { TabNavigation } from '@/components/Layout/TabNavigation';
-import { HomeTab } from '@/components/Tabs/HomeTab';
-import { StatsTab } from '@/components/Tabs/StatsTab';
-import { MissionsTab } from '@/components/Tabs/MissionsTab';
-import { BadgesTab } from '@/components/Tabs/BadgesTab';
-import { CollectionTab } from '@/components/Tabs/CollectionTab';
-import { SettingsTab } from '@/components/Tabs/SettingsTab';
-import { InputModal } from '@/components/Modals/InputModal';
-import { Notification } from '@/components/Common/Notification';
-import { ConfirmDialog } from '@/components/Common/ConfirmDialog';
-import { useAppStore, useUIStore } from '@/store/useAppStore';
+import { useEffect } from "react";
+import { Header } from "@/components/Layout/Header";
+import { TabNavigation } from "@/components/Layout/TabNavigation";
+import { HomeTab } from "@/components/Tabs/HomeTab";
+import { StatsTab } from "@/components/Tabs/StatsTab";
+import { MissionsTab } from "@/components/Tabs/MissionsTab";
+import { BadgesTab } from "@/components/Tabs/BadgesTab";
+import { CollectionTab } from "@/components/Tabs/CollectionTab";
+import { SettingsTab } from "@/components/Tabs/SettingsTab";
+import { InputModal } from "@/components/Modals/InputModal";
+import { Notification } from "@/components/Common/Notification";
+import { ConfirmDialog } from "@/components/Common/ConfirmDialog";
+import { useAppStore, useUIStore } from "@/store/useAppStore";
 
 function App() {
-  const { 
-    updateMonthlyData, 
-    generateDailyMissions, 
+  const {
+    updateMonthlyData,
+    generateDailyMissions,
     generateWeeklyMissions,
     missions,
     resetDailyMissions,
-    resetWeeklyMissions
+    resetWeeklyMissions,
   } = useAppStore();
   const { currentTab } = useUIStore();
 
   useEffect(() => {
     // アプリ起動時に月次データを更新
     updateMonthlyData();
-    
+
     // ミッションリセットチェック
     resetDailyMissions();
     resetWeeklyMissions();
-    
+
     // ミッションが存在しない場合は生成
     if (Object.keys(missions.daily).length === 0) {
       generateDailyMissions();
@@ -38,21 +38,29 @@ function App() {
     if (Object.keys(missions.weekly).length === 0) {
       generateWeeklyMissions();
     }
-  }, [updateMonthlyData, missions.daily, missions.weekly, generateDailyMissions, generateWeeklyMissions, resetDailyMissions, resetWeeklyMissions]);
+  }, [
+    updateMonthlyData,
+    missions.daily,
+    missions.weekly,
+    generateDailyMissions,
+    generateWeeklyMissions,
+    resetDailyMissions,
+    resetWeeklyMissions,
+  ]);
 
   const renderCurrentTab = () => {
     switch (currentTab) {
-      case 'home':
+      case "home":
         return <HomeTab />;
-      case 'stats':
+      case "stats":
         return <StatsTab />;
-      case 'missions':
+      case "missions":
         return <MissionsTab />;
-      case 'badges':
+      case "badges":
         return <BadgesTab />;
-      case 'collection':
+      case "collection":
         return <CollectionTab />;
-      case 'settings':
+      case "settings":
         return <SettingsTab />;
       default:
         return <HomeTab />;
@@ -63,7 +71,7 @@ function App() {
     <div className="app-container">
       <Header />
       <TabNavigation />
-      {renderCurrentTab()}
+      <main className="main-content">{renderCurrentTab()}</main>
       <InputModal />
       <Notification />
       <ConfirmDialog />
