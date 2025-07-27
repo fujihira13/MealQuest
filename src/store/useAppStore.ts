@@ -377,21 +377,19 @@ const badgeDefinitions: Badge[] = [
 ];
 
 const savingsEquivalents: SavingsEquivalent[] = [
-  { amount: 120, item: "ペットボトル飲料1本", icon: "🥤" },
-  { amount: 200, item: "おにぎり1個", icon: "🍙" },
-  { amount: 300, item: "コンビニサンドイッチ", icon: "🥪" },
-  { amount: 500, item: "コンビニ弁当", icon: "🍱" },
-  { amount: 800, item: "ファストフード1食", icon: "🍔" },
-  { amount: 1000, item: "好きな文庫本1冊", icon: "📚" },
-  { amount: 1500, item: "スタバのコーヒー2杯", icon: "☕" },
-  { amount: 2000, item: "ランチ外食1回", icon: "🍽️" },
-  { amount: 3000, item: "映画鑑賞チケット", icon: "🎬" },
-  { amount: 5000, item: "洋服1着", icon: "👕" },
-  { amount: 8000, item: "高級ランチコース", icon: "🍽️" },
-  { amount: 10000, item: "欲しかった雑貨", icon: "🛍️" },
-  { amount: 15000, item: "美容院でのトリートメント", icon: "💇" },
-  { amount: 20000, item: "友達との旅行(日帰り)", icon: "🚌" },
-  { amount: 30000, item: "新しいスニーカー", icon: "👟" },
+  { amount: 300, item: "オーガニック野菜", icon: "🥬" },
+  { amount: 500, item: "プロテイン1回分", icon: "🥛" },
+  { amount: 800, item: "ヘルシーサラダランチ", icon: "🥗" },
+  { amount: 1000, item: "栄養補助食品", icon: "💊" },
+  { amount: 1500, item: "スムージーボウル", icon: "🍓" },
+  { amount: 2000, item: "ヨガクラス1回", icon: "🧘" },
+  { amount: 3000, item: "フィットネス1日券", icon: "🏃" },
+  { amount: 5000, item: "健康的な食材セット", icon: "🥕" },
+  { amount: 8000, item: "マッサージ1回", icon: "💆" },
+  { amount: 10000, item: "良質なオリーブオイル", icon: "🫒" },
+  { amount: 15000, item: "栄養カウンセリング", icon: "👩‍⚕️" },
+  { amount: 20000, item: "ヘルシー食材の月額定期便", icon: "📦" },
+  { amount: 30000, item: "高品質な調理器具", icon: "🍳" },
   { amount: 50000, item: "憧れのブランドバッグ", icon: "👜" },
   { amount: 100000, item: "1泊2日の温泉旅行", icon: "♨️" },
 ];
@@ -403,7 +401,8 @@ interface AppStore extends AppState {
   addExpenseRecord: (
     category: ExpenseCategory,
     amount: number,
-    meal: MealTime
+    meal: MealTime,
+    date?: string
   ) => void;
   updateExpenseRecord: (
     id: number,
@@ -506,10 +505,10 @@ export const useAppStore = create<AppStore>()(
       savingsEquivalents,
 
       // アクション
-      addExpenseRecord: (category, amount, meal) => {
+      addExpenseRecord: (category, amount, meal, date) => {
         const record: ExpenseRecord = {
           id: Date.now(),
-          date: new Date().toISOString().split("T")[0],
+          date: date || new Date().toISOString().split("T")[0],
           category,
           amount,
           meal,

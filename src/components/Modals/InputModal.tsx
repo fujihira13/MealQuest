@@ -23,12 +23,14 @@ export const InputModal: React.FC = () => {
   } = useUIStore();
 
   const [displayAmount, setDisplayAmount] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
     if (editingRecord && isInputModalOpen) {
       setAmount(editingRecord.amount.toString());
       setSelectedMeal(editingRecord.meal);
       setDisplayAmount(editingRecord.amount.toLocaleString());
+      setSelectedDate(editingRecord.date);
     } else if (isInputModalOpen) {
       setAmount('');
       // スーパーの場合は時間帯選択を無効化
@@ -38,6 +40,7 @@ export const InputModal: React.FC = () => {
         setSelectedMeal('lunch');
       }
       setDisplayAmount('');
+      setSelectedDate(new Date().toISOString().split('T')[0]); // 今日をデフォルト
     }
   }, [editingRecord, isInputModalOpen, setAmount, setSelectedMeal, currentInputCategory]);
 
@@ -84,7 +87,7 @@ export const InputModal: React.FC = () => {
     } else {
       // スーパーの場合はmealを'lunch'でデフォルト設定
       const finalMeal = currentInputCategory === 'スーパー' ? 'lunch' : selectedMeal!;
-      addExpenseRecord(currentInputCategory, amount, finalMeal);
+      addExpenseRecord(currentInputCategory, amount, finalMeal, selectedDate);
       showNotification('success', `${currentInputCategory}の支出を記録しました: ¥${amount.toLocaleString()}`);
     }
 
@@ -142,6 +145,17 @@ export const InputModal: React.FC = () => {
             <button className="key-btn clear-btn" onClick={handleClear}>C</button>
             <button className="key-btn" onClick={() => handleDigit('0')}>0</button>
             <button className="key-btn delete-btn" onClick={handleDelete}>⌫</button>
+          </div>
+
+          {/* 日付選択 */}
+          <div className="date-selection">
+            <h4>記録日</h4>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="date-input"
+            />
           </div>
 
           {/* 時間帯選択 - スーパー以外で表示 */}

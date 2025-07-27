@@ -1776,9 +1776,10 @@ body {
   }
 
   .tab-btn {
-    font-size: 0.65rem;
-    padding: 0.5rem 0.1rem;
-    line-height: 1.1;
+    font-size: 0.8rem;
+    padding: 0.7rem 0.2rem;
+    line-height: 1.2;
+    min-height: 60px;
   }
 
   .gauge-section,
@@ -2972,4 +2973,102 @@ body {
   .streak-current {
     font-size: 1rem;
   }
+}
+
+/* 今月の支出状況表示 */
+.expense-summary {
+  background: linear-gradient(135deg, #fff7e6, #ffeaa7);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.total-expense {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.expense-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.expense-amount {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #e17055;
+}
+
+/* コンパクトなステータス表示 */
+.status-compact {
+  display: flex;
+  justify-content: space-around;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.status-item-small {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.status-item-small .status-icon {
+  font-size: 1rem;
+}
+
+.status-item-small .status-text {
+  font-size: 0.8rem;
+  color: #555;
+  font-weight: 500;
+}
+
+/* コンパクトなゲージセクション */
+.gauge-section-compact {
+  background: linear-gradient(135deg, #f0f4ff, #dce7ff);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.gauge-section-compact h4 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+}
+
+/* 日付選択 */
+.date-selection {
+  margin-bottom: 1.5rem;
+}
+
+.date-selection h4 {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+.date-input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fff;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 外食カテゴリのスタイル */
+.category-restaurant {
+  background: linear-gradient(135deg, #ff9a9e, #fecfef);
 }

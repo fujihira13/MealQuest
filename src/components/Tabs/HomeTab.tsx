@@ -6,6 +6,7 @@ export const HomeTab: React.FC = () => {
   const {
     userData,
     goals,
+    expenses,
     cookingRecords,
     toggleCookingRecord,
     addSavingsRecord,
@@ -111,6 +112,13 @@ export const HomeTab: React.FC = () => {
   const remaining = Math.max(0, goals.allowanceGoal - userData.allowanceUsed);
   const gaugePercent = Math.max(0, (remaining / goals.allowanceGoal) * 100);
 
+  // 今月の総支出を計算
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthlyExpenses = expenses.filter(expense => 
+    expense.date.startsWith(currentMonth)
+  );
+  const totalMonthlyExpense = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+
   // 今日の自炊記録をチェック
   const today = new Date().toISOString().split("T")[0];
   const todayCooking = cookingRecords.filter((r) => r.date === today);
@@ -120,47 +128,9 @@ export const HomeTab: React.FC = () => {
 
   return (
     <section className="tab-content active">
-      {/* 簡潔なステータス表示 - 最上部に移動 */}
-      <div className="status-summary">
-        <div className="status-item">
-          <span className="status-icon">💰</span>
-          <span className="status-text">
-            {userData.points.toLocaleString()}pt
-          </span>
-        </div>
-        <div className="status-item">
-          <span className="status-icon">🏆</span>
-          <span className="status-text">Lv.{userData.level}</span>
-        </div>
-        <div className="status-item">
-          <span className="status-icon">🔥</span>
-          <span className="status-text">
-            無駄遣いなし {streaks.noWasteStreak}日
-          </span>
-        </div>
-      </div>
-
-      {/* 今月の消費許容ゲージ - 重要な進捗情報 */}
-      <div className="gauge-section">
-        <h3>📊 今月の予算状況</h3>
-        <div className="gauge-container">
-          <div className="gauge-bar">
-            <div
-              className="gauge-fill"
-              style={{ width: `${gaugePercent}%` }}
-            ></div>
-          </div>
-          <div className="gauge-text">
-            残り予算: ¥{remaining.toLocaleString()} / ¥
-            {goals.allowanceGoal.toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      {/* 支出記録セクション - 主要機能 */}
+      {/* 支出記録セクション - 最上部に移動 */}
       <div className="expense-priority-section">
         <h3>💰 今日の支出を記録する</h3>
-        <p className="expense-instruction">今日の支出を記録しましょう</p>
         <div className="category-grid">
           <button
             className="category-btn category-supermarket"
@@ -187,6 +157,14 @@ export const HomeTab: React.FC = () => {
             コンビニ
           </button>
           <button
+            className="category-btn category-restaurant"
+            onClick={() => openInputModal("外食")}
+          >
+            🍽️
+            <br />
+            外食
+          </button>
+          <button
             className="category-btn category-drinking"
             onClick={() => openInputModal("飲み会")}
           >
@@ -210,6 +188,46 @@ export const HomeTab: React.FC = () => {
             <br />
             その他
           </button>
+        </div>
+      </div>
+
+      {/* 今月の支出状況 - 重要な情報を目立つ位置に */}
+      <div className="expense-summary">
+        <div className="total-expense">
+          <span className="expense-label">今月の総支出</span>
+          <span className="expense-amount">¥{totalMonthlyExpense.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* コンパクトなステータス表示 */}
+      <div className="status-compact">
+        <div className="status-item-small">
+          <span className="status-icon">💰</span>
+          <span className="status-text">{userData.points.toLocaleString()}pt</span>
+        </div>
+        <div className="status-item-small">
+          <span className="status-icon">🏆</span>
+          <span className="status-text">Lv.{userData.level}</span>
+        </div>
+        <div className="status-item-small">
+          <span className="status-icon">🔥</span>
+          <span className="status-text">{streaks.noWasteStreak}日</span>
+        </div>
+      </div>
+
+      {/* 今月の消費許容ゲージ - コンパクト化 */}
+      <div className="gauge-section-compact">
+        <h4>📊 予算状況</h4>
+        <div className="gauge-container">
+          <div className="gauge-bar">
+            <div
+              className="gauge-fill"
+              style={{ width: `${gaugePercent}%` }}
+            ></div>
+          </div>
+          <div className="gauge-text">
+            残り: ¥{remaining.toLocaleString()}
+          </div>
         </div>
       </div>
 
@@ -294,19 +312,19 @@ export const HomeTab: React.FC = () => {
         <div className="savings-buttons">
           <button
             className="savings-quick-btn"
-            onClick={() => handleSavingsRecord(500)}
+            onClick={() => handleSavingsRecord(800)}
           >
-            🏪 コンビニ買い食い
+            🥗 外食を自炊に
             <br />
-            ¥500節約
+            ¥800節約
           </button>
           <button
             className="savings-quick-btn"
-            onClick={() => handleSavingsRecord(120)}
+            onClick={() => handleSavingsRecord(300)}
           >
-            🥤 自販機飲み物
+            🍵 カフェでお茶我慢
             <br />
-            ¥120節約
+            ¥300節約
           </button>
           <button className="savings-custom-btn" onClick={handleCustomSavings}>
             📝 その他

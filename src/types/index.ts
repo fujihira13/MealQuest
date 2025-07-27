@@ -12,7 +12,7 @@ export interface UserData {
 }
 
 // カテゴリ型定義
-export type ExpenseCategory = 'スーパー' | '自販機' | 'コンビニ' | '飲み会' | 'デート' | 'その他';
+export type ExpenseCategory = 'スーパー' | '自販機' | 'コンビニ' | '外食' | '飲み会' | 'デート' | 'その他';
 
 // 食事時間帯型定義
 export type MealTime = 'morning' | 'lunch' | 'dinner' | 'snack';

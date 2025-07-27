@@ -2,7 +2,7 @@
   "name": "食費管理アプリ - 節約マスター",
   "short_name": "節約マスター",
   "description": "食費管理に特化したゲーミフィケーション家計簿アプリ",
-  "start_url": "/new-household-app.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
