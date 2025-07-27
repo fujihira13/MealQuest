@@ -21,6 +21,9 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         start_url: "/",
+        lang: "ja",
+        orientation: "portrait",
+        scope: "/",
         icons: [
           {
             src: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192"%3E%3Crect width="192" height="192" rx="20" fill="%23667eea"/%3E%3Ctext x="96" y="120" font-size="80" text-anchor="middle" fill="white"%3E🐷%3C/text%3E%3C/svg%3E',
