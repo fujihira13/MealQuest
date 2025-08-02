@@ -414,6 +414,13 @@ interface AppStore extends AppState {
 
   // 自炊記録
   toggleCookingRecord: (meal: MealTime) => void;
+  toggleCookingRecordWithDate: (
+    meal: MealTime,
+    date: string,
+    memo?: string
+  ) => void;
+  addCookingRecord: (meal: MealTime, date: string, memo?: string) => void;
+  updateCookingRecordMemo: (meal: MealTime, date: string, memo: string) => void;
   deleteCookingRecord: (id: number) => void;
 
   // 節約記録
@@ -595,6 +602,78 @@ export const useAppStore = create<AppStore>()(
           get().checkBadgeProgress();
         }
 
+        get().updateMonthlyData();
+      },
+
+      toggleCookingRecordWithDate: (meal, date, memo) => {
+        const state = get();
+        const existingRecord = state.cookingRecords.find(
+          (r) => r.date === date && r.meal === meal
+        );
+
+        if (existingRecord) {
+          // 削除
+          set((state) => ({
+            cookingRecords: state.cookingRecords.filter(
+              (r) => !(r.date === date && r.meal === meal)
+            ),
+          }));
+        } else {
+          // 追加
+          const record: CookingRecord = {
+            id: Date.now(),
+            date,
+            meal,
+            memo,
+            timestamp: new Date().toISOString(),
+          };
+
+          set((state) => ({
+            cookingRecords: [...state.cookingRecords, record],
+            userData: {
+              ...state.userData,
+              points: state.userData.points + 20,
+            },
+          }));
+
+          get().updateMissionProgress("cooking");
+          get().checkBadgeProgress();
+        }
+
+        get().updateMonthlyData();
+      },
+
+      addCookingRecord: (meal, date, memo) => {
+        const record: CookingRecord = {
+          id: Date.now(),
+          date,
+          meal,
+          memo,
+          timestamp: new Date().toISOString(),
+        };
+
+        set((state) => ({
+          cookingRecords: [...state.cookingRecords, record],
+          userData: {
+            ...state.userData,
+            points: state.userData.points + 20,
+          },
+        }));
+
+        get().updateMissionProgress("cooking");
+        get().checkBadgeProgress();
+        get().updateMonthlyData();
+      },
+
+      updateCookingRecordMemo: (meal, date, memo) => {
+        set((state) => {
+          const updatedCookingRecords = state.cookingRecords.map((record) =>
+            record.date === date && record.meal === meal
+              ? { ...record, memo }
+              : record
+          );
+          return { cookingRecords: updatedCookingRecords };
+        });
         get().updateMonthlyData();
       },
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAppStore, useUIStore } from "@/store/useAppStore";
 import type { MealTime } from "@/types";
 
@@ -9,6 +9,8 @@ export const HomeTab: React.FC = () => {
     expenses,
     cookingRecords,
     toggleCookingRecord,
+    toggleCookingRecordWithDate,
+    updateCookingRecordMemo,
     addSavingsRecord,
     playGacha,
     recordNoWasteDay,
@@ -20,8 +22,29 @@ export const HomeTab: React.FC = () => {
 
   const { openInputModal, showNotification } = useUIStore();
 
+  // 自炊記録用の状態管理
+  const [selectedCookingDate, setSelectedCookingDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [cookingMemos, setCookingMemos] = useState<{
+    [key in MealTime]?: string;
+  }>({});
+
   const handleCookingRecord = (meal: MealTime) => {
-    toggleCookingRecord(meal);
+    const today = new Date().toISOString().split("T")[0];
+
+    if (selectedCookingDate === today) {
+      // 今日の記録は従来通り
+      toggleCookingRecord(meal);
+    } else {
+      // 過去・未来の日付は新しい関数を使用
+      toggleCookingRecordWithDate(
+        meal,
+        selectedCookingDate,
+        cookingMemos[meal]
+      );
+    }
+
     const leveledUp = checkLevelUp();
     const savingsLeveledUp = checkSavingsLevelUp();
 
@@ -36,6 +59,18 @@ export const HomeTab: React.FC = () => {
         "success",
         `節約レベルアップ！ 節約Lv.${userData.savingsLevel}になりました！`
       );
+    }
+  };
+
+  const handleMemoChange = (meal: MealTime, memo: string) => {
+    setCookingMemos((prev) => ({
+      ...prev,
+      [meal]: memo,
+    }));
+
+    // 記録が存在する場合は即座に保存
+    if (isCookingRecordedForSelectedDate(meal)) {
+      updateCookingRecordMemo(meal, selectedCookingDate, memo);
     }
   };
 
@@ -122,11 +157,18 @@ export const HomeTab: React.FC = () => {
     0
   );
 
-  // 今日の自炊記録をチェック
-  const today = new Date().toISOString().split("T")[0];
-  const todayCooking = cookingRecords.filter((r) => r.date === today);
-  const isCookingRecorded = (meal: MealTime) => {
-    return todayCooking.some((r) => r.meal === meal);
+  // 選択した日付の自炊記録をチェック
+  const selectedDateCooking = cookingRecords.filter(
+    (r) => r.date === selectedCookingDate
+  );
+  const isCookingRecordedForSelectedDate = (meal: MealTime) => {
+    return selectedDateCooking.some((r) => r.meal === meal);
+  };
+
+  // 選択した日付の料理メモを取得
+  const getCookingMemo = (meal: MealTime) => {
+    const record = selectedDateCooking.find((r) => r.meal === meal);
+    return record?.memo || cookingMemos[meal] || "";
   };
 
   return (
@@ -240,11 +282,25 @@ export const HomeTab: React.FC = () => {
       <div className="daily-activities-row">
         {/* 今日の自炊記録セクション */}
         <div className="cooking-section">
-          <h3>🍳 今日の自炊記録</h3>
+          <h3>🍳 自炊記録</h3>
+
+          {/* 日付選択 */}
+          <div className="cooking-date-selector">
+            <label htmlFor="cooking-date">📅 記録日付:</label>
+            <input
+              type="date"
+              id="cooking-date"
+              value={selectedCookingDate}
+              onChange={(e) => setSelectedCookingDate(e.target.value)}
+              className="date-input"
+            />
+          </div>
+
+          {/* 自炊記録ボタン */}
           <div className="cooking-buttons">
             <button
               className={`cooking-btn ${
-                isCookingRecorded("morning") ? "active" : ""
+                isCookingRecordedForSelectedDate("morning") ? "active" : ""
               }`}
               onClick={() => handleCookingRecord("morning")}
             >
@@ -252,7 +308,7 @@ export const HomeTab: React.FC = () => {
             </button>
             <button
               className={`cooking-btn ${
-                isCookingRecorded("lunch") ? "active" : ""
+                isCookingRecordedForSelectedDate("lunch") ? "active" : ""
               }`}
               onClick={() => handleCookingRecord("lunch")}
             >
@@ -260,12 +316,48 @@ export const HomeTab: React.FC = () => {
             </button>
             <button
               className={`cooking-btn ${
-                isCookingRecorded("dinner") ? "active" : ""
+                isCookingRecordedForSelectedDate("dinner") ? "active" : ""
               }`}
               onClick={() => handleCookingRecord("dinner")}
             >
               夜
             </button>
+          </div>
+
+          {/* 料理メモ入力 */}
+          <div className="cooking-memos">
+            {(["morning", "lunch", "dinner"] as MealTime[]).map((meal) => {
+              const isRecorded = isCookingRecordedForSelectedDate(meal);
+              const mealLabel: { [key in MealTime]: string } = {
+                morning: "朝",
+                lunch: "昼",
+                dinner: "夜",
+                snack: "間食",
+              };
+
+              return (
+                <div
+                  key={meal}
+                  className={`memo-input ${isRecorded ? "recorded" : ""}`}
+                >
+                  <label>
+                    {mealLabel[meal]}の料理:
+                    <input
+                      type="text"
+                      placeholder={
+                        isRecorded
+                          ? "何を作りましたか？"
+                          : "記録してからメモできます"
+                      }
+                      value={getCookingMemo(meal)}
+                      onChange={(e) => handleMemoChange(meal, e.target.value)}
+                      disabled={!isRecorded}
+                      className="memo-input-field"
+                    />
+                  </label>
+                </div>
+              );
+            })}
           </div>
         </div>
 

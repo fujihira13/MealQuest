@@ -12,10 +12,17 @@ export interface UserData {
 }
 
 // カテゴリ型定義
-export type ExpenseCategory = 'スーパー' | '自販機' | 'コンビニ' | '外食' | '飲み会' | 'デート' | 'その他';
+export type ExpenseCategory =
+  | "スーパー"
+  | "自販機"
+  | "コンビニ"
+  | "外食"
+  | "飲み会"
+  | "デート"
+  | "その他";
 
 // 食事時間帯型定義
-export type MealTime = 'morning' | 'lunch' | 'dinner' | 'snack';
+export type MealTime = "morning" | "lunch" | "dinner" | "snack";
 
 // 支出記録型定義
 export interface ExpenseRecord {
@@ -33,6 +40,7 @@ export interface CookingRecord {
   date: string;
   meal: MealTime;
   timestamp: string;
+  memo?: string; // 料理名や簡単なメモ（オプション）
 }
 
 // 節約記録型定義
@@ -44,7 +52,7 @@ export interface SavingsRecord {
 }
 
 // ガチャアイテム型定義
-export type ItemRarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type ItemRarity = "common" | "rare" | "epic" | "legendary";
 
 export interface GachaItem {
   id: number;
@@ -61,7 +69,12 @@ export interface CollectionItem extends GachaItem {
 }
 
 // ミッション型定義
-export type MissionType = 'cooking' | 'expense_record' | 'savings' | 'total_savings' | 'expense_control';
+export type MissionType =
+  | "cooking"
+  | "expense_record"
+  | "savings"
+  | "total_savings"
+  | "expense_control";
 
 export interface Mission {
   id: string;
@@ -82,7 +95,7 @@ export interface MissionHistory {
   title: string;
   reward: number;
   claimedAt: string;
-  type: 'daily' | 'weekly';
+  type: "daily" | "weekly";
 }
 
 // ミッション管理型定義
@@ -95,17 +108,17 @@ export interface MissionState {
 }
 
 // バッジ要件型定義
-export type BadgeRequirementType = 
-  | 'cooking_count'
-  | 'total_savings'
-  | 'savings_count'
-  | 'level'
-  | 'consecutive_days'
-  | 'monthly_goal_achieved'
-  | 'gacha_items'
-  | 'missions_completed'
-  | 'savings_level'
-  | 'no_waste_streak';
+export type BadgeRequirementType =
+  | "cooking_count"
+  | "total_savings"
+  | "savings_count"
+  | "level"
+  | "consecutive_days"
+  | "monthly_goal_achieved"
+  | "gacha_items"
+  | "missions_completed"
+  | "savings_level"
+  | "no_waste_streak";
 
 export interface BadgeRequirement {
   type: BadgeRequirementType;
@@ -113,7 +126,7 @@ export interface BadgeRequirement {
 }
 
 // バッジ型定義
-export type BadgeCategory = 'cooking' | 'savings' | 'level' | 'special';
+export type BadgeCategory = "cooking" | "savings" | "level" | "special";
 
 export interface Badge {
   id: string;
@@ -172,10 +185,16 @@ export interface AppState {
 }
 
 // タブ型定義
-export type TabType = 'home' | 'stats' | 'missions' | 'badges' | 'collection' | 'settings';
+export type TabType =
+  | "home"
+  | "stats"
+  | "missions"
+  | "badges"
+  | "collection"
+  | "settings";
 
 // 通知型定義
-export type NotificationType = 'success' | 'error' | 'info' | 'warning';
+export type NotificationType = "success" | "error" | "info" | "warning";
 
 export interface Notification {
   id: string;
