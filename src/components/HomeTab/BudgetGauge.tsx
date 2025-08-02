@@ -17,7 +17,10 @@ export const BudgetGauge: React.FC = () => {
             style={{ width: `${gaugePercent}%` }}
           ></div>
         </div>
-        <div className="gauge-text">残り: ¥{remaining.toLocaleString()}</div>
+        <div className="gauge-text">
+          ¥{userData.allowanceUsed.toLocaleString()}/¥
+          {goals.allowanceGoal.toLocaleString()}
+        </div>
       </div>
     </div>
   );
