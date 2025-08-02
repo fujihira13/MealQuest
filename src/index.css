@@ -3254,6 +3254,19 @@ body {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* 自炊記録の日付選択部分 */
+.cooking-date-selector {
+  margin-bottom: 1.5rem;
+}
+
+.cooking-date-selector label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+}
+
 /* 外食カテゴリのスタイル */
 .category-restaurant {
   background: linear-gradient(135deg, #ff9a9e, #fecfef);
