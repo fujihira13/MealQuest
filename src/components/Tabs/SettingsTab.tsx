@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAppStore, useUIStore } from "@/store/useAppStore";
 
 export const SettingsTab: React.FC = () => {
@@ -6,16 +6,61 @@ export const SettingsTab: React.FC = () => {
 
   const { showNotification, showConfirmDialog } = useUIStore();
 
-  const handleGoalUpdate = (
-    type: "expense" | "allowance" | "cooking",
+  // 一時的な入力値を保持するための状態（保存前の値）
+  const [tempGoals, setTempGoals] = useState({
+    monthlyExpenseGoal: goals.monthlyExpenseGoal,
+    allowanceGoal: goals.allowanceGoal,
+    cookingGoal: goals.cookingGoal,
+  });
+
+  // 入力値が変更された時は一時的な状態のみを更新
+  const handleTempGoalUpdate = (
+    type: "monthlyExpenseGoal" | "allowanceGoal" | "cookingGoal",
     value: string
   ) => {
     const numValue = parseInt(value);
-    if (isNaN(numValue) || numValue <= 0) return;
+    // 数値チェック：無効な値の場合は更新しない
+    if (isNaN(numValue) || numValue < 0) return;
 
-    updateGoals(type, numValue);
+    // 一時的な状態を更新
+    setTempGoals((prev) => ({
+      ...prev,
+      [type]: numValue,
+    }));
+  };
+
+  // 保存ボタンを押した時に実際にストアを更新
+  const handleSaveGoals = () => {
+    // 各目標値が有効かチェック
+    if (
+      tempGoals.monthlyExpenseGoal <= 0 ||
+      tempGoals.allowanceGoal <= 0 ||
+      tempGoals.cookingGoal <= 0
+    ) {
+      showNotification("error", "目標値は1以上の値を入力してください");
+      return;
+    }
+
+    // 実際にストアの値を更新
+    updateGoals("expense", tempGoals.monthlyExpenseGoal);
+    updateGoals("allowance", tempGoals.allowanceGoal);
+    updateGoals("cooking", tempGoals.cookingGoal);
+
+    // 月間データも更新
     updateMonthlyData();
-    showNotification("success", "目標を更新しました");
+
+    // 成功メッセージを表示
+    showNotification("success", "目標を保存しました");
+  };
+
+  // キャンセルボタン：一時的な状態を元の値に戻す
+  const handleCancelGoals = () => {
+    setTempGoals({
+      monthlyExpenseGoal: goals.monthlyExpenseGoal,
+      allowanceGoal: goals.allowanceGoal,
+      cookingGoal: goals.cookingGoal,
+    });
+    showNotification("info", "入力をキャンセルしました");
   };
 
   const handleDataReset = () => {
@@ -38,26 +83,47 @@ export const SettingsTab: React.FC = () => {
             <label>食費目標 (円)</label>
             <input
               type="number"
-              defaultValue={goals.monthlyExpenseGoal}
-              onChange={(e) => handleGoalUpdate("expense", e.target.value)}
+              value={tempGoals.monthlyExpenseGoal}
+              onChange={(e) =>
+                handleTempGoalUpdate("monthlyExpenseGoal", e.target.value)
+              }
+              placeholder="例: 30000"
             />
           </div>
           <div className="setting-item">
             <label>消費許容額 (円)</label>
             <input
               type="number"
-              defaultValue={goals.allowanceGoal}
-              onChange={(e) => handleGoalUpdate("allowance", e.target.value)}
+              value={tempGoals.allowanceGoal}
+              onChange={(e) =>
+                handleTempGoalUpdate("allowanceGoal", e.target.value)
+              }
+              placeholder="例: 5000"
             />
           </div>
           <div className="setting-item">
             <label>自炊回数目標 (回)</label>
             <input
               type="number"
-              defaultValue={goals.cookingGoal}
-              onChange={(e) => handleGoalUpdate("cooking", e.target.value)}
+              value={tempGoals.cookingGoal}
+              onChange={(e) =>
+                handleTempGoalUpdate("cookingGoal", e.target.value)
+              }
+              placeholder="例: 20"
             />
           </div>
+        </div>
+
+        {/* 保存・キャンセルボタン */}
+        <div className="goal-actions">
+          <button className="save-btn" onClick={handleSaveGoals}>
+            <i className="fas fa-save"></i>
+            目標を保存
+          </button>
+          <button className="cancel-btn" onClick={handleCancelGoals}>
+            <i className="fas fa-undo"></i>
+            キャンセル
+          </button>
         </div>
       </div>
 
@@ -73,35 +139,6 @@ export const SettingsTab: React.FC = () => {
             ⚠️
             この操作は全ての記録、進捗、設定を削除します。元に戻すことはできません。
           </p>
-        </div>
-      </div>
-
-      {/* 使い方ガイド */}
-      <div className="guide-section">
-        <h3>📖 使い方ガイド</h3>
-        <div className="guide-items">
-          <div className="guide-item">
-            <h4>💰 支出記録</h4>
-            <p>ホーム画面でカテゴリボタンを押して日々の支出を記録しましょう</p>
-          </div>
-          <div className="guide-item">
-            <h4>🍳 自炊記録</h4>
-            <p>
-              自炊をした時間帯（朝・昼・夜）をタップしてポイントを獲得しましょう
-            </p>
-          </div>
-          <div className="guide-item">
-            <h4>💎 節約記録</h4>
-            <p>
-              誘惑に負けずに節約できた時は節約記録で貯金額を積み上げましょう
-            </p>
-          </div>
-          <div className="guide-item">
-            <h4>🎯 クエスト</h4>
-            <p>
-              デイリー・ウィークリークエストを達成してポイントを稼ぎましょう
-            </p>
-          </div>
         </div>
       </div>
     </section>

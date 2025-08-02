@@ -10,6 +10,7 @@ import { SettingsTab } from "@/components/Tabs/SettingsTab";
 import { InputModal } from "@/components/Modals/InputModal";
 import { Notification } from "@/components/Common/Notification";
 import { ConfirmDialog } from "@/components/Common/ConfirmDialog";
+import { HelpModal } from "@/components/Common/HelpModal";
 import { useAppStore, useUIStore } from "@/store/useAppStore";
 
 function App() {
@@ -75,6 +76,7 @@ function App() {
       <InputModal />
       <Notification />
       <ConfirmDialog />
+      <HelpModal />
     </div>
   );
 }

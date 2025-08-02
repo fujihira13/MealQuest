@@ -475,6 +475,7 @@ interface UIStore extends UIState {
   showConfirmDialog: (message: string, action: () => void) => void;
   hideConfirmDialog: () => void;
   executeConfirmAction: () => void;
+  setHelpOpen: (isOpen: boolean) => void; // ヘルプ画面の表示制御
 }
 
 // アプリケーションストア
@@ -1366,6 +1367,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   isConfirmDialogOpen: false,
   confirmMessage: "",
   confirmAction: null,
+  isHelpOpen: false, // ヘルプ画面の初期状態
 
   // アクション
   setCurrentTab: (tab) => set({ currentTab: tab }),
@@ -1438,4 +1440,6 @@ export const useUIStore = create<UIStore>((set, get) => ({
     }
     get().hideConfirmDialog();
   },
+
+  setHelpOpen: (isOpen) => set({ isHelpOpen: isOpen }),
 }));

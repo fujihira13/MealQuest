@@ -215,4 +215,5 @@ export interface UIState {
   isConfirmDialogOpen: boolean;
   confirmMessage: string;
   confirmAction: (() => void) | null;
+  isHelpOpen: boolean; // ヘルプ画面の表示状態
 }

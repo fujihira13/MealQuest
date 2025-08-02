@@ -40,7 +40,7 @@ body {
 
 .user-info {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   align-items: center;
 }
 
@@ -84,6 +84,31 @@ body {
 .points {
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+/* ヘッダーボタン */
+.help-btn,
+.settings-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.help-btn:hover,
+.settings-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
 }
 
 /* タブナビゲーション */
@@ -1286,6 +1311,108 @@ body {
   box-shadow: 0 4px 15px rgba(225, 112, 85, 0.3);
 }
 
+/* ヘルプモーダル */
+.help-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.help-modal-content {
+  background: white;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-header {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.help-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.help-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.help-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.help-content {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.guide-item {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 1.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.guide-item h4 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.guide-item p {
+  margin: 0 0 1rem 0;
+  color: #666;
+  line-height: 1.6;
+}
+
+.guide-item ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #666;
+}
+
+.guide-item li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
 /* 確認ダイアログ */
 .confirm-dialog {
   position: fixed;
@@ -1481,6 +1608,53 @@ body {
   .delete-btn {
     padding: 0.4rem 0.8rem;
     font-size: 0.7rem;
+  }
+
+  /* ヘルプモーダルのモバイル対応 */
+  .help-modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .help-header {
+    padding: 1rem;
+  }
+
+  .help-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .help-content {
+    padding: 1rem;
+  }
+
+  .help-section {
+    gap: 1.5rem;
+  }
+
+  .guide-item {
+    padding: 1rem;
+  }
+
+  .guide-item h4 {
+    font-size: 1rem;
+  }
+
+  .guide-item p {
+    font-size: 0.9rem;
+  }
+
+  .guide-item li {
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+  }
+
+  /* ヘッダーボタンのモバイル対応 */
+  .help-btn,
+  .settings-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
   }
 }
 
