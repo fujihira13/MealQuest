@@ -114,10 +114,13 @@ export const HomeTab: React.FC = () => {
 
   // 今月の総支出を計算
   const currentMonth = new Date().toISOString().slice(0, 7);
-  const monthlyExpenses = expenses.filter(expense => 
+  const monthlyExpenses = expenses.filter((expense) =>
     expense.date.startsWith(currentMonth)
   );
-  const totalMonthlyExpense = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalMonthlyExpense = monthlyExpenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  );
 
   // 今日の自炊記録をチェック
   const today = new Date().toISOString().split("T")[0];
@@ -191,30 +194,6 @@ export const HomeTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 今月の支出状況 - 重要な情報を目立つ位置に */}
-      <div className="expense-summary">
-        <div className="total-expense">
-          <span className="expense-label">今月の総支出</span>
-          <span className="expense-amount">¥{totalMonthlyExpense.toLocaleString()}</span>
-        </div>
-      </div>
-
-      {/* コンパクトなステータス表示 */}
-      <div className="status-compact">
-        <div className="status-item-small">
-          <span className="status-icon">💰</span>
-          <span className="status-text">{userData.points.toLocaleString()}pt</span>
-        </div>
-        <div className="status-item-small">
-          <span className="status-icon">🏆</span>
-          <span className="status-text">Lv.{userData.level}</span>
-        </div>
-        <div className="status-item-small">
-          <span className="status-icon">🔥</span>
-          <span className="status-text">{streaks.noWasteStreak}日</span>
-        </div>
-      </div>
-
       {/* 今月の消費許容ゲージ - コンパクト化 */}
       <div className="gauge-section-compact">
         <h4>📊 消費許容額</h4>
@@ -225,9 +204,35 @@ export const HomeTab: React.FC = () => {
               style={{ width: `${gaugePercent}%` }}
             ></div>
           </div>
-          <div className="gauge-text">
-            残り: ¥{remaining.toLocaleString()}
-          </div>
+          <div className="gauge-text">残り: ¥{remaining.toLocaleString()}</div>
+        </div>
+      </div>
+
+      {/* 今月の支出状況 - 重要な情報を目立つ位置に */}
+      <div className="expense-summary">
+        <div className="total-expense">
+          <span className="expense-label">今月の総支出</span>
+          <span className="expense-amount">
+            ¥{totalMonthlyExpense.toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      {/* コンパクトなステータス表示 */}
+      <div className="status-compact">
+        <div className="status-item-small">
+          <span className="status-icon">💰</span>
+          <span className="status-text">
+            {userData.points.toLocaleString()}pt
+          </span>
+        </div>
+        <div className="status-item-small">
+          <span className="status-icon">🏆</span>
+          <span className="status-text">Lv.{userData.level}</span>
+        </div>
+        <div className="status-item-small">
+          <span className="status-icon">🔥</span>
+          <span className="status-text">{streaks.noWasteStreak}日</span>
         </div>
       </div>
 
@@ -270,16 +275,19 @@ export const HomeTab: React.FC = () => {
           <div className="challenge-buttons">
             <button
               className={`challenge-btn ${
-                streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+                streaks.lastNoWasteDate ===
+                new Date().toISOString().split("T")[0]
                   ? "completed"
                   : ""
               }`}
               onClick={handleNoWasteDay}
               disabled={
-                streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+                streaks.lastNoWasteDate ===
+                new Date().toISOString().split("T")[0]
               }
             >
-              {streaks.lastNoWasteDate === new Date().toISOString().split("T")[0]
+              {streaks.lastNoWasteDate ===
+              new Date().toISOString().split("T")[0]
                 ? "✅ 無駄遣いなし達成！"
                 : "🔥 無駄遣いなし"}
             </button>
@@ -302,7 +310,9 @@ export const HomeTab: React.FC = () => {
                 : "🍭 お菓子我慢"}
             </button>
           </div>
-          <p className="challenge-note">毎日チャレンジして連続記録を伸ばそう！</p>
+          <p className="challenge-note">
+            毎日チャレンジして連続記録を伸ばそう！
+          </p>
         </div>
       </div>
 
