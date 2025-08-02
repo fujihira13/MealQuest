@@ -53,16 +53,6 @@ export const SettingsTab: React.FC = () => {
     showNotification("success", "目標を保存しました");
   };
 
-  // キャンセルボタン：一時的な状態を元の値に戻す
-  const handleCancelGoals = () => {
-    setTempGoals({
-      monthlyExpenseGoal: goals.monthlyExpenseGoal,
-      allowanceGoal: goals.allowanceGoal,
-      cookingGoal: goals.cookingGoal,
-    });
-    showNotification("info", "入力をキャンセルしました");
-  };
-
   const handleDataReset = () => {
     showConfirmDialog(
       "全てのデータをリセットしますか？この操作は元に戻せません。",
@@ -114,31 +104,23 @@ export const SettingsTab: React.FC = () => {
           </div>
         </div>
 
-        {/* 保存・キャンセルボタン */}
+        {/* 保存ボタン */}
         <div className="goal-actions">
           <button className="save-btn" onClick={handleSaveGoals}>
             <i className="fas fa-save"></i>
             目標を保存
-          </button>
-          <button className="cancel-btn" onClick={handleCancelGoals}>
-            <i className="fas fa-undo"></i>
-            キャンセル
           </button>
         </div>
       </div>
 
       {/* データ管理 */}
       <div className="data-management-section">
-        <h3>🗂️ データ管理</h3>
+        <h3>🗄️ データ管理</h3>
         <div className="data-actions">
           <button className="reset-btn" onClick={handleDataReset}>
             <i className="fas fa-trash-alt"></i>
-            全データをリセット
+            データをリセット
           </button>
-          <p className="reset-warning">
-            ⚠️
-            この操作は全ての記録、進捗、設定を削除します。元に戻すことはできません。
-          </p>
         </div>
       </div>
     </section>
