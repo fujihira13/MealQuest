@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAppStore, useUIStore } from "@/store/useAppStore";
 import type { MealTime } from "@/types";
 
@@ -6,6 +6,7 @@ export const CookingRecordSection: React.FC = () => {
   const {
     cookingRecords,
     toggleCookingRecord,
+    toggleCookingRecordWithDate,
     checkLevelUp,
     checkSavingsLevelUp,
     userData,
@@ -13,8 +14,18 @@ export const CookingRecordSection: React.FC = () => {
 
   const { showNotification } = useUIStore();
 
+  const [selectedCookingDate, setSelectedCookingDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+
   const handleCookingRecord = (meal: MealTime) => {
-    toggleCookingRecord(meal);
+    const today = new Date().toISOString().split("T")[0];
+
+    if (selectedCookingDate === today) {
+      toggleCookingRecord(meal);
+    } else {
+      toggleCookingRecordWithDate(meal, selectedCookingDate);
+    }
 
     const leveledUp = checkLevelUp();
     const savingsLeveledUp = checkSavingsLevelUp();
@@ -33,21 +44,33 @@ export const CookingRecordSection: React.FC = () => {
     }
   };
 
-  const today = new Date().toISOString().split("T")[0];
-  const todayCooking = cookingRecords.filter((r) => r.date === today);
+  const selectedDateCooking = cookingRecords.filter(
+    (r) => r.date === selectedCookingDate
+  );
 
-  const isCookingRecordedToday = (meal: MealTime) => {
-    return todayCooking.some((r) => r.meal === meal);
+  const isCookingRecordedForSelectedDate = (meal: MealTime) => {
+    return selectedDateCooking.some((r) => r.meal === meal);
   };
 
   return (
     <div className="cooking-section">
       <h3>🍳 自炊記録</h3>
 
+      <div className="cooking-date-selector">
+        <label htmlFor="cooking-date">📅 記録日付:</label>
+        <input
+          type="date"
+          id="cooking-date"
+          value={selectedCookingDate}
+          onChange={(e) => setSelectedCookingDate(e.target.value)}
+          className="date-input"
+        />
+      </div>
+
       <div className="cooking-buttons">
         <button
           className={`cooking-btn ${
-            isCookingRecordedToday("morning") ? "active" : ""
+            isCookingRecordedForSelectedDate("morning") ? "active" : ""
           }`}
           onClick={() => handleCookingRecord("morning")}
         >
@@ -55,7 +78,7 @@ export const CookingRecordSection: React.FC = () => {
         </button>
         <button
           className={`cooking-btn ${
-            isCookingRecordedToday("lunch") ? "active" : ""
+            isCookingRecordedForSelectedDate("lunch") ? "active" : ""
           }`}
           onClick={() => handleCookingRecord("lunch")}
         >
@@ -63,7 +86,7 @@ export const CookingRecordSection: React.FC = () => {
         </button>
         <button
           className={`cooking-btn ${
-            isCookingRecordedToday("dinner") ? "active" : ""
+            isCookingRecordedForSelectedDate("dinner") ? "active" : ""
           }`}
           onClick={() => handleCookingRecord("dinner")}
         >
