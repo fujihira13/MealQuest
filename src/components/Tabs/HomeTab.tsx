@@ -217,7 +217,7 @@ export const HomeTab: React.FC = () => {
 
       {/* 今月の消費許容ゲージ - コンパクト化 */}
       <div className="gauge-section-compact">
-        <h4>📊 予算状況</h4>
+        <h4>📊 消費許容額</h4>
         <div className="gauge-container">
           <div className="gauge-bar">
             <div

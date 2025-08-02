@@ -1641,8 +1641,8 @@ body {
 
 .progress-text {
   font-size: 0.9rem;
-  color: #495057;
-  font-weight: 500;
+  color: #2c3e50;
+  font-weight: 600;
   min-width: 60px;
   text-align: right;
 }
