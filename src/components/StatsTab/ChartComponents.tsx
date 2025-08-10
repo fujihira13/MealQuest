@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
 import type { ExpenseRecord } from "@/types";
 
@@ -6,8 +6,8 @@ Chart.register(...registerables);
 
 interface ChartComponentsProps {
   expenses: ExpenseRecord[];
-  cookingRecords: any[];
-  savingsRecords: any[];
+  cookingRecords: { date: string; [key: string]: any }[];
+  savingsRecords: { date: string; amount: number; [key: string]: any }[];
 }
 
 export const ChartComponents: React.FC<ChartComponentsProps> = ({
@@ -22,14 +22,7 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
 
   const chartInstances = useRef<{ [key: string]: Chart }>({});
 
-  useEffect(() => {
-    renderCharts();
-    return () => {
-      Object.values(chartInstances.current).forEach((chart) => chart.destroy());
-    };
-  }, [expenses, cookingRecords, savingsRecords]);
-
-  const renderCharts = () => {
+  const renderCharts = useCallback(() => {
     Object.values(chartInstances.current).forEach((chart) => chart.destroy());
     chartInstances.current = {};
 
@@ -37,7 +30,14 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
     renderCategoryChart();
     renderCookingChart();
     renderSavingsChart();
-  };
+  }, [expenses, cookingRecords, savingsRecords]);
+
+  useEffect(() => {
+    renderCharts();
+    return () => {
+      Object.values(chartInstances.current).forEach((chart) => chart.destroy());
+    };
+  }, [renderCharts]);
 
   const renderExpenseChart = () => {
     if (!expenseChartRef.current) return;
