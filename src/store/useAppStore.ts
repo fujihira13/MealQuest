@@ -36,6 +36,7 @@ const initialGoals = {
   monthlyExpenseGoal: 25000,
   allowanceGoal: 15000,
   cookingGoal: 20,
+  monthlySavingsGoal: 5000,
 };
 
 const gachaItems: GachaItem[] = [
@@ -444,6 +445,9 @@ interface AppStore extends AppState {
   // バッジ
   checkBadgeProgress: () => string[];
 
+  // 一日完全自炊ボーナス
+  checkAllDayCookingBonus: (date: string) => void;
+
   // 連続記録
   recordNoWasteDay: () => void;
   recordSnackFreeDay: () => void;
@@ -451,7 +455,7 @@ interface AppStore extends AppState {
 
   // 目標設定
   updateGoals: (
-    type: "expense" | "allowance" | "cooking",
+    type: "expense" | "allowance" | "cooking" | "savings",
     value: number
   ) => void;
 
@@ -540,6 +544,7 @@ export const useAppStore = create<AppStore>()(
 
         get().resetStreakIfNeeded(category);
         get().updateMissionProgress("expense_record");
+        get().updateMissionProgress("record_habit");
         get().checkBadgeProgress();
       },
 
@@ -600,6 +605,8 @@ export const useAppStore = create<AppStore>()(
           }));
 
           get().updateMissionProgress("cooking");
+          get().updateMissionProgress("record_habit");
+          get().checkAllDayCookingBonus(today);
           get().checkBadgeProgress();
         }
 
@@ -638,6 +645,8 @@ export const useAppStore = create<AppStore>()(
           }));
 
           get().updateMissionProgress("cooking");
+          get().updateMissionProgress("record_habit");
+          get().checkAllDayCookingBonus(date);
           get().checkBadgeProgress();
         }
 
@@ -662,6 +671,8 @@ export const useAppStore = create<AppStore>()(
         }));
 
         get().updateMissionProgress("cooking");
+        get().updateMissionProgress("record_habit");
+        get().checkAllDayCookingBonus(date);
         get().checkBadgeProgress();
         get().updateMonthlyData();
       },
@@ -840,10 +851,10 @@ export const useAppStore = create<AppStore>()(
           {
             id: "daily_expenses_record",
             title: "記録の習慣",
-            description: "支出を1回記録する",
+            description: "支出または自炊を1回記録する",
             target: 1,
             reward: 20,
-            type: "expense_record" as MissionType,
+            type: "record_habit" as MissionType,
             icon: "📝",
           },
           {
@@ -1076,6 +1087,42 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
+      checkAllDayCookingBonus: (date) => {
+        const state = get();
+        
+        // Check if the user has already received the bonus for this date
+        const existingBonusKey = `allDayCookingBonus_${date}`;
+        if (localStorage.getItem(existingBonusKey)) {
+          return;
+        }
+
+        // Check if all three main meals (morning, lunch, dinner) are cooked on this date
+        const dayRecords = state.cookingRecords.filter(r => r.date === date);
+        const hasBreakfast = dayRecords.some(r => r.meal === "morning");
+        const hasLunch = dayRecords.some(r => r.meal === "lunch");
+        const hasDinner = dayRecords.some(r => r.meal === "dinner");
+
+        if (hasBreakfast && hasLunch && hasDinner) {
+          // Award 50 bonus points for cooking all three meals
+          set((state) => ({
+            userData: {
+              ...state.userData,
+              points: state.userData.points + 50,
+            },
+          }));
+
+          // Mark bonus as received for this date
+          localStorage.setItem(existingBonusKey, "true");
+
+          // Show notification
+          const { showNotification } = useUIStore.getState();
+          showNotification(
+            "success",
+            "🎉 一日完全自炊達成！ボーナス50ポイントを獲得しました！"
+          );
+        }
+      },
+
       checkBadgeProgress: () => {
         const state = get();
         const newBadges: string[] = [];
@@ -1265,6 +1312,9 @@ export const useAppStore = create<AppStore>()(
               break;
             case "cooking":
               newGoals.cookingGoal = value;
+              break;
+            case "savings":
+              newGoals.monthlySavingsGoal = value;
               break;
           }
           return { goals: newGoals };

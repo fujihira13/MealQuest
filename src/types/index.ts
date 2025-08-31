@@ -72,6 +72,7 @@ export interface CollectionItem extends GachaItem {
 export type MissionType =
   | "cooking"
   | "expense_record"
+  | "record_habit"
   | "savings"
   | "total_savings"
   | "expense_control";
@@ -159,6 +160,7 @@ export interface Goals {
   monthlyExpenseGoal: number;
   allowanceGoal: number;
   cookingGoal: number;
+  monthlySavingsGoal: number;
 }
 
 // 節約額相当型定義

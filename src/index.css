@@ -1042,6 +1042,8 @@ body {
   align-items: center;
   padding: 1rem 0;
   border-bottom: 1px solid #e9ecef;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .setting-item:last-child {
@@ -1269,6 +1271,22 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 1rem;
+}
+
+/* 目標保存アクション */
+.goal-actions {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.goal-actions .save-btn {
+  width: auto;
+  min-width: 200px;
+  padding: 1rem 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .save-btn:hover {
@@ -2749,6 +2767,19 @@ body {
     text-align: center;
   }
 
+  .setting-item {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 0.8rem;
+  }
+
+  .setting-item input {
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+
   .reset-btn {
     padding: 0.8rem 1.5rem;
     font-size: 0.9rem;
@@ -2861,13 +2892,13 @@ body {
 
 /* 統計画面 - 詳細ステータス */
 .detailed-status-section {
-  margin-bottom: 2rem;
+  margin-bottom: 0.8rem;
 }
 
 .detailed-status-section h3 {
   color: #333;
-  margin-bottom: 1.5rem;
-  font-size: 1.3rem;
+  margin-bottom: 0.6rem;
+  font-size: 1.1rem;
   text-align: center;
   font-weight: 600;
 }
@@ -2876,17 +2907,17 @@ body {
 .savings-detail-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
 }
 
 .savings-card {
   background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
-  border-radius: 15px;
-  padding: 1.5rem;
+  border-radius: 10px;
+  padding: 0.8rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.6rem;
   box-shadow: 0 4px 15px rgba(255, 234, 167, 0.4);
 }
 
@@ -2901,64 +2932,64 @@ body {
 }
 
 .savings-icon {
-  font-size: 2rem;
+  font-size: 1.3rem;
 }
 
 .savings-info h4 {
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  margin-bottom: 0.2rem;
   opacity: 0.8;
 }
 
 .savings-amount {
-  font-size: 1.3rem;
+  font-size: 1rem;
   font-weight: bold;
 }
 
 /* 節約で買える物 */
 .savings-equivalent-section {
   background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  border-radius: 10px;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
   text-align: center;
   box-shadow: 0 4px 15px rgba(255, 234, 167, 0.4);
 }
 
 .savings-equivalent-section h4 {
   color: #333;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
 }
 
 .savings-equivalent-display {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #333;
 }
 
 /* レベル詳細セクション */
 .level-detail-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.8rem;
 }
 
 .level-detail-section h4 {
   color: #333;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 
 .level-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.6rem;
 }
 
 .level-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 15px;
-  padding: 1.5rem;
+  border-radius: 10px;
+  padding: 0.8rem;
   color: white;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
@@ -2967,30 +2998,30 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.6rem;
 }
 
 .level-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   opacity: 0.8;
 }
 
 .level-value {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: bold;
 }
 
 .level-progress {
-  margin-top: 1rem;
+  margin-top: 0.6rem;
 }
 
 .progress-bar {
   width: 100%;
-  height: 8px;
+  height: 6px;
   background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 .progress-fill {
@@ -3005,57 +3036,57 @@ body {
 }
 
 .progress-text {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   opacity: 0.9;
 }
 
 /* 詳細連続記録セクション */
 .detailed-streaks-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.8rem;
 }
 
 .detailed-streaks-section h4 {
   color: #333;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 
 .streak-detail-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.6rem;
 }
 
 .streak-card {
   background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-  border-radius: 15px;
-  padding: 1.5rem;
+  border-radius: 10px;
+  padding: 1rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
   box-shadow: 0 4px 15px rgba(255, 154, 158, 0.3);
 }
 
 .streak-icon {
-  font-size: 2rem;
+  font-size: 1.5rem;
 }
 
 .streak-info h5 {
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.3rem;
   color: #333;
 }
 
 .streak-current {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: bold;
   color: #333;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .streak-best {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #666;
 }
 
@@ -3144,16 +3175,16 @@ body {
   .savings-card,
   .level-card,
   .streak-card {
-    padding: 1rem;
+    padding: 0.8rem;
   }
 
   .savings-icon,
   .streak-icon {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
 
   .savings-amount {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .streak-current {
@@ -3270,4 +3301,142 @@ body {
 /* 外食カテゴリのスタイル */
 .category-restaurant {
   background: linear-gradient(135deg, #ff9a9e, #fecfef);
+}
+
+/* 節約ボタンのレイアウト調整（新しい節約オプション用） */
+.savings-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.savings-custom-btn {
+  grid-column: 1 / -1; /* その他ボタンを全幅で表示 */
+}
+
+@media (max-width: 480px) {
+  .savings-buttons {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .savings-custom-btn {
+    grid-column: auto;
+  }
+}
+
+/* 週選択ナビゲーション */
+.week-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  color: white;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.nav-btn.current-week {
+  background: rgba(255, 255, 255, 0.9);
+  color: #667eea;
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+.week-display {
+  color: white;
+  font-weight: bold;
+  font-size: 1.1rem;
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .week-navigation {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .nav-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .week-display {
+    flex-basis: 100%;
+    order: -1;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* レベル進捗の説明セクション */
+.level-explanation {
+  display: none; /* 一時的に非表示にして空白を解消 */
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.level-explanation p {
+  margin: 0 0 0.4rem 0;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.exp-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+}
+
+.exp-methods span {
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.9;
+  padding: 0.15rem 0;
+}
+
+@media (max-width: 480px) {
+  .level-explanation {
+    padding: 0.6rem;
+  }
+
+  .level-explanation p {
+    font-size: 0.8rem;
+  }
+
+  .exp-methods {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .exp-methods span {
+    font-size: 0.7rem;
+  }
 }

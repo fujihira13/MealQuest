@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import { Chart, registerables } from "chart.js";
 import type { ExpenseRecord } from "@/types";
 
@@ -21,6 +21,49 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
   const savingsChartRef = useRef<HTMLCanvasElement>(null);
 
   const chartInstances = useRef<{ [key: string]: Chart }>({});
+  
+  // 週の開始日を状態として管理
+  const [selectedWeekStart, setSelectedWeekStart] = useState(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - dayOfWeek);
+    return startOfWeek.toISOString().split("T")[0];
+  });
+
+  // 週のナビゲーション関数
+  const goToPreviousWeek = () => {
+    const previousWeek = new Date(selectedWeekStart);
+    previousWeek.setDate(previousWeek.getDate() - 7);
+    setSelectedWeekStart(previousWeek.toISOString().split("T")[0]);
+  };
+
+  const goToNextWeek = () => {
+    const nextWeek = new Date(selectedWeekStart);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    setSelectedWeekStart(nextWeek.toISOString().split("T")[0]);
+  };
+
+  const goToCurrentWeek = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - dayOfWeek);
+    setSelectedWeekStart(startOfWeek.toISOString().split("T")[0]);
+  };
+
+  // 週の表示用フォーマット
+  const getWeekDisplayText = () => {
+    const weekStart = new Date(selectedWeekStart);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    const formatDate = (date: Date) => {
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    };
+    
+    return `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
+  };
 
   const renderCharts = useCallback(() => {
     Object.values(chartInstances.current).forEach((chart) => chart.destroy());
@@ -30,7 +73,7 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
     renderCategoryChart();
     renderCookingChart();
     renderSavingsChart();
-  }, [expenses, cookingRecords, savingsRecords]);
+  }, [expenses, cookingRecords, savingsRecords, selectedWeekStart]);
 
   useEffect(() => {
     renderCharts();
@@ -47,13 +90,15 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
 
     const dates = [];
     const expenseData = [];
-    const today = new Date();
+    const weekStart = new Date(selectedWeekStart);
 
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
+    // 1週間分のデータを生成
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
       const dateStr = date.toISOString().split("T")[0];
-      dates.push(date.getDate() + "日");
+      const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+      dates.push(`${date.getDate()}日(${dayNames[date.getDay()]})`);
 
       const dayExpense = expenses
         .filter((expense) => expense.date === dateStr)
@@ -182,13 +227,15 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
 
     const dates = [];
     const cookingCounts = [];
-    const today = new Date();
+    const weekStart = new Date(selectedWeekStart);
 
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
+    // 1週間分のデータを生成
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
       const dateStr = date.toISOString().split("T")[0];
-      dates.push(date.getDate() + "日");
+      const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+      dates.push(`${date.getDate()}日(${dayNames[date.getDay()]})`);
 
       const dayCount = cookingRecords.filter(
         (record) => record.date === dateStr
@@ -242,37 +289,35 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
     if (!ctx) return;
 
     const dates = [];
-    const cumulativeSavings = [];
-    const today = new Date();
-    let runningTotal = 0;
+    const weeklySavings = [];
+    const weekStart = new Date(selectedWeekStart);
 
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
+    // 1週間分のデータを生成
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
       const dateStr = date.toISOString().split("T")[0];
-      dates.push(date.getDate() + "日");
+      const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+      dates.push(`${date.getDate()}日(${dayNames[date.getDay()]})`);
 
       const daySavings = savingsRecords
         .filter((record) => record.date === dateStr)
         .reduce((sum, record) => sum + record.amount, 0);
 
-      runningTotal += daySavings;
-      cumulativeSavings.push(runningTotal);
+      weeklySavings.push(daySavings);
     }
 
     chartInstances.current.savings = new Chart(ctx, {
-      type: "line",
+      type: "bar",
       data: {
         labels: dates,
         datasets: [
           {
-            label: "累積節約額 (円)",
-            data: cumulativeSavings,
+            label: "日別節約額 (円)",
+            data: weeklySavings,
+            backgroundColor: "rgba(0, 184, 148, 0.7)",
             borderColor: "#00b894",
-            backgroundColor: "rgba(0, 184, 148, 0.1)",
-            borderWidth: 3,
-            fill: true,
-            tension: 0.3,
+            borderWidth: 1,
           },
         ],
       },
@@ -305,8 +350,23 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
   return (
     <div className="charts-section">
       <h3>📈 グラフ分析</h3>
+      
+      {/* 週選択コントロール */}
+      <div className="week-navigation">
+        <button className="nav-btn" onClick={goToPreviousWeek}>
+          ← 前の週
+        </button>
+        <span className="week-display">{getWeekDisplayText()}</span>
+        <button className="nav-btn" onClick={goToNextWeek}>
+          次の週 →
+        </button>
+        <button className="nav-btn current-week" onClick={goToCurrentWeek}>
+          今週
+        </button>
+      </div>
+
       <div className="chart-container">
-        <h4>支出推移</h4>
+        <h4>支出推移（週表示）</h4>
         <canvas ref={expenseChartRef} width="400" height="200"></canvas>
       </div>
       <div className="chart-container">
@@ -314,11 +374,11 @@ export const ChartComponents: React.FC<ChartComponentsProps> = ({
         <canvas ref={categoryChartRef} width="400" height="200"></canvas>
       </div>
       <div className="chart-container">
-        <h4>自炊回数推移</h4>
+        <h4>自炊回数推移（週表示）</h4>
         <canvas ref={cookingChartRef} width="400" height="200"></canvas>
       </div>
       <div className="chart-container">
-        <h4>節約額推移</h4>
+        <h4>節約額推移（週表示）</h4>
         <canvas ref={savingsChartRef} width="400" height="200"></canvas>
       </div>
     </div>

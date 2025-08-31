@@ -56,6 +56,22 @@ export const QuickSavingsSection: React.FC = () => {
           <br />
           ¥300節約
         </button>
+        <button
+          className="savings-quick-btn"
+          onClick={() => handleSavingsRecord(500)}
+        >
+          🍭 お菓子の我慢
+          <br />
+          ¥500節約
+        </button>
+        <button
+          className="savings-quick-btn"
+          onClick={() => handleSavingsRecord(500)}
+        >
+          🍺 コンビニでお酒我慢
+          <br />
+          ¥500節約
+        </button>
         <button className="savings-custom-btn" onClick={handleCustomSavings}>
           📝 その他
           <br />

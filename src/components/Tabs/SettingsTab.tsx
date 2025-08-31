@@ -11,15 +11,25 @@ export const SettingsTab: React.FC = () => {
     monthlyExpenseGoal: goals.monthlyExpenseGoal,
     allowanceGoal: goals.allowanceGoal,
     cookingGoal: goals.cookingGoal,
+    monthlySavingsGoal: goals.monthlySavingsGoal,
   });
 
   // 入力値が変更された時は一時的な状態のみを更新
   const handleTempGoalUpdate = (
-    type: "monthlyExpenseGoal" | "allowanceGoal" | "cookingGoal",
+    type: "monthlyExpenseGoal" | "allowanceGoal" | "cookingGoal" | "monthlySavingsGoal",
     value: string
   ) => {
+    // 空文字列の場合は0をセット（入力中の状態を許可）
+    if (value === "") {
+      setTempGoals((prev) => ({
+        ...prev,
+        [type]: 0,
+      }));
+      return;
+    }
+
     const numValue = parseInt(value);
-    // 数値チェック：無効な値の場合は更新しない
+    // 数値が有効でない場合は更新しない
     if (isNaN(numValue) || numValue < 0) return;
 
     // 一時的な状態を更新
@@ -35,7 +45,8 @@ export const SettingsTab: React.FC = () => {
     if (
       tempGoals.monthlyExpenseGoal <= 0 ||
       tempGoals.allowanceGoal <= 0 ||
-      tempGoals.cookingGoal <= 0
+      tempGoals.cookingGoal <= 0 ||
+      tempGoals.monthlySavingsGoal <= 0
     ) {
       showNotification("error", "目標値は1以上の値を入力してください");
       return;
@@ -45,6 +56,7 @@ export const SettingsTab: React.FC = () => {
     updateGoals("expense", tempGoals.monthlyExpenseGoal);
     updateGoals("allowance", tempGoals.allowanceGoal);
     updateGoals("cooking", tempGoals.cookingGoal);
+    updateGoals("savings", tempGoals.monthlySavingsGoal);
 
     // 月間データも更新
     updateMonthlyData();
@@ -73,7 +85,7 @@ export const SettingsTab: React.FC = () => {
             <label>食費目標 (円)</label>
             <input
               type="number"
-              value={tempGoals.monthlyExpenseGoal}
+              value={tempGoals.monthlyExpenseGoal === 0 ? "" : tempGoals.monthlyExpenseGoal}
               onChange={(e) =>
                 handleTempGoalUpdate("monthlyExpenseGoal", e.target.value)
               }
@@ -84,7 +96,7 @@ export const SettingsTab: React.FC = () => {
             <label>消費許容額 (円)</label>
             <input
               type="number"
-              value={tempGoals.allowanceGoal}
+              value={tempGoals.allowanceGoal === 0 ? "" : tempGoals.allowanceGoal}
               onChange={(e) =>
                 handleTempGoalUpdate("allowanceGoal", e.target.value)
               }
@@ -95,11 +107,22 @@ export const SettingsTab: React.FC = () => {
             <label>自炊回数目標 (回)</label>
             <input
               type="number"
-              value={tempGoals.cookingGoal}
+              value={tempGoals.cookingGoal === 0 ? "" : tempGoals.cookingGoal}
               onChange={(e) =>
                 handleTempGoalUpdate("cookingGoal", e.target.value)
               }
               placeholder="例: 20"
+            />
+          </div>
+          <div className="setting-item">
+            <label>月間節約目標 (円)</label>
+            <input
+              type="number"
+              value={tempGoals.monthlySavingsGoal === 0 ? "" : tempGoals.monthlySavingsGoal}
+              onChange={(e) =>
+                handleTempGoalUpdate("monthlySavingsGoal", e.target.value)
+              }
+              placeholder="例: 5000"
             />
           </div>
         </div>

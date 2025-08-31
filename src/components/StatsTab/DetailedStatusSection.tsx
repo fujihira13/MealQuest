@@ -68,6 +68,17 @@ export const DetailedStatusSection: React.FC = () => {
 
       <div className="level-detail-section">
         <h4>🏆 レベル進捗</h4>
+        <div className="level-explanation">
+          <p><strong>経験値の獲得方法：</strong></p>
+          <div className="exp-methods">
+            <span>自炊記録: +20pt</span>
+            <span>節約記録: +10pt（¥100ごと）</span>
+            <span>クエスト達成: 20-120pt</span>
+            <span>連続記録ボーナス: 最大50pt</span>
+            <span>一日完全自炊: +50pt</span>
+            <span>ガチャレアアイテム: 最大100pt</span>
+          </div>
+        </div>
         <div className="level-cards">
           <div className="level-card">
             <div className="level-info">

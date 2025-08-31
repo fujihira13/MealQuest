@@ -46,6 +46,35 @@ export const BadgesTab: React.FC = () => {
     }
   };
 
+  const getBadgeRequirementDescription = (badge: Badge): string => {
+    const req = badge.requirement;
+
+    switch (req.type) {
+      case "cooking_count":
+        return `自炊を${req.value}回達成で獲得`;
+      case "total_savings":
+        return `合計${req.value.toLocaleString()}円節約で獲得`;
+      case "savings_count":
+        return `節約記録を${req.value}回達成で獲得`;
+      case "level":
+        return `レベル${req.value}達成で獲得`;
+      case "consecutive_days":
+        return `${req.value}日連続記録で獲得`;
+      case "monthly_goal_achieved":
+        return "月間目標を全て達成で獲得";
+      case "gacha_items":
+        return `ガチャアイテム${req.value}種類獲得で取得`;
+      case "missions_completed":
+        return `クエスト${req.value}個達成で獲得`;
+      case "savings_level":
+        return `節約レベル${req.value}達成で獲得`;
+      case "no_waste_streak":
+        return `${req.value}日連続無駄遣いなしで獲得`;
+      default:
+        return "条件を満たすと獲得できます";
+    }
+  };
+
   const getConsecutiveDays = (): number => {
     if (
       expenses.length === 0 &&
@@ -192,7 +221,7 @@ export const BadgesTab: React.FC = () => {
                   {isEarned ? badge.title : "???"}
                 </h5>
                 <p className="badge-description">
-                  {isEarned ? badge.description : "条件を満たすと獲得できます"}
+                  {isEarned ? badge.description : getBadgeRequirementDescription(badge)}
                 </p>
                 <div className="badge-progress">
                   <div className="badge-progress-bar">
