@@ -60,42 +60,46 @@ export default function HomeTab() {
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
-        {/* 今日の食費 + 今月の予算 */}
-        <View style={styles.row}>
-          <View style={[styles.card, styles.flex1]}>
-            <View style={styles.cardIconRow}>
-              <Text style={styles.cardIcon}>🍽️</Text>
-              <Text style={styles.cardLabel}>今日の食費</Text>
-            </View>
-            <Text style={styles.todayAmount}>{formatCurrency(todayTotal)}</Text>
-            <Text style={styles.subLabel}>残り {formatCurrency(remaining)}</Text>
+        {/* 今日の食費 */}
+        <View style={styles.card}>
+          <View style={styles.cardIconRow}>
+            <Text style={styles.cardIcon}>🍽️</Text>
+            <Text style={styles.cardLabel}>今日の食費</Text>
           </View>
+          <Text style={styles.todayAmount}>{formatCurrency(todayTotal)}</Text>
+          <Text style={styles.subLabel}>残り {formatCurrency(remaining)}</Text>
+        </View>
 
-          <View style={[styles.card, styles.flex1, styles.alignCenter]}>
-            <Text style={styles.cardLabel}>今月の予算</Text>
-            <CircularProgress
-              percent={budgetPercent}
-              size={72}
-              strokeWidth={7}
-              color={budgetPercent >= 90 ? '#F44336' : '#4CAF50'}
-            >
-              <Text style={styles.circlePercent}>{Math.round(budgetPercent)}%</Text>
-            </CircularProgress>
-            <Text style={styles.budgetAmount}>{formatCurrency(userData.monthlyExpense)}</Text>
-            <Text style={styles.budgetGoal}>/ {formatCurrency(goals.monthlyExpenseGoal)}</Text>
-            <View style={styles.allowanceDivider} />
-            <Text style={styles.allowanceLabel}>お小遣い</Text>
-            <View style={styles.allowanceBarBg}>
-              <View
-                style={[
-                  styles.allowanceBarFill,
-                  { width: `${allowancePercent}%`, backgroundColor: allowancePercent >= 90 ? '#F44336' : '#FF9800' },
-                ]}
-              />
+        {/* 今月の予算 + お小遣い */}
+        <View style={styles.card}>
+          <View style={styles.budgetRow}>
+            <View style={styles.budgetLeft}>
+              <Text style={styles.cardLabel}>今月の予算</Text>
+              <CircularProgress
+                percent={budgetPercent}
+                size={72}
+                strokeWidth={7}
+                color={budgetPercent >= 90 ? '#F44336' : '#4CAF50'}
+              >
+                <Text style={styles.circlePercent}>{Math.round(budgetPercent)}%</Text>
+              </CircularProgress>
+              <Text style={styles.budgetAmount}>{formatCurrency(userData.monthlyExpense)}</Text>
+              <Text style={styles.budgetGoal}>/ {formatCurrency(goals.monthlyExpenseGoal)}</Text>
             </View>
-            <Text style={styles.allowanceText}>
-              {formatCurrency(userData.allowanceUsed)} / {formatCurrency(goals.allowanceGoal)}
-            </Text>
+            <View style={styles.budgetRight}>
+              <Text style={styles.allowanceLabel}>お小遣い</Text>
+              <View style={styles.allowanceBarBg}>
+                <View
+                  style={[
+                    styles.allowanceBarFill,
+                    { width: `${allowancePercent}%`, backgroundColor: allowancePercent >= 90 ? '#F44336' : '#FF9800' },
+                  ]}
+                />
+              </View>
+              <Text style={styles.allowanceText}>
+                {formatCurrency(userData.allowanceUsed)} / {formatCurrency(goals.allowanceGoal)}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -206,9 +210,6 @@ const styles = StyleSheet.create({
   },
   flex1: {
     flex: 1,
-  },
-  alignCenter: {
-    alignItems: 'center',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -387,11 +388,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  allowanceDivider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    alignSelf: 'stretch',
-    marginVertical: 2,
+  budgetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  budgetLeft: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  budgetRight: {
+    flex: 1,
+    gap: 6,
+    justifyContent: 'center',
   },
   allowanceLabel: {
     fontSize: 11,
