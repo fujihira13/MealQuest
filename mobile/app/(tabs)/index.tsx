@@ -41,6 +41,11 @@ export default function HomeTab() {
     .filter((m) => m.completed && !m.claimed)
     .reduce((sum, m) => sum + m.reward, 0);
 
+  const allowancePercent = Math.min(
+    (userData.allowanceUsed / goals.allowanceGoal) * 100,
+    100
+  );
+
   const gachaPointsNeeded = 100 - (userData.points % 100);
   const gachaProgress = (userData.points % 100) / 100;
 
@@ -48,9 +53,6 @@ export default function HomeTab() {
 
   const handleCategoryPress = (cat: ExpenseCategory) => {
     setSelectedCategory(cat);
-  };
-
-  const handleRecordPress = () => {
     setShowInputModal(true);
   };
 
@@ -81,37 +83,37 @@ export default function HomeTab() {
             </CircularProgress>
             <Text style={styles.budgetAmount}>{formatCurrency(userData.monthlyExpense)}</Text>
             <Text style={styles.budgetGoal}>/ {formatCurrency(goals.monthlyExpenseGoal)}</Text>
+            <View style={styles.allowanceDivider} />
+            <Text style={styles.allowanceLabel}>お小遣い</Text>
+            <View style={styles.allowanceBarBg}>
+              <View
+                style={[
+                  styles.allowanceBarFill,
+                  { width: `${allowancePercent}%`, backgroundColor: allowancePercent >= 90 ? '#F44336' : '#FF9800' },
+                ]}
+              />
+            </View>
+            <Text style={styles.allowanceText}>
+              {formatCurrency(userData.allowanceUsed)} / {formatCurrency(goals.allowanceGoal)}
+            </Text>
           </View>
         </View>
 
         {/* カテゴリー入力 */}
         <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>カテゴリー入力</Text>
-            <TouchableOpacity onPress={() => { setSelectedCategory('その他'); setShowInputModal(true); }}>
-              <Text style={styles.directLink}>💰直接入力 {'>'}</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.sectionTitle}>カテゴリー入力</Text>
           <View style={styles.categoryGrid}>
             {HOME_CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat.key}
-                style={[styles.categoryBtn, selectedCategory === cat.key && styles.categoryBtnActive]}
+                style={styles.categoryBtn}
                 onPress={() => handleCategoryPress(cat.key)}
               >
                 <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                <Text style={[styles.categoryLabel, selectedCategory === cat.key && styles.categoryLabelActive]}>
-                  {cat.label}
-                </Text>
+                <Text style={styles.categoryLabel}>{cat.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity
-            style={[styles.recordBtn, !selectedCategory && styles.recordBtnDisabled]}
-            onPress={handleRecordPress}
-          >
-            <Text style={styles.recordBtnText}>🍽️ 食費を記録する　→</Text>
-          </TouchableOpacity>
         </View>
 
         {/* 今日のアクション */}
@@ -176,6 +178,7 @@ export default function HomeTab() {
       </ScrollView>
 
       <InputModal
+        key={selectedCategory ?? 'none'}
         visible={showInputModal}
         initialCategory={selectedCategory}
         onClose={() => { setShowInputModal(false); setSelectedCategory(null); }}
@@ -265,11 +268,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#212121',
   },
-  directLink: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '600',
-  },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -286,10 +284,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
     gap: 4,
   },
-  categoryBtnActive: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#E8F5E9',
-  },
   categoryIcon: {
     fontSize: 22,
   },
@@ -297,24 +291,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#424242',
     fontWeight: '500',
-  },
-  categoryLabelActive: {
-    color: '#2E7D32',
-    fontWeight: '700',
-  },
-  recordBtn: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  recordBtnDisabled: {
-    backgroundColor: '#A5D6A7',
-  },
-  recordBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
   },
   streakBadge: {
     fontSize: 12,
@@ -410,5 +386,32 @@ const styles = StyleSheet.create({
     color: '#E65100',
     fontSize: 14,
     fontWeight: '700',
+  },
+  allowanceDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    alignSelf: 'stretch',
+    marginVertical: 2,
+  },
+  allowanceLabel: {
+    fontSize: 11,
+    color: '#757575',
+    fontWeight: '500',
+  },
+  allowanceBarBg: {
+    height: 6,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
+    overflow: 'hidden',
+    alignSelf: 'stretch',
+  },
+  allowanceBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  allowanceText: {
+    fontSize: 11,
+    color: '#9E9E9E',
+    marginTop: -4,
   },
 });
