@@ -4,114 +4,98 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **gamified household expense tracking web application** focused specifically on food expense management. The app is designed as a Progressive Web App (PWA) using React + TypeScript to help users reduce wasteful spending and encourage home cooking through game mechanics.
+**MealQuest** は食費管理に特化したゲーミフィケーション付きの家計簿アプリ。Web版（PWA）とモバイル版（Expo/React Native）の2プラットフォーム構成。
 
-**Key Features:**
-- Food expense tracking with categorization (スーパー, 自販機, コンビニ, 外食, 飲み会, デート, その他)
-- Gamification elements including user levels, points, missions, and gacha collection system
-- Badge system and achievements tracking
-- Mission/challenge system with daily and weekly goals
-- Data visualization for spending patterns with Chart.js
-- Meal time tracking (morning, lunch, dinner, snack/間食)
-- Statistics with visual progress gauges
+- 支出カテゴリ: スーパー / 自販機 / コンビニ / 外食 / 飲み会 / デート / その他
+- 食事時間帯: morning / lunch / dinner / snack（間食）
+- ゲーム要素: レベル・ポイント・ミッション・バッジ・ガチャコレクション・連続記録
 
-## Architecture
+## Repository Structure
 
-The application follows a **Progressive Web App (PWA)** pattern with modern React + TypeScript:
+```
+/               Web版 (Vite + React 18 + PWA)
+/mobile         モバイル版 (Expo SDK 54 + React Native 0.81 + React 19)
+```
 
-- **React Components**: Modular component-based architecture with functional components and hooks
-- **TypeScript**: Full type safety with strict mode enabled
-- **State Management**: Zustand for efficient state management with persistence
-- **Styling**: Single `src/index.css` file with mobile-first responsive design
-- **PWA Features**: Vite PWA plugin with automatic service worker generation
-- **Data Storage**: LocalStorage via Zustand persistence middleware (key: `"food-expense-app-storage"`)
-- **Build System**: Vite with SWC for fast development and optimized builds
-
-### Core Architecture Components
-
-**State Management (Zustand):**
-- `src/store/useAppStore.ts`: All business logic state (expenses, savings, missions, user data, badges, gacha)
-- `src/store/useUIStore.ts` (or same file): UI state (modals, notifications, current tab)
-- All state persisted to LocalStorage automatically
-
-**Component Structure:**
-- `App.tsx`: Root component with tab routing and mission initialization
-- `Layout/`: Header and TabNavigation components
-- `Tabs/`: Six main tab components (HomeTab, StatsTab, MissionsTab, BadgesTab, CollectionTab, SettingsTab)
-- `Common/`: Reusable components (Avatar, Notification, ConfirmDialog, HelpModal)
-- `Modals/`: InputModal for expense entry with number pad
-
-**Key Data Models** (`src/types/index.ts`):
-- `UserData`: Level, points, savings, cooking count, streaks, allowance tracking
-- `ExpenseRecord`: Amount, category, meal time, timestamp
-- `Mission`: Daily/weekly challenges with progress and rewards
-- `Badge`: Achievement system with requirements and categories
-- `GachaItem`/`CollectionItem`: Collectibles with rarity (common/rare/epic/legendary, 60/25/12/3%)
-- `Goals`: Monthly user-set targets for expenses, allowance, cooking, savings
-
-**Utility Functions:**
-- `src/utils/dateHelpers.ts` — date formatting and range calculation
-- `src/utils/formatHelpers.ts` — currency, emoji icons, rarity display
-- `src/utils/calculationHelpers.ts` — budget and level progress calculations
-- `src/hooks/useNotifications.ts` — level-up notification custom hook
+Web版とモバイル版でロジックは共通だが、型定義・ユーティリティは現在それぞれに重複して存在する（`src/types/` と `mobile/src/types/` は同一内容）。
 
 ## Development Commands
 
+### Web版（ルートディレクトリ）
+
 ```bash
-npm install          # Install dependencies
-npm run dev          # Start development server (localhost:3000)
-npm run build        # Production build (tsc + vite build)
-npm run typecheck    # TypeScript type checking without emit
-npm run lint         # ESLint checking (max-warnings 0)
-npm run preview      # Preview production build locally
-npm run test         # Run tests in watch mode (Vitest)
-npm run test:run     # Run tests once (CI)
+npm run dev          # 開発サーバー起動 (localhost:3000)
+npm run build        # 本番ビルド (tsc + vite build)
+npm run typecheck    # 型チェック
+npm run lint         # ESLint (max-warnings 0)
+npm run test         # テスト監視モード (Vitest)
+npm run test:run     # テスト1回実行
+npx vitest run src/utils/__tests__/simple-test.test.ts  # 単一ファイル実行
 ```
 
-**Running a single test file:**
+### モバイル版（mobile/ ディレクトリ）
+
 ```bash
-npx vitest run src/utils/__tests__/simple-test.test.ts
+cd mobile
+npm run start        # Expo開発サーバー起動
+npm run android      # Androidで起動
+npm run ios          # iOSで起動
+npm run typecheck    # 型チェック
+npm run lint         # Expo Lint
 ```
 
-**Development Workflow:**
-1. Always run `npm run typecheck` before committing
-2. Run `npm run lint` to check code quality
-3. Use `npm run dev` for development with hot reload
+**コミット前:** Web版は `npm run typecheck && npm run lint`、モバイル版は `cd mobile && npm run typecheck`
+
+## Architecture
+
+### 状態管理（Zustand）
+
+`src/store/useAppStore.ts` に **AppStore** と **UIStore** の2ストアが同居している（別ファイルではない）。
+
+**AppStore** — ビジネスロジック全体（1496行）
+- State: `userData`, `goals`, `expenses[]`, `cookingRecords[]`, `savingsRecords[]`, `missions`, `badges`, `streaks`, `collection[]`, `gachaItems[]`, `badgeDefinitions[]`
+- Actions（28種）: 支出・自炊・節約の記録、ガチャ、レベルアップ判定、ミッション生成/リセット/達成、バッジ判定、連続記録管理
+
+**UIStore** — UI状態のみ
+- State: `currentTab`, `isInputModalOpen`, `currentInputCategory`, `currentAmount`, `selectedMeal`, `editingRecord`, `notifications[]`
+- Actions（9種）: タブ切替、モーダル開閉、通知表示（3秒で自動削除）、確認ダイアログ
+
+**永続化:**
+- Web版: LocalStorage（キー: `"food-expense-app-storage"`）/ Zustand v4
+- モバイル版: AsyncStorage / Zustand v5
+
+### ゲーミフィケーションの仕組み
+
+- **ポイント:** 支出記録 +1pt、自炊 +20pt、節約額÷10pt
+- **レベル:** level × 100pt 必要、節約レベルは 1000¥ ごとに上昇
+- **ガチャ:** 100pt消費、レアリティ確率 common 60% / rare 25% / epic 12% / legendary 3%
+- **ミッション:** daily 3種・weekly 3種、アプリ起動時に自動生成・リセット判定
+- **バッジ:** 24種類、`checkBadgeProgress()` で自動獲得判定
+- **連続記録:** 無駄遣いなし日数・スナック菓子なし日数をストリーク管理
+
+### Key Implementation Patterns
+
+**支出記録フロー:**
+1. `InputModal` でカテゴリ・金額・食事時間を入力
+2. `addExpenseRecord()` → `updateMissionProgress()` → `checkLevelUp()` → `checkBadgeProgress()` の順で自動実行
+3. スーパーカテゴリのみ食事時間選択を無効化（'lunch' 固定）
+
+**データ変更の原則:** コンポーネントから直接状態を変更しない。必ず `useAppStore` のアクションを経由する。
+
+### モバイル版固有の注意点
+
+- `react-native-reanimated` v4.x のBabelプラグインが `react-native-worklets` を必要とする（`mobile/package.json` に明示的に記載済み）
+- Expo Router によるファイルベースルーティング（`mobile/app/` 配下）
+- `new architecture (newArchEnabled: true)` 有効
 
 ## Testing
 
-Tests use **Vitest** with jsdom environment and `@testing-library/react`. Test files live in `src/utils/__tests__/`. The `src/test-setup.ts` clears localStorage between tests.
+Vitest + jsdom + `@testing-library/react`。テストファイルは `src/utils/__tests__/` に置く。`src/test-setup.ts` がテスト間で localStorage をクリアする。
 
-Path aliases configured in both `vite.config.ts` and `tsconfig.json`:
-- `@/` → `src/`
-- `@/components`, `@/types`, `@/store`, `@/utils`, `@/hooks`
+## Path Aliases
 
-## Key Implementation Patterns
+Web版・モバイル版ともに `@/` → `src/` のエイリアスを設定済み（各 `tsconfig.json` 参照）。
 
-**Input Modal System:**
-- スーパー category disables meal time selection (defaults to 'lunch')
-- All other categories require meal time selection including '間食' option
-- Centralized expense recording through InputModal component
+## Data Persistence Note
 
-**State Updates:**
-- All data modifications go through Zustand actions in `useAppStore`
-- Automatic level-up checking after point-earning actions (`checkLevelUp()`)
-- Mission progress automatically updates via `updateMissionProgress(actionType, value?)`
-- Badge progress calculated dynamically via `checkBadgeProgress()`
-
-**Gamification System:**
-- Level progression: level × 100 points per level
-- Savings level: every 1000¥ saved
-- Gacha system: 100pt per pull, rarity distribution 60/25/12/3%
-- Streak tracking for "no waste" and "snack-free" consecutive days
-- All-day cooking bonus: 50pts for cooking all 3 meals in a day
-
-## Data Persistence
-
-All state persisted via Zustand `persist` middleware to LocalStorage under key `"food-expense-app-storage"`. Manual data reset available in SettingsTab.
-
-**Note:** `firebase ^12.0.0` is installed as a dependency but currently unused (reserved for future backend integration).
-
-## Localization
-
-Entirely in Japanese. All UI text, categories, and user-facing content use Japanese language.
+`firebase ^12.0.0` は依存関係に含まれているが現時点では未使用（将来のバックエンド連携用）。
