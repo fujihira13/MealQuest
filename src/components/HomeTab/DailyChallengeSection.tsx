@@ -5,54 +5,41 @@ export const DailyChallengeSection: React.FC = () => {
   const { streaks, recordNoWasteDay, recordSnackFreeDay } = useAppStore();
   const { showNotification } = useUIStore();
 
+  const today = new Date().toISOString().split("T")[0];
+
   const handleNoWasteDay = () => {
     recordNoWasteDay();
-    showNotification(
-      "success",
-      `🔥 無駄遣いなし ${streaks.noWasteStreak + 1}日連続！素晴らしい！`
-    );
+    showNotification("success", `🔥 無駄遣いなし ${streaks.noWasteStreak + 1}日連続！`);
   };
 
   const handleSnackFreeDay = () => {
     recordSnackFreeDay();
-    showNotification(
-      "success",
-      `🍭 お菓子我慢 ${streaks.snackFreeStreak + 1}日連続！頑張ってる！`
-    );
+    showNotification("success", `🍭 お菓子我慢 ${streaks.snackFreeStreak + 1}日連続！`);
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const noWasteDone  = streaks.lastNoWasteDate  === today;
+  const snackFreeDone = streaks.lastSnackFreeDate === today;
 
   return (
     <div className="daily-challenge-section">
-      <h3>💪 今日のチャレンジ</h3>
+      <h3>🚩 今日のミッション</h3>
       <div className="challenge-buttons">
         <button
-          className={`challenge-btn ${
-            streaks.lastNoWasteDate === today ? "completed" : ""
-          }`}
+          className={`challenge-btn ${noWasteDone ? "completed" : ""}`}
           onClick={handleNoWasteDay}
-          disabled={streaks.lastNoWasteDate === today}
+          disabled={noWasteDone}
         >
-          {streaks.lastNoWasteDate === today
-            ? "✅ 無駄遣いなし達成！"
-            : "🔥 無駄遣いなし"}
+          {noWasteDone ? "✓ 無駄遣いなし" : "🔥 無駄遣いなし"}
         </button>
         <button
-          className={`challenge-btn ${
-            streaks.lastSnackFreeDate === today ? "completed" : ""
-          }`}
+          className={`challenge-btn ${snackFreeDone ? "completed" : ""}`}
           onClick={handleSnackFreeDay}
-          disabled={streaks.lastSnackFreeDate === today}
+          disabled={snackFreeDone}
         >
-          {streaks.lastSnackFreeDate === today
-            ? "✅ お菓子我慢達成！"
-            : "🍭 お菓子我慢"}
+          {snackFreeDone ? "✓ お菓子我慢" : "🍭 お菓子我慢"}
         </button>
       </div>
-      <p className="challenge-note">
-        毎日チャレンジして連続記録を伸ばそう！
-      </p>
+      <p className="challenge-note">連続記録を伸ばそう！</p>
     </div>
   );
 };

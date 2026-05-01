@@ -1,174 +1,113 @@
 import React, { useState } from "react";
 import { useAppStore, useUIStore } from "@/store/useAppStore";
-import type { GachaItem } from "@/types";
+
+const rarityFilters = [
+  { key: "all",       label: "すべて" },
+  { key: "unowned",   label: "未所持" },
+  { key: "rare",      label: "⭐⭐ レア以上" },
+] as const;
+
+const rarityText: Record<string, string> = {
+  common: "⭐", rare: "⭐⭐", epic: "⭐⭐⭐", legendary: "⭐⭐⭐⭐",
+};
 
 export const CollectionTab: React.FC = () => {
   const { collection, gachaItems, userData, playGacha } = useAppStore();
-
   const { showNotification } = useUIStore();
-
-  const [selectedRarity, setSelectedRarity] = useState<string>("all");
+  const [filter, setFilter] = useState<"all" | "unowned" | "rare">("all");
 
   const handleGacha = () => {
     if (userData.points < 100) {
       showNotification("error", "ポイントが不足しています（100pt必要）");
       return;
     }
-
     const result = playGacha();
     if (result) {
-      const rarityText = {
-        common: "⭐",
-        rare: "⭐⭐",
-        epic: "⭐⭐⭐",
-        legendary: "⭐⭐⭐⭐",
-      };
-      showNotification(
-        "success",
-        `ガチャ結果: ${rarityText[result.rarity]} ${result.name} ${
-          result.icon
-        }を獲得！`
-      );
+      showNotification("success", `ガチャ結果: ${rarityText[result.rarity]} ${result.name} ${result.icon}を獲得！`);
     }
   };
 
-  const filterByRarity = (items: GachaItem[]): GachaItem[] => {
-    if (selectedRarity === "all") {
-      return items;
-    }
-    return items.filter((item) => item.rarity === selectedRarity);
-  };
-
-  const handleRarityFilter = (rarity: string) => {
-    setSelectedRarity(rarity);
-  };
-
-  const getRarityText = (rarity: string): string => {
-    const rarityTexts: { [key: string]: string } = {
-      common: "⭐ コモン",
-      rare: "⭐⭐ レア",
-      epic: "⭐⭐⭐ エピック",
-      legendary: "⭐⭐⭐⭐ レジェンド",
-    };
-    return rarityTexts[rarity] || rarity;
-  };
-
-  const filteredItems = filterByRarity(gachaItems);
-  const totalCollectionCount = collection.reduce(
-    (sum, item) => sum + item.count,
-    0
-  );
   const uniqueItems = collection.length;
-  const totalItems = gachaItems.length;
-  const completionRate = Math.round((uniqueItems / totalItems) * 100);
+  const totalItems  = gachaItems.length;
+  const currentPt   = userData.points % 100;
+  const canPlay     = userData.points >= 100;
+
+  const filteredItems = gachaItems.filter((item) => {
+    const owned = collection.some((c) => c.id === item.id);
+    if (filter === "unowned") return !owned;
+    if (filter === "rare")    return item.rarity === "rare" || item.rarity === "epic" || item.rarity === "legendary";
+    return true;
+  });
 
   return (
     <section className="tab-content active">
       <div className="collection-header">
-        <h3>🎁 ガチャリスト</h3>
+        <h3>🎁 コレクション</h3>
         <div className="collection-stats">
-          <span>所持アイテム: {totalCollectionCount}個</span>
-          <span>コンプリート率: {completionRate}%</span>
+          <span className="collection-rate">
+            収集率 <strong>{uniqueItems}/{totalItems}</strong>
+          </span>
         </div>
       </div>
 
-      {/* レアリティ別フィルター */}
-      <div className="rarity-filter">
+      {/* ガチャエリア */}
+      <div className="gacha-top-section">
+        <div className="gacha-top-title">節約ガチャ</div>
+        <div className="gacha-top-subtitle">100ptで1回</div>
+        <div className="gacha-top-progress-wrap">
+          <div
+            className="gacha-top-progress-fill"
+            style={{ width: `${canPlay ? 100 : currentPt}%` }}
+          />
+        </div>
+        <div className="gacha-top-progress-text">
+          {canPlay ? userData.points : currentPt} / 100 pt
+        </div>
         <button
-          className={`filter-btn ${selectedRarity === "all" ? "active" : ""}`}
-          onClick={() => handleRarityFilter("all")}
+          className="gacha-top-btn"
+          onClick={handleGacha}
+          disabled={!canPlay}
         >
-          全て
-        </button>
-        <button
-          className={`filter-btn ${
-            selectedRarity === "common" ? "active" : ""
-          }`}
-          onClick={() => handleRarityFilter("common")}
-        >
-          ⭐ コモン
-        </button>
-        <button
-          className={`filter-btn ${selectedRarity === "rare" ? "active" : ""}`}
-          onClick={() => handleRarityFilter("rare")}
-        >
-          ⭐⭐ レア
-        </button>
-        <button
-          className={`filter-btn ${selectedRarity === "epic" ? "active" : ""}`}
-          onClick={() => handleRarityFilter("epic")}
-        >
-          ⭐⭐⭐ エピック
-        </button>
-        <button
-          className={`filter-btn ${
-            selectedRarity === "legendary" ? "active" : ""
-          }`}
-          onClick={() => handleRarityFilter("legendary")}
-        >
-          ⭐⭐⭐⭐ レジェンド
+          {canPlay ? "まわす 🎰" : `あと ${100 - currentPt}pt`}
         </button>
       </div>
 
-      {/* コレクションアイテム一覧 */}
+      {/* フィルター */}
+      <div className="rarity-filter">
+        {rarityFilters.map(({ key, label }) => (
+          <button
+            key={key}
+            className={`filter-btn ${filter === key ? "active" : ""}`}
+            onClick={() => setFilter(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* アイテムグリッド */}
       <div className="collection-grid">
         {filteredItems.length === 0 ? (
-          <div className="collection-empty">
+          <div className="collection-empty" style={{ gridColumn: "1/-1" }}>
             <div className="collection-empty-icon">📦</div>
-            <p>このレアリティのアイテムはありません</p>
+            <p>アイテムがありません</p>
           </div>
         ) : (
-          filteredItems.map((gachaItem) => {
-            const collectionItem = collection.find(
-              (item) => item.id === gachaItem.id
-            );
-            const isObtained = !!collectionItem;
-
+          filteredItems.map((item) => {
+            const owned = collection.find((c) => c.id === item.id);
             return (
               <div
-                key={gachaItem.id}
-                className={`collection-item rarity-${gachaItem.rarity} ${
-                  !isObtained ? "locked" : ""
-                }`}
+                key={item.id}
+                className={`collection-item rarity-${item.rarity} ${!owned ? "locked" : ""}`}
               >
-                <div className="item-icon">
-                  {isObtained ? gachaItem.icon : "❓"}
-                </div>
-                <div className="item-name">
-                  {isObtained ? gachaItem.name : "???"}
-                </div>
-                <div className="item-rarity">
-                  {getRarityText(gachaItem.rarity)}
-                </div>
-                <div className="item-count">
-                  {isObtained ? `×${collectionItem.count}` : "未獲得"}
-                </div>
-                {isObtained && (
-                  <div
-                    className="item-description"
-                    title={gachaItem.description}
-                  >
-                    {gachaItem.description}
-                  </div>
-                )}
+                <span className="item-icon">{owned ? item.icon : "❓"}</span>
+                <div className="item-name">{owned ? item.name : "???"}</div>
+                <div className="item-rarity">{rarityText[item.rarity]}</div>
+                <div className="item-count">{owned ? `×${owned.count}` : "未獲得"}</div>
               </div>
             );
           })
         )}
-      </div>
-
-      {/* ガチャボタン */}
-      <div className="gacha-section">
-        <button
-          className="gacha-btn"
-          onClick={handleGacha}
-          disabled={userData.points < 100}
-        >
-          <i className="fas fa-gift"></i> ガチャを引く (100pt)
-        </button>
-        <p className="gacha-info">
-          ※ポイントが足りない場合は節約や自炊でポイントを貯めましょう！
-        </p>
       </div>
     </section>
   );

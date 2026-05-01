@@ -1,69 +1,200 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
-import { formatCurrency } from '@/utils/formatHelpers';
-import { getCategoryIcon } from '@/utils/formatHelpers';
+import { formatCurrency, getCategoryIcon } from '@/utils/formatHelpers';
+import { CircularProgress } from '@/components/CircularProgress';
+import { PieChart } from '@/components/PieChart';
+import { LineChart } from '@/components/LineChart';
 import type { ExpenseCategory } from '@/types';
 
 const CATEGORIES: ExpenseCategory[] = [
   'スーパー', '自販機', 'コンビニ', '外食', '飲み会', 'デート', 'その他',
 ];
 
+const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
+  'スーパー': '#4CAF50', '自販機': '#2196F3', 'コンビニ': '#FF9800',
+  '外食': '#9C27B0', '飲み会': '#F44336', 'デート': '#E91E63', 'その他': '#9E9E9E',
+};
+
+function getMonthLabel(yearMonth: string): string {
+  const [y, m] = yearMonth.split('-');
+  return `${y}年${parseInt(m)}月`;
+}
+
+function addMonths(yearMonth: string, delta: number): string {
+  const [y, m] = yearMonth.split('-').map(Number);
+  const date = new Date(y, m - 1 + delta);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export default function StatsTab() {
-  const { expenses } = useAppStore();
+  const { expenses, cookingRecords, goals, userData } = useAppStore();
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const monthlyExpenses = expenses.filter((e) => e.date.startsWith(currentMonth));
+  const prevMonth = addMonths(selectedMonth, -1);
 
-  const byCategory = CATEGORIES.map((cat) => {
-    const total = monthlyExpenses
-      .filter((e) => e.category === cat)
-      .reduce((sum, e) => sum + e.amount, 0);
-    return { category: cat, total };
-  }).filter((item) => item.total > 0);
+  const monthExpenses = useMemo(
+    () => expenses.filter((e) => e.date.startsWith(selectedMonth)),
+    [expenses, selectedMonth]
+  );
+  const prevExpenses = useMemo(
+    () => expenses.filter((e) => e.date.startsWith(prevMonth)),
+    [expenses, prevMonth]
+  );
 
-  const grandTotal = byCategory.reduce((sum, item) => sum + item.total, 0);
+  const total = monthExpenses.reduce((s, e) => s + e.amount, 0);
+  const prevTotal = prevExpenses.reduce((s, e) => s + e.amount, 0);
+  const momChange = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null;
+
+  const monthCooking = cookingRecords.filter((r) => r.date.startsWith(selectedMonth));
+  const cookingCount = monthCooking.length;
+  const savingsEstimate = cookingCount * 700;
+
+  const budgetPercent = Math.min((total / goals.monthlyExpenseGoal) * 100, 100);
+  const remaining = goals.monthlyExpenseGoal - total;
+
+  const byCategory = CATEGORIES.map((cat) => ({
+    label: cat,
+    value: monthExpenses.filter((e) => e.category === cat).reduce((s, e) => s + e.amount, 0),
+    color: CATEGORY_COLORS[cat],
+  })).filter((d) => d.value > 0);
+
+  const dailyData = useMemo(() => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const day = String(i + 1).padStart(2, '0');
+      const date = `${selectedMonth}-${day}`;
+      const amount = monthExpenses
+        .filter((e) => e.date === date)
+        .reduce((s, e) => s + e.amount, 0);
+      return { label: `${i + 1}`, value: amount };
+    });
+  }, [monthExpenses, selectedMonth]);
+
+  const insights = useMemo(() => {
+    const result: { icon: string; text: string; sub: string }[] = [];
+    if (momChange !== null) {
+      if (momChange < 0) {
+        result.push({ icon: '📉', text: '食費が節約できています', sub: `前月比 ${momChange}%` });
+      } else if (momChange > 10) {
+        result.push({ icon: '📈', text: '食費が増えています', sub: `前月比 +${momChange}%` });
+      }
+    }
+    if (cookingCount > 10) {
+      result.push({ icon: '🍳', text: '自炊ペースが良好です', sub: `今月 ${cookingCount}回達成` });
+    }
+    const conbini = byCategory.find((d) => d.label === 'コンビニ');
+    const prevConbini = prevExpenses
+      .filter((e) => e.category === 'コンビニ')
+      .reduce((s, e) => s + e.amount, 0);
+    if (conbini && prevConbini > 0 && conbini.value < prevConbini) {
+      result.push({ icon: '🏪', text: 'コンビニ支出が減少', sub: `先月比 -${formatCurrency(prevConbini - conbini.value)}` });
+    }
+    return result.slice(0, 3);
+  }, [momChange, cookingCount, byCategory, prevExpenses]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>今月のカテゴリ別支出</Text>
-        {byCategory.length === 0 ? (
-          <Text style={styles.empty}>まだ記録がありません</Text>
-        ) : (
-          byCategory.map((item) => (
-            <View key={item.category} style={styles.row}>
-              <Text style={styles.icon}>{getCategoryIcon(item.category)}</Text>
-              <Text style={styles.categoryName}>{item.category}</Text>
-              <View style={styles.barContainer}>
-                <View
-                  style={[
-                    styles.bar,
-                    { width: `${(item.total / grandTotal) * 100}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.categoryAmount}>{formatCurrency(item.total)}</Text>
-            </View>
-          ))
-        )}
+
+      {/* 月ナビゲーション */}
+      <View style={styles.monthNav}>
+        <TouchableOpacity onPress={() => setSelectedMonth(addMonths(selectedMonth, -1))}>
+          <Text style={styles.navArrow}>{'＜'}</Text>
+        </TouchableOpacity>
+        <Text style={styles.monthLabel}>{getMonthLabel(selectedMonth)}</Text>
+        <TouchableOpacity onPress={() => setSelectedMonth(addMonths(selectedMonth, 1))}>
+          <Text style={styles.navArrow}>{'＞'}</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>直近7日間の支出</Text>
-        {expenses.slice(0, 10).map((expense) => (
-          <View key={expense.id} style={styles.expenseRow}>
-            <Text style={styles.expenseIcon}>{getCategoryIcon(expense.category)}</Text>
-            <View style={styles.expenseInfo}>
-              <Text style={styles.expenseCategory}>{expense.category}</Text>
-              <Text style={styles.expenseDate}>{expense.date}</Text>
-            </View>
-            <Text style={styles.expenseAmount}>{formatCurrency(expense.amount)}</Text>
-          </View>
-        ))}
-        {expenses.length === 0 && (
-          <Text style={styles.empty}>まだ記録がありません</Text>
-        )}
+      {/* 3カラムサマリー */}
+      <View style={styles.row}>
+        <View style={[styles.card, styles.flex1, styles.alignCenter]}>
+          <Text style={styles.summaryLabel}>食費合計</Text>
+          <Text style={styles.summaryAmount}>{formatCurrency(total)}</Text>
+          {momChange !== null && (
+            <Text style={[styles.summaryChange, momChange < 0 ? styles.changeGood : styles.changeBad]}>
+              前月比 {momChange > 0 ? '+' : ''}{momChange}%{momChange < 0 ? '↓' : '↑'}
+            </Text>
+          )}
+        </View>
+        <View style={[styles.card, styles.flex1, styles.alignCenter]}>
+          <Text style={styles.summaryLabel}>自炊回数</Text>
+          <Text style={styles.summaryAmount}>{cookingCount}回</Text>
+          <Text style={styles.summaryChange}>節約 {formatCurrency(savingsEstimate)}</Text>
+        </View>
+        <View style={[styles.card, styles.flex1, styles.alignCenter]}>
+          <Text style={styles.summaryLabel}>予算達成率</Text>
+          <CircularProgress
+            percent={budgetPercent}
+            size={56}
+            strokeWidth={6}
+            color={budgetPercent >= 90 ? '#F44336' : '#4CAF50'}
+          >
+            <Text style={styles.circleSmall}>{Math.round(budgetPercent)}%</Text>
+          </CircularProgress>
+          <Text style={styles.summaryChange}>残り {formatCurrency(remaining)}</Text>
+        </View>
       </View>
+
+      {/* グラフ行 */}
+      <View style={styles.row}>
+        <View style={[styles.card, styles.flex1]}>
+          <Text style={styles.cardTitle}>カテゴリー別</Text>
+          <PieChart data={byCategory} size={110} />
+          <View style={styles.legend}>
+            {byCategory.slice(0, 4).map((d) => (
+              <View key={d.label} style={styles.legendRow}>
+                <View style={[styles.legendDot, { backgroundColor: d.color }]} />
+                <Text style={styles.legendLabel}>{d.label}</Text>
+                <Text style={styles.legendVal}>{formatCurrency(d.value)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+        <View style={[styles.card, styles.flex1]}>
+          <Text style={styles.cardTitle}>日別推移</Text>
+          <LineChart data={dailyData.filter((_, i) => i % 2 === 0)} width={150} height={110} />
+          {monthExpenses.length === 0 && (
+            <Text style={styles.empty}>まだ記録がありません</Text>
+          )}
+        </View>
+      </View>
+
+      {/* 今月の気づき */}
+      {insights.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>💡 今月の気づき</Text>
+          {insights.map((ins, i) => (
+            <View key={i} style={styles.insightRow}>
+              <Text style={styles.insightIcon}>{ins.icon}</Text>
+              <View style={styles.flex1}>
+                <Text style={styles.insightText}>{ins.text}</Text>
+                <Text style={styles.insightSub}>{ins.sub}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* 直近支出リスト */}
+      {monthExpenses.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>支出記録</Text>
+          {monthExpenses.slice(0, 8).map((e) => (
+            <View key={e.id} style={styles.expRow}>
+              <Text style={styles.expIcon}>{getCategoryIcon(e.category)}</Text>
+              <View style={styles.flex1}>
+                <Text style={styles.expCat}>{e.category}</Text>
+                <Text style={styles.expDate}>{e.date}</Text>
+              </View>
+              <Text style={styles.expAmt}>{formatCurrency(e.amount)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
     </ScrollView>
   );
 }
@@ -74,89 +205,149 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   content: {
-    padding: 16,
+    padding: 12,
     gap: 12,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#212121',
-    marginBottom: 12,
-  },
-  empty: {
-    color: '#9E9E9E',
-    textAlign: 'center',
-    padding: 16,
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    gap: 10,
   },
-  icon: {
-    fontSize: 18,
-    width: 28,
-  },
-  categoryName: {
-    width: 64,
-    fontSize: 13,
-    color: '#424242',
-  },
-  barContainer: {
+  flex1: {
     flex: 1,
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
-    marginHorizontal: 8,
-    overflow: 'hidden',
   },
-  bar: {
-    height: '100%',
-    backgroundColor: '#4CAF50',
-    borderRadius: 4,
+  alignCenter: {
+    alignItems: 'center',
   },
-  categoryAmount: {
-    fontSize: 13,
-    color: '#212121',
-    fontWeight: '500',
-    width: 72,
-    textAlign: 'right',
-  },
-  expenseRow: {
+  monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+    paddingVertical: 4,
+  },
+  navArrow: {
+    fontSize: 18,
+    color: '#4CAF50',
+    fontWeight: '700',
+    paddingHorizontal: 8,
+  },
+  monthLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#212121',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#424242',
+  },
+  summaryLabel: {
+    fontSize: 11,
+    color: '#757575',
+  },
+  summaryAmount: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#212121',
+  },
+  summaryChange: {
+    fontSize: 11,
+    color: '#757575',
+  },
+  changeGood: {
+    color: '#4CAF50',
+  },
+  changeBad: {
+    color: '#F44336',
+  },
+  circleSmall: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#212121',
+  },
+  legend: {
+    gap: 4,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendLabel: {
+    fontSize: 10,
+    color: '#424242',
+    flex: 1,
+  },
+  legendVal: {
+    fontSize: 10,
+    color: '#212121',
+    fontWeight: '600',
+  },
+  empty: {
+    fontSize: 12,
+    color: '#9E9E9E',
+    textAlign: 'center',
     paddingVertical: 8,
+  },
+  insightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
   },
-  expenseIcon: {
+  insightIcon: {
     fontSize: 20,
-    width: 32,
   },
-  expenseInfo: {
-    flex: 1,
-  },
-  expenseCategory: {
-    fontSize: 14,
+  insightText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#212121',
   },
-  expenseDate: {
-    fontSize: 12,
+  insightSub: {
+    fontSize: 11,
     color: '#9E9E9E',
   },
-  expenseAmount: {
-    fontSize: 14,
-    fontWeight: '500',
+  expRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+    gap: 8,
+  },
+  expIcon: {
+    fontSize: 18,
+    width: 28,
+  },
+  expCat: {
+    fontSize: 13,
+    color: '#212121',
+  },
+  expDate: {
+    fontSize: 11,
+    color: '#9E9E9E',
+  },
+  expAmt: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#F44336',
   },
 });

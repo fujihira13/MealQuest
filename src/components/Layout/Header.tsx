@@ -3,34 +3,20 @@ import { useAppStore, useUIStore } from "@/store/useAppStore";
 
 export const Header: React.FC = () => {
   const userData = useAppStore((state) => state.userData);
-  const { setCurrentTab, setHelpOpen } = useUIStore();
-
-  const handleSettingsClick = () => {
-    setCurrentTab("settings");
-  };
-
-  const handleHelpClick = () => {
-    setHelpOpen(true);
-  };
+  const { setCurrentTab } = useUIStore();
 
   return (
     <header className="app-header">
-      <h1>
-        <i className="fas fa-piggy-bank"></i> 節約マスター
-      </h1>
+      <h1>🏅 節約マスター</h1>
       <div className="user-info">
-        <div className="level-badge">
-          Lv.<span>{userData.level}</span>
-        </div>
-        <button className="help-btn" onClick={handleHelpClick} title="ヘルプ">
-          <i className="fas fa-question-circle"></i>
-        </button>
+        <div className="level-badge">🏆 Lv.{userData.level}</div>
+        <div className="points-badge">🪙 {userData.points.toLocaleString()} pt</div>
         <button
-          className="settings-btn"
-          onClick={handleSettingsClick}
+          className="header-settings-btn"
+          onClick={() => setCurrentTab("settings")}
           title="設定"
         >
-          <i className="fas fa-cog"></i>
+          ⚙️
         </button>
       </div>
     </header>

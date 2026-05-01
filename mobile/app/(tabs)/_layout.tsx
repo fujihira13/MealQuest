@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { AppHeader } from '@/components/AppHeader';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -22,18 +23,12 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        header: () => <AppHeader />,
         tabBarActiveTintColor: '#4CAF50',
         tabBarInactiveTintColor: '#9E9E9E',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E0E0E0',
-        },
-        headerStyle: {
-          backgroundColor: '#4CAF50',
-        },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: {
-          fontWeight: 'bold',
         },
       }}
     >

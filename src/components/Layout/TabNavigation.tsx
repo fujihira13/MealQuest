@@ -9,11 +9,11 @@ interface TabButton {
 }
 
 const tabs: TabButton[] = [
-  { key: "home", icon: "🏠", label: "ホーム" },
-  { key: "stats", icon: "📊", label: "統計" },
-  { key: "missions", icon: "🎯", label: "クエスト" },
-  { key: "badges", icon: "🏆", label: "称号" },
-  { key: "collection", icon: "🎁", label: "リスト" },
+  { key: "home",       icon: "🏠", label: "ホーム" },
+  { key: "stats",      icon: "📊", label: "統計" },
+  { key: "missions",   icon: "🚩", label: "ミッション" },
+  { key: "badges",     icon: "🏅", label: "バッジ" },
+  { key: "collection", icon: "🎁", label: "コレクション" },
 ];
 
 export const TabNavigation: React.FC = () => {
@@ -27,7 +27,8 @@ export const TabNavigation: React.FC = () => {
           className={`tab-btn ${currentTab === tab.key ? "active" : ""}`}
           onClick={() => setCurrentTab(tab.key)}
         >
-          {tab.icon} {tab.label}
+          <span className="tab-icon">{tab.icon}</span>
+          {tab.label}
         </button>
       ))}
     </nav>

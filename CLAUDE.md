@@ -96,6 +96,11 @@ Vitest + jsdom + `@testing-library/react`。テストファイルは `src/utils/
 
 Web版・モバイル版ともに `@/` → `src/` のエイリアスを設定済み（各 `tsconfig.json` 参照）。
 
+## 修正対象について
+
+**今後の修正はすべて `mobile/` ディレクトリ配下のモバイルアプリのみが対象。**
+Web版（ルートの `src/` 配下）は修正しない。
+
 ## Data Persistence Note
 
 `firebase ^12.0.0` は依存関係に含まれているが現時点では未使用（将来のバックエンド連携用）。
