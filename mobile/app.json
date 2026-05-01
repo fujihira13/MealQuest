@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "MealQuest",
+    "slug": "mealquest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "mealquest",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mealquest.app"
+    },
+    "android": {
+      "package": "com.mealquest.app",
+      "minSdkVersion": 26
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
