@@ -88,22 +88,22 @@ export default function SettingsTab() {
         <Text style={styles.arrow}>{'>'}</Text>
       </TouchableOpacity>
 
-      {/* 予算設定 */}
-      <Text style={styles.sectionLabel}>予算設定</Text>
-      <View style={styles.card}>
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>📊</Text>
-            <Text style={styles.settingLabel}>月の食費予算</Text>
-          </View>
-          <View style={styles.settingRight}>
-            <Text style={styles.settingValue}>{formatCurrency(goals.monthlyExpenseGoal)}</Text>
-            <TouchableOpacity style={styles.changeBtn} onPress={handleBudgetChange}>
-              <Text style={styles.changeBtnText}>変更</Text>
-            </TouchableOpacity>
+        {/* 予算設定 */}
+        <Text style={styles.sectionLabel}>予算設定</Text>
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>📊</Text>
+              <Text style={styles.settingLabel}>月のスーパー予算</Text>
+            </View>
+            <View style={styles.settingRight}>
+              <Text style={styles.settingValue}>{formatCurrency(goals.monthlyExpenseGoal)}</Text>
+              <TouchableOpacity style={styles.changeBtn} onPress={handleBudgetChange}>
+                <Text style={styles.changeBtnText}>変更</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
 
       {/* 通知 */}
       <Text style={styles.sectionLabel}>通知</Text>
@@ -199,7 +199,7 @@ export default function SettingsTab() {
           style={styles.modalOverlay}
         >
           <View style={styles.budgetModal}>
-            <Text style={styles.modalTitle}>月の食費予算</Text>
+            <Text style={styles.modalTitle}>月のスーパー予算</Text>
             <Text style={styles.modalDescription}>新しい予算を入力してください</Text>
             <View style={styles.budgetInputRow}>
               <Text style={styles.yen}>¥</Text>

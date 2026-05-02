@@ -5,7 +5,6 @@ import { useAppStore } from '@/store/useAppStore';
 import { calculateGachaProgress, calculateLevelProgress } from '@/utils/calculationHelpers';
 import { formatCurrency } from '@/utils/formatHelpers';
 import { getCurrentDate } from '@/utils/dateHelpers';
-import { CircularProgress } from '@/components/CircularProgress';
 import { InputModal } from '@/components/InputModal';
 import { CookingModal } from '@/components/CookingModal';
 import type { ExpenseCategory, MealTime } from '@/types';
@@ -21,6 +20,26 @@ const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] =
   { key: 'その他', icon: '📝', label: 'その他' },
 ];
 
+function getBudgetPercent(used: number, goal: number): number {
+  if (goal <= 0) return 0;
+  return Math.min((used / goal) * 100, 100);
+}
+
+function getBudgetStatus(used: number, goal: number): { text: string; isOver: boolean } {
+  const remaining = goal - used;
+  if (remaining >= 0) {
+    return { text: `残り ${formatCurrency(remaining)}`, isOver: false };
+  }
+
+  return { text: `超過 ${formatCurrency(Math.abs(remaining))}`, isOver: true };
+}
+
+function getBudgetColor(percent: number, isOver: boolean): string {
+  if (isOver || percent >= 100) return '#F44336';
+  if (percent >= 80) return '#FF9800';
+  return '#4CAF50';
+}
+
 export default function HomeTab() {
   const router = useRouter();
   const { userData, goals, expenses, missions, streaks, cookingRecords } = useAppStore();
@@ -29,15 +48,43 @@ export default function HomeTab() {
   const [showCookingModal, setShowCookingModal] = useState(false);
 
   const today = getCurrentDate();
+  const currentMonth = today.slice(0, 7);
 
   const todayTotal = expenses
     .filter((e) => e.date === today)
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const remaining = Math.max(0, goals.monthlyExpenseGoal - userData.monthlyExpense);
-  const budgetPercent = goals.monthlyExpenseGoal > 0
-    ? Math.min((remaining / goals.monthlyExpenseGoal) * 100, 100)
-    : 0;
+  const supermarketUsed = expenses
+    .filter((e) => e.date.startsWith(currentMonth) && e.category === 'スーパー')
+    .reduce((sum, e) => sum + e.amount, 0);
+  const allowanceUsed = userData.allowanceUsed;
+  const totalUsed = userData.monthlyExpense;
+  const totalGoal = goals.monthlyExpenseGoal + goals.allowanceGoal;
+  const totalBudgetStatus = getBudgetStatus(totalUsed, totalGoal);
+
+  const budgetItems = [
+    {
+      label: 'スーパー予算',
+      used: supermarketUsed,
+      goal: goals.monthlyExpenseGoal,
+      status: getBudgetStatus(supermarketUsed, goals.monthlyExpenseGoal),
+      percent: getBudgetPercent(supermarketUsed, goals.monthlyExpenseGoal),
+    },
+    {
+      label: 'お小遣い',
+      used: allowanceUsed,
+      goal: goals.allowanceGoal,
+      status: getBudgetStatus(allowanceUsed, goals.allowanceGoal),
+      percent: getBudgetPercent(allowanceUsed, goals.allowanceGoal),
+    },
+    {
+      label: '食費合計',
+      used: totalUsed,
+      goal: totalGoal,
+      status: totalBudgetStatus,
+      percent: getBudgetPercent(totalUsed, totalGoal),
+    },
+  ];
 
   const dailyList = Object.values(missions.daily);
   const completedDaily = dailyList.filter((m) => m.completed).length;
@@ -45,11 +92,6 @@ export default function HomeTab() {
   const claimablePoints = dailyList
     .filter((m) => m.completed && !m.claimed)
     .reduce((sum, m) => sum + m.reward, 0);
-
-  const allowanceRemaining = Math.max(0, goals.allowanceGoal - userData.allowanceUsed);
-  const allowancePercent = goals.allowanceGoal > 0
-    ? Math.min((allowanceRemaining / goals.allowanceGoal) * 100, 100)
-    : 0;
 
   const gachaProgress = calculateGachaProgress(userData.points);
   const { pointsToNext: xpToNext, progressPercent: levelProgressPercent } =
@@ -78,7 +120,9 @@ export default function HomeTab() {
             <Text style={styles.cardLabel}>今日の食費</Text>
           </View>
           <Text style={styles.todayAmount}>{formatCurrency(todayTotal)}</Text>
-          <Text style={styles.subLabel}>残り {formatCurrency(remaining)}</Text>
+          <Text style={[styles.subLabel, totalBudgetStatus.isOver && styles.textOver]}>
+            今月合計 {totalBudgetStatus.text}
+          </Text>
         </View>
 
         {/* レベル進捗 */}
@@ -98,41 +142,40 @@ export default function HomeTab() {
           </View>
         </View>
 
-        {/* 今月の予算 + お小遣い */}
+        {/* 今月の予算 */}
         <View style={styles.card}>
-          <View style={styles.budgetRow}>
-            <View style={styles.budgetLeft}>
-              <Text style={styles.cardLabel}>今月の予算</Text>
-              <CircularProgress
-                percent={budgetPercent}
-                size={72}
-                strokeWidth={7}
-                color={budgetPercent <= 10 ? '#F44336' : budgetPercent <= 30 ? '#FF9800' : '#4CAF50'}
-              >
-                <Text style={styles.circlePercent}>{Math.round(budgetPercent)}%</Text>
-              </CircularProgress>
-              <Text style={styles.budgetAmount}>残り {formatCurrency(remaining)}</Text>
-              <Text style={styles.budgetGoal}>
-                使用 {formatCurrency(userData.monthlyExpense)} / {formatCurrency(goals.monthlyExpenseGoal)}
-              </Text>
-            </View>
-            <View style={styles.budgetRight}>
-              <Text style={styles.allowanceLabel}>お小遣い</Text>
-              <View style={styles.allowanceBarBg}>
-                <View
-                  style={[
-                    styles.allowanceBarFill,
-                    {
-                      width: `${allowancePercent}%`,
-                      backgroundColor: allowancePercent <= 10 ? '#F44336' : allowancePercent <= 30 ? '#FF9800' : '#4CAF50',
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.allowanceText}>
-                残り {formatCurrency(allowanceRemaining)} / {formatCurrency(goals.allowanceGoal)}
-              </Text>
-            </View>
+          <Text style={styles.sectionTitle}>今月の予算</Text>
+          <View style={styles.budgetList}>
+            {budgetItems.map((item) => {
+              const barColor = getBudgetColor(item.percent, item.status.isOver);
+
+              return (
+                <View key={item.label} style={styles.budgetItem}>
+                  <View style={styles.budgetHeader}>
+                    <Text style={styles.budgetLabel}>{item.label}</Text>
+                    <Text style={[styles.budgetStatus, item.status.isOver && styles.textOver]}>
+                      {item.status.text}
+                    </Text>
+                  </View>
+                  <View style={styles.budgetBarBg}>
+                    <View
+                      style={[
+                        styles.budgetBarFill,
+                        { width: `${item.percent}%`, backgroundColor: barColor },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.budgetMeta}>
+                    使用 {formatCurrency(item.used)} / {formatCurrency(item.goal)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          <View style={styles.budgetNote}>
+            <Text style={styles.budgetNoteText}>
+              食費合計はスーパー予算 + お小遣いを目安にしています
+            </Text>
           </View>
         </View>
 
@@ -281,20 +324,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9E9E9E',
   },
-  circlePercent: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#212121',
-  },
-  budgetAmount: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#212121',
-  },
-  budgetGoal: {
-    fontSize: 11,
-    color: '#9E9E9E',
-    marginTop: -6,
+  textOver: {
+    color: '#F44336',
   },
   levelHeader: {
     flexDirection: 'row',
@@ -468,39 +499,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  budgetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+  budgetList: {
+    gap: 12,
   },
-  budgetLeft: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  budgetRight: {
-    flex: 1,
+  budgetItem: {
     gap: 6,
-    justifyContent: 'center',
   },
-  allowanceLabel: {
-    fontSize: 11,
-    color: '#757575',
-    fontWeight: '500',
+  budgetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
   },
-  allowanceBarBg: {
-    height: 6,
+  budgetLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: '#212121',
+    fontWeight: '700',
+  },
+  budgetStatus: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  budgetBarBg: {
+    height: 8,
     backgroundColor: '#E0E0E0',
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: 'hidden',
-    alignSelf: 'stretch',
   },
-  allowanceBarFill: {
+  budgetBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
-  allowanceText: {
+  budgetMeta: {
     fontSize: 11,
     color: '#9E9E9E',
-    marginTop: -4,
+  },
+  budgetNote: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  budgetNoteText: {
+    fontSize: 11,
+    color: '#757575',
   },
 });
