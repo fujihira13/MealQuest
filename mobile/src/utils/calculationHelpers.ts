@@ -45,3 +45,18 @@ export const calculateSavingsLevelProgress = (
   const progressPercent = (totalSavings / (savingsLevel * 1000)) * 100;
   return { remainingToNext, progressPercent };
 };
+
+export const calculateGachaProgress = (
+  points: number
+): { pointsNeeded: number; progressPercent: number; canPlay: boolean; currentCyclePoints: number } => {
+  const safePoints = Math.max(0, Math.floor(points));
+  const canPlay = safePoints >= 100;
+  const currentCyclePoints = canPlay ? 100 : safePoints;
+
+  return {
+    pointsNeeded: canPlay ? 0 : 100 - safePoints,
+    progressPercent: canPlay ? 100 : safePoints,
+    canPlay,
+    currentCyclePoints,
+  };
+};

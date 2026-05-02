@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   Modal,
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
+import { DateSelector } from '@/components/DateSelector';
+import { getCurrentDate, isValidDateKey } from '@/utils/dateHelpers';
 import type { MealTime } from '@/types';
 import { COOKING_RECORD_POINTS } from '@/constants/game';
 
@@ -23,19 +27,37 @@ interface Props {
 }
 
 export function CookingModal({ visible, onClose, todayMeals }: Props) {
-  const { toggleCookingRecord } = useAppStore();
+  const { cookingRecords, toggleCookingRecordWithDate } = useAppStore();
+  const [date, setDate] = useState(getCurrentDate());
 
-  const defaultMeal = (): MealTime => {
-    if (!todayMeals.includes('dinner')) return 'dinner';
-    const unrecorded = MEAL_OPTIONS.find((opt) => !todayMeals.includes(opt.value));
+  const selectedDateMeals = useMemo(
+    () => cookingRecords
+      .filter((record) => record.date === date)
+      .map((record) => record.meal) as MealTime[],
+    [cookingRecords, date]
+  );
+
+  const defaultMeal = (recordedMeals: MealTime[]): MealTime => {
+    if (!recordedMeals.includes('dinner')) return 'dinner';
+    const unrecorded = MEAL_OPTIONS.find((opt) => !recordedMeals.includes(opt.value));
     return unrecorded?.value ?? 'dinner';
   };
 
-  const [meal, setMeal] = useState<MealTime>(defaultMeal);
+  const [meal, setMeal] = useState<MealTime>(defaultMeal(todayMeals));
+
+  useEffect(() => {
+    if (selectedDateMeals.includes(meal)) {
+      setMeal(defaultMeal(selectedDateMeals));
+    }
+  }, [meal, selectedDateMeals]);
 
   const handleSave = () => {
-    if (todayMeals.includes(meal)) return;
-    toggleCookingRecord(meal);
+    if (!isValidDateKey(date)) {
+      Alert.alert('入力エラー', '日付を YYYY-MM-DD 形式で入力してください');
+      return;
+    }
+    if (selectedDateMeals.includes(meal)) return;
+    toggleCookingRecordWithDate(meal, date);
     onClose();
   };
 
@@ -43,51 +65,56 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>自炊を記録する</Text>
-          <Text style={styles.subtitle}>今日の自炊：+{COOKING_RECORD_POINTS}pt 獲得</Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.handle} />
+            <Text style={styles.title}>自炊を記録する</Text>
+            <Text style={styles.subtitle}>自炊1食：+{COOKING_RECORD_POINTS}pt 獲得</Text>
 
-          <Text style={styles.label}>食事の時間帯を選択</Text>
-          <View style={styles.grid}>
-            {MEAL_OPTIONS.map((opt) => {
-              const done = todayMeals.includes(opt.value);
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[
-                    styles.mealBtn,
-                    meal === opt.value && !done && styles.mealBtnActive,
-                    done && styles.mealBtnDone,
-                  ]}
-                  onPress={() => !done && setMeal(opt.value)}
-                  activeOpacity={done ? 1 : 0.7}
-                >
-                  <Text style={styles.mealIcon}>{opt.icon}</Text>
-                  <Text style={[
-                    styles.mealText,
-                    meal === opt.value && !done && styles.mealTextActive,
-                    done && styles.mealTextDone,
-                  ]}>
-                    {opt.label}
-                  </Text>
-                  {done && <Text style={styles.doneLabel}>済み</Text>}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+            <Text style={styles.label}>日付</Text>
+            <DateSelector value={date} onChange={setDate} />
 
-          <View style={styles.btnRow}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelText}>キャンセル</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.saveBtn, todayMeals.includes(meal) && styles.saveBtnDisabled]}
-              onPress={handleSave}
-              disabled={todayMeals.includes(meal)}
-            >
-              <Text style={styles.saveText}>🍳 記録する（+{COOKING_RECORD_POINTS}pt）</Text>
-            </TouchableOpacity>
-          </View>
+            <Text style={styles.label}>食事の時間帯を選択</Text>
+            <View style={styles.grid}>
+              {MEAL_OPTIONS.map((opt) => {
+                const done = selectedDateMeals.includes(opt.value);
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[
+                      styles.mealBtn,
+                      meal === opt.value && !done && styles.mealBtnActive,
+                      done && styles.mealBtnDone,
+                    ]}
+                    onPress={() => !done && setMeal(opt.value)}
+                    activeOpacity={done ? 1 : 0.7}
+                  >
+                    <Text style={styles.mealIcon}>{opt.icon}</Text>
+                    <Text style={[
+                      styles.mealText,
+                      meal === opt.value && !done && styles.mealTextActive,
+                      done && styles.mealTextDone,
+                    ]}>
+                      {opt.label}
+                    </Text>
+                    {done && <Text style={styles.doneLabel}>済み</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.btnRow}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+                <Text style={styles.cancelText}>キャンセル</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveBtn, selectedDateMeals.includes(meal) && styles.saveBtnDisabled]}
+                onPress={handleSave}
+                disabled={selectedDateMeals.includes(meal)}
+              >
+                <Text style={styles.saveText}>🍳 記録する（+{COOKING_RECORD_POINTS}pt）</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -106,6 +133,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     paddingBottom: 36,
+    maxHeight: '92%',
   },
   handle: {
     width: 36,
@@ -131,6 +159,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     color: '#757575',
+    marginTop: 12,
     marginBottom: 12,
   },
   grid: {

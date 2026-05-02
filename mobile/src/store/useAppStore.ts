@@ -25,6 +25,7 @@ import {
   calculateLevelFromTotalXp,
   getTotalXpRequiredForLevel,
 } from "@/utils/levelHelpers";
+import { formatDateKey, getCurrentDate, getDaysAgo } from "@/utils/dateHelpers";
 
 // 初期データ定義
 const initialUserData: UserData = {
@@ -36,7 +37,7 @@ const initialUserData: UserData = {
   monthlyExpense: 0,
   cookingCount: 0,
   allowanceUsed: 0,
-  lastUpdated: new Date().toISOString().split("T")[0],
+  lastUpdated: getCurrentDate(),
   savingsLevel: 1,
 };
 
@@ -115,7 +116,7 @@ interface AppStore extends AppState {
   allDayCookingBonusDates: string[];
 
   addExpenseRecord: (category: ExpenseCategory, amount: number, meal: MealTime, date?: string) => void;
-  updateExpenseRecord: (id: number, category: ExpenseCategory, amount: number, meal: MealTime) => void;
+  updateExpenseRecord: (id: number, category: ExpenseCategory, amount: number, meal: MealTime, date: string) => void;
   deleteExpenseRecord: (id: number) => void;
 
   toggleCookingRecord: (meal: MealTime) => void;
@@ -133,14 +134,16 @@ interface AppStore extends AppState {
 
   generateDailyMissions: () => void;
   generateWeeklyMissions: () => void;
-  updateMissionProgress: (actionType: string, value?: number) => void;
+  updateMissionProgress: (
+    actionType: string,
+    value?: number,
+    options?: { updateDaily?: boolean; updateWeekly?: boolean }
+  ) => void;
   claimMissionReward: (missionId: string) => boolean;
   resetDailyMissions: () => void;
   resetWeeklyMissions: () => void;
 
   checkBadgeProgress: () => string[];
-
-  checkAllDayCookingBonus: (date: string) => void;
 
   recordNoWasteDay: () => void;
   recordSnackFreeDay: () => void;
@@ -200,9 +203,10 @@ export const useAppStore = create<AppStore>()(
       allDayCookingBonusDates: [],
 
       addExpenseRecord: (category, amount, meal, date) => {
+        const recordDate = date || getCurrentDate();
         const record: ExpenseRecord = {
           id: Date.now(),
-          date: date || new Date().toISOString().split("T")[0],
+          date: recordDate,
           category,
           amount,
           meal,
@@ -211,27 +215,22 @@ export const useAppStore = create<AppStore>()(
 
         set((state) => ({
           expenses: [record, ...state.expenses],
-          userData: {
-            ...state.userData,
-            monthlyExpense: state.userData.monthlyExpense + amount,
-            allowanceUsed:
-              category !== "スーパー"
-                ? state.userData.allowanceUsed + amount
-                : state.userData.allowanceUsed,
-          },
         }));
 
-        get().resetStreakIfNeeded(category);
-        get().updateMissionProgress("expense_record");
-        get().updateMissionProgress("record_habit");
+        if (recordDate === getCurrentDate()) {
+          get().resetStreakIfNeeded(category);
+          get().updateMissionProgress("expense_record");
+          get().updateMissionProgress("record_habit");
+        }
         get().checkBadgeProgress();
+        get().updateMonthlyData();
       },
 
-      updateExpenseRecord: (id, category, amount, meal) => {
+      updateExpenseRecord: (id, category, amount, meal, date) => {
         set((state) => ({
           expenses: state.expenses.map((exp) =>
             exp.id === id
-              ? { ...exp, category, amount, meal, timestamp: new Date().toISOString() }
+              ? { ...exp, category, amount, meal, date, timestamp: new Date().toISOString() }
               : exp
           ),
         }));
@@ -246,7 +245,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       toggleCookingRecord: (meal) => {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getCurrentDate();
         const state = get();
         const existingRecord = state.cookingRecords.find(
           (r) => r.date === today && r.meal === meal
@@ -284,7 +283,6 @@ export const useAppStore = create<AppStore>()(
           }));
           get().updateMissionProgress("cooking");
           get().updateMissionProgress("record_habit");
-          get().checkAllDayCookingBonus(today);
           get().checkBadgeProgress();
         }
         get().updateMonthlyData();
@@ -327,9 +325,14 @@ export const useAppStore = create<AppStore>()(
               COOKING_RECORD_POINTS
             ),
           }));
-          get().updateMissionProgress("cooking");
-          get().updateMissionProgress("record_habit");
-          get().checkAllDayCookingBonus(date);
+          const isTodayRecord = date === getCurrentDate();
+          get().updateMissionProgress("cooking", 1, {
+            updateDaily: isTodayRecord,
+            updateWeekly: true,
+          });
+          if (isTodayRecord) {
+            get().updateMissionProgress("record_habit");
+          }
           get().checkBadgeProgress();
         }
         get().updateMonthlyData();
@@ -353,9 +356,14 @@ export const useAppStore = create<AppStore>()(
             COOKING_RECORD_POINTS
           ),
         }));
-        get().updateMissionProgress("cooking");
-        get().updateMissionProgress("record_habit");
-        get().checkAllDayCookingBonus(date);
+        const isTodayRecord = date === getCurrentDate();
+        get().updateMissionProgress("cooking", 1, {
+          updateDaily: isTodayRecord,
+          updateWeekly: true,
+        });
+        if (isTodayRecord) {
+          get().updateMissionProgress("record_habit");
+        }
         get().checkBadgeProgress();
         get().updateMonthlyData();
       },
@@ -395,7 +403,7 @@ export const useAppStore = create<AppStore>()(
         const reward = Math.floor(amount / 10);
         const record: SavingsRecord = {
           id: Date.now(),
-          date: new Date().toISOString().split("T")[0],
+          date: getCurrentDate(),
           amount,
           timestamp: new Date().toISOString(),
         };
@@ -508,7 +516,7 @@ export const useAppStore = create<AppStore>()(
             missions: {
               ...state.missions,
               daily: newDaily,
-              lastDailyReset: new Date().toISOString().split("T")[0],
+              lastDailyReset: getCurrentDate(),
             },
           };
         });
@@ -533,50 +541,56 @@ export const useAppStore = create<AppStore>()(
             missions: {
               ...state.missions,
               weekly: newWeekly,
-              lastWeeklyReset: startOfWeek.toISOString().split("T")[0],
+              lastWeeklyReset: formatDateKey(startOfWeek),
             },
           };
         });
       },
 
-      updateMissionProgress: (actionType, value = 1) => {
+      updateMissionProgress: (actionType, value = 1, options = {}) => {
         set((state) => {
           const newMissions = { ...state.missions };
           let updated = false;
+          const updateDaily = options.updateDaily ?? true;
+          const updateWeekly = options.updateWeekly ?? true;
 
-          Object.keys(newMissions.daily).forEach((missionId) => {
-            const mission = newMissions.daily[missionId];
-            if (!mission.completed && mission.type === actionType) {
-              mission.progress = Math.min(mission.progress + value, mission.target);
-              if (mission.progress >= mission.target) mission.completed = true;
-              updated = true;
-            }
-          });
-
-          Object.keys(newMissions.weekly).forEach((missionId) => {
-            const mission = newMissions.weekly[missionId];
-            if (!mission.completed && mission.type === actionType) {
-              if (actionType === "total_savings") {
-                const weekStart = newMissions.lastWeeklyReset;
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekEnd.getDate() + 7);
-                mission.progress = state.savingsRecords
-                  .filter((r) => r.date >= weekStart && r.date < weekEnd.toISOString().split("T")[0])
-                  .reduce((sum, r) => sum + r.amount, 0);
-              } else if (actionType === "cooking") {
-                const weekStart = newMissions.lastWeeklyReset;
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekEnd.getDate() + 7);
-                mission.progress = state.cookingRecords.filter(
-                  (r) => r.date >= weekStart && r.date < weekEnd.toISOString().split("T")[0]
-                ).length;
-              } else {
+          if (updateDaily) {
+            Object.keys(newMissions.daily).forEach((missionId) => {
+              const mission = newMissions.daily[missionId];
+              if (!mission.completed && mission.type === actionType) {
                 mission.progress = Math.min(mission.progress + value, mission.target);
+                if (mission.progress >= mission.target) mission.completed = true;
+                updated = true;
               }
-              if (mission.progress >= mission.target) mission.completed = true;
-              updated = true;
-            }
-          });
+            });
+          }
+
+          if (updateWeekly) {
+            Object.keys(newMissions.weekly).forEach((missionId) => {
+              const mission = newMissions.weekly[missionId];
+              if (!mission.completed && mission.type === actionType) {
+                if (actionType === "total_savings") {
+                  const weekStart = newMissions.lastWeeklyReset;
+                  const weekEnd = new Date(weekStart);
+                  weekEnd.setDate(weekEnd.getDate() + 7);
+                  mission.progress = state.savingsRecords
+                    .filter((r) => r.date >= weekStart && r.date < formatDateKey(weekEnd))
+                    .reduce((sum, r) => sum + r.amount, 0);
+                } else if (actionType === "cooking") {
+                  const weekStart = newMissions.lastWeeklyReset;
+                  const weekEnd = new Date(weekStart);
+                  weekEnd.setDate(weekEnd.getDate() + 7);
+                  mission.progress = state.cookingRecords.filter(
+                    (r) => r.date >= weekStart && r.date < formatDateKey(weekEnd)
+                  ).length;
+                } else {
+                  mission.progress = Math.min(mission.progress + value, mission.target);
+                }
+                if (mission.progress >= mission.target) mission.completed = true;
+                updated = true;
+              }
+            });
+          }
 
           return updated ? { missions: newMissions } : state;
         });
@@ -617,7 +631,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       resetDailyMissions: () => {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getCurrentDate();
         if (get().missions.lastDailyReset !== today) {
           set((state) => ({
             missions: { ...state.missions, daily: {}, lastDailyReset: today },
@@ -629,37 +643,11 @@ export const useAppStore = create<AppStore>()(
         const now = new Date();
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay());
-        const weekKey = startOfWeek.toISOString().split("T")[0];
+        const weekKey = formatDateKey(startOfWeek);
         if (get().missions.lastWeeklyReset !== weekKey) {
           set((state) => ({
             missions: { ...state.missions, weekly: {}, lastWeeklyReset: weekKey },
           }));
-        }
-      },
-
-      checkAllDayCookingBonus: (date) => {
-        const state = get();
-        if (state.allDayCookingBonusDates.includes(date)) return;
-
-        const dayRecords = state.cookingRecords.filter((r) => r.date === date);
-        const hasBreakfast = dayRecords.some((r) => r.meal === "morning");
-        const hasLunch = dayRecords.some((r) => r.meal === "lunch");
-        const hasDinner = dayRecords.some((r) => r.meal === "dinner");
-
-        if (hasBreakfast && hasLunch && hasDinner) {
-          set((state) => ({
-            userData: applyXpChange(
-              {
-                ...state.userData,
-                points: state.userData.points + 50,
-              },
-              50
-            ),
-            allDayCookingBonusDates: [...state.allDayCookingBonusDates, date],
-          }));
-          const { showNotification } = useUIStore.getState();
-          showNotification("success", "🎉 一日完全自炊達成！ボーナス50ポイントを獲得しました！");
-          get().checkBadgeProgress();
         }
       },
 
@@ -720,13 +708,11 @@ export const useAppStore = create<AppStore>()(
       },
 
       recordNoWasteDay: () => {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getCurrentDate();
         const state = get();
         if (state.streaks.lastNoWasteDate === today) return;
 
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
+        const yesterdayStr = getDaysAgo(1);
 
         set((state) => {
           const newStreak =
@@ -752,13 +738,11 @@ export const useAppStore = create<AppStore>()(
       },
 
       recordSnackFreeDay: () => {
-        const today = new Date().toISOString().split("T")[0];
+        const today = getCurrentDate();
         const state = get();
         if (state.streaks.lastSnackFreeDate === today) return;
 
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
+        const yesterdayStr = getDaysAgo(1);
 
         set((state) => {
           const newStreak =
@@ -812,7 +796,7 @@ export const useAppStore = create<AppStore>()(
 
       updateMonthlyData: () => {
         const state = get();
-        const currentMonth = new Date().toISOString().slice(0, 7);
+        const currentMonth = getCurrentDate().slice(0, 7);
 
         const monthlyExpenses = state.expenses.filter((e) => e.date.startsWith(currentMonth));
         const monthlyExpense = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);

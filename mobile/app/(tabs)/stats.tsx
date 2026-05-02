@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { formatCurrency, getCategoryIcon } from '@/utils/formatHelpers';
+import { getCurrentMonth } from '@/utils/dateHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { PieChart } from '@/components/PieChart';
 import { LineChart } from '@/components/LineChart';
@@ -29,8 +30,8 @@ function addMonths(yearMonth: string, delta: number): string {
 }
 
 export default function StatsTab() {
-  const { expenses, cookingRecords, goals, userData, deleteExpenseRecord } = useAppStore();
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const { expenses, cookingRecords, goals, deleteExpenseRecord } = useAppStore();
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
 
   const prevMonth = addMonths(selectedMonth, -1);

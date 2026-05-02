@@ -9,8 +9,11 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
+import { DateSelector } from '@/components/DateSelector';
+import { getCurrentDate, isValidDateKey } from '@/utils/dateHelpers';
 import type { ExpenseCategory, ExpenseRecord, MealTime } from '@/types';
 
 const CATEGORIES: ExpenseCategory[] = [
@@ -45,6 +48,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
   );
   const [amount, setAmount] = useState(editingRecord?.amount?.toString() ?? '');
   const [meal, setMeal] = useState<MealTime>(editingRecord?.meal ?? 'lunch');
+  const [date, setDate] = useState(editingRecord?.date ?? getCurrentDate());
 
   const handleCategoryChange = (cat: ExpenseCategory) => {
     setCategory(cat);
@@ -57,11 +61,15 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
       Alert.alert('入力エラー', '金額を正しく入力してください');
       return;
     }
+    if (!isValidDateKey(date)) {
+      Alert.alert('入力エラー', '日付を YYYY-MM-DD 形式で入力してください');
+      return;
+    }
     const finalMeal: MealTime = category === 'スーパー' ? 'lunch' : meal;
     if (isEditing) {
-      updateExpenseRecord(editingRecord.id, category, parsed, finalMeal);
+      updateExpenseRecord(editingRecord.id, category, parsed, finalMeal, date);
     } else {
-      addExpenseRecord(category, parsed, finalMeal);
+      addExpenseRecord(category, parsed, finalMeal, date);
     }
     onClose();
   };
@@ -73,69 +81,75 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
         style={styles.overlay}
       >
         <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>{isEditing ? '支出を編集' : '食費を記録する'}</Text>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.handle} />
+            <Text style={styles.title}>{isEditing ? '支出を編集' : '食費を記録する'}</Text>
 
-          {/* カテゴリー選択 */}
-          <Text style={styles.label}>カテゴリー</Text>
-          <View style={styles.categoryGrid}>
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
-                onPress={() => handleCategoryChange(cat)}
-              >
-                <Text style={styles.categoryIcon}>{CATEGORY_ICONS[cat]}</Text>
-                <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
-                  {cat}
-                </Text>
+            {/* 日付選択 */}
+            <Text style={styles.label}>日付</Text>
+            <DateSelector value={date} onChange={setDate} />
+
+            {/* カテゴリー選択 */}
+            <Text style={styles.label}>カテゴリー</Text>
+            <View style={styles.categoryGrid}>
+              {CATEGORIES.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
+                  onPress={() => handleCategoryChange(cat)}
+                >
+                  <Text style={styles.categoryIcon}>{CATEGORY_ICONS[cat]}</Text>
+                  <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* 金額入力 */}
+            <Text style={styles.label}>金額（円）</Text>
+            <View style={styles.amountRow}>
+              <Text style={styles.yen}>¥</Text>
+              <TextInput
+                style={styles.amountInput}
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#BDBDBD"
+              />
+            </View>
+
+            {/* 食事時間 */}
+            {category !== 'スーパー' && (
+              <>
+                <Text style={styles.label}>食事の時間帯</Text>
+                <View style={styles.mealRow}>
+                  {MEAL_OPTIONS.map((opt) => (
+                    <TouchableOpacity
+                      key={opt.value}
+                      style={[styles.mealBtn, meal === opt.value && styles.mealBtnActive]}
+                      onPress={() => setMeal(opt.value)}
+                    >
+                      <Text style={[styles.mealText, meal === opt.value && styles.mealTextActive]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* ボタン行 */}
+            <View style={styles.btnRow}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+                <Text style={styles.cancelText}>キャンセル</Text>
               </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* 金額入力 */}
-          <Text style={styles.label}>金額（円）</Text>
-          <View style={styles.amountRow}>
-            <Text style={styles.yen}>¥</Text>
-            <TextInput
-              style={styles.amountInput}
-              value={amount}
-              onChangeText={setAmount}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor="#BDBDBD"
-            />
-          </View>
-
-          {/* 食事時間 */}
-          {category !== 'スーパー' && (
-            <>
-              <Text style={styles.label}>食事の時間帯</Text>
-              <View style={styles.mealRow}>
-                {MEAL_OPTIONS.map((opt) => (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[styles.mealBtn, meal === opt.value && styles.mealBtnActive]}
-                    onPress={() => setMeal(opt.value)}
-                  >
-                    <Text style={[styles.mealText, meal === opt.value && styles.mealTextActive]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* ボタン行 */}
-          <View style={styles.btnRow}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelText}>キャンセル</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-              <Text style={styles.saveText}>{isEditing ? '更新する' : '記録する'}</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+                <Text style={styles.saveText}>{isEditing ? '更新する' : '記録する'}</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -154,6 +168,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     paddingBottom: 36,
+    maxHeight: '92%',
   },
   handle: {
     width: 36,

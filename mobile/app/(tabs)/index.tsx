@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
-import { calculateLevelProgress } from '@/utils/calculationHelpers';
+import { calculateGachaProgress, calculateLevelProgress } from '@/utils/calculationHelpers';
 import { formatCurrency } from '@/utils/formatHelpers';
+import { getCurrentDate } from '@/utils/dateHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { InputModal } from '@/components/InputModal';
 import { CookingModal } from '@/components/CookingModal';
@@ -27,7 +28,7 @@ export default function HomeTab() {
   const [showInputModal, setShowInputModal] = useState(false);
   const [showCookingModal, setShowCookingModal] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCurrentDate();
 
   const todayTotal = expenses
     .filter((e) => e.date === today)
@@ -50,8 +51,7 @@ export default function HomeTab() {
     ? Math.min((allowanceRemaining / goals.allowanceGoal) * 100, 100)
     : 0;
 
-  const gachaPointsNeeded = 100 - (userData.points % 100);
-  const gachaProgress = (userData.points % 100) / 100;
+  const gachaProgress = calculateGachaProgress(userData.points);
   const { pointsToNext: xpToNext, progressPercent: levelProgressPercent } =
     calculateLevelProgress(userData.totalXp, userData.level);
   const levelProgressWidth = Math.min(Math.max(levelProgressPercent, 0), 100);
@@ -162,8 +162,8 @@ export default function HomeTab() {
           <View style={styles.row}>
             <TouchableOpacity
               style={[styles.actionCard, styles.flex1, allMealsComplete && styles.actionCardDone]}
-              onPress={() => !allMealsComplete && setShowCookingModal(true)}
-              activeOpacity={allMealsComplete ? 1 : 0.7}
+              onPress={() => setShowCookingModal(true)}
+              activeOpacity={0.7}
             >
               <Text style={styles.actionIcon}>🍳</Text>
               <Text style={styles.actionTitle}>自炊を記録</Text>
@@ -198,11 +198,13 @@ export default function HomeTab() {
           <View style={styles.gachaRow}>
             <Text style={styles.gachaIcon}>🎰</Text>
             <View style={styles.flex1}>
-              <Text style={styles.gachaTitle}>ガチャまであと {gachaPointsNeeded}pt</Text>
+              <Text style={styles.gachaTitle}>
+                {gachaProgress.canPlay ? 'ガチャできます' : `ガチャまであと ${gachaProgress.pointsNeeded}pt`}
+              </Text>
               <View style={styles.gachaBarBg}>
-                <View style={[styles.gachaBarFill, { width: `${gachaProgress * 100}%` }]} />
+                <View style={[styles.gachaBarFill, { width: `${gachaProgress.progressPercent}%` }]} />
               </View>
-              <Text style={styles.gachaSub}>{userData.points % 100} / 100 pt</Text>
+              <Text style={styles.gachaSub}>{gachaProgress.currentCyclePoints} / 100 pt</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -387,7 +389,8 @@ const styles = StyleSheet.create({
     borderColor: '#BBDEFB',
   },
   actionCardDone: {
-    opacity: 0.55,
+    backgroundColor: '#E8F5E9',
+    borderColor: '#A5D6A7',
   },
   actionIcon: {
     fontSize: 28,

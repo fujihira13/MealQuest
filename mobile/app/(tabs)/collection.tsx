@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { getRarityDisplay } from '@/utils/formatHelpers';
+import { calculateGachaProgress } from '@/utils/calculationHelpers';
 import type { CollectionItem } from '@/types';
 
 type Filter = 'all' | 'rare' | 'notOwned';
@@ -64,8 +65,7 @@ export default function CollectionTab() {
   const { userData, collection, gachaItems, playGacha } = useAppStore();
   const [filter, setFilter] = useState<Filter>('all');
 
-  const gachaPointsNeeded = 100 - (userData.points % 100);
-  const gachaProgress = userData.points % 100;
+  const gachaProgress = calculateGachaProgress(userData.points);
   const totalItems = gachaItems.length;
 
   const ownedIds = new Set(collection.map((c) => c.id));
@@ -105,9 +105,11 @@ export default function CollectionTab() {
           </View>
           <View style={styles.gachaNeeded}>
             <Text style={styles.gachaNeedLabel}>次のガチャまで</Text>
-            <Text style={styles.gachaNeedPt}>あと {gachaPointsNeeded}pt</Text>
+            <Text style={styles.gachaNeedPt}>
+              {gachaProgress.canPlay ? 'まわせます' : `あと ${gachaProgress.pointsNeeded}pt`}
+            </Text>
             <View style={styles.gachaBarBg}>
-              <View style={[styles.gachaBarFill, { width: `${gachaProgress}%` }]} />
+              <View style={[styles.gachaBarFill, { width: `${gachaProgress.progressPercent}%` }]} />
             </View>
           </View>
         </View>
