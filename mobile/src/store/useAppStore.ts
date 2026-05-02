@@ -19,6 +19,7 @@ import type {
   SavingsEquivalent,
   MissionType,
 } from "@/types";
+import { COOKING_RECORD_POINTS } from "@/constants/game";
 
 // 初期データ定義
 const initialUserData: UserData = {
@@ -245,6 +246,10 @@ export const useAppStore = create<AppStore>()(
             cookingRecords: state.cookingRecords.filter(
               (r) => !(r.date === today && r.meal === meal)
             ),
+            userData: {
+              ...state.userData,
+              points: Math.max(0, state.userData.points - COOKING_RECORD_POINTS),
+            },
           }));
         } else {
           const record: CookingRecord = {
@@ -255,7 +260,10 @@ export const useAppStore = create<AppStore>()(
           };
           set((state) => ({
             cookingRecords: [...state.cookingRecords, record],
-            userData: { ...state.userData, points: state.userData.points + 20 },
+            userData: {
+              ...state.userData,
+              points: state.userData.points + COOKING_RECORD_POINTS,
+            },
           }));
           get().updateMissionProgress("cooking");
           get().updateMissionProgress("record_habit");
@@ -276,6 +284,10 @@ export const useAppStore = create<AppStore>()(
             cookingRecords: state.cookingRecords.filter(
               (r) => !(r.date === date && r.meal === meal)
             ),
+            userData: {
+              ...state.userData,
+              points: Math.max(0, state.userData.points - COOKING_RECORD_POINTS),
+            },
           }));
         } else {
           const record: CookingRecord = {
@@ -287,7 +299,10 @@ export const useAppStore = create<AppStore>()(
           };
           set((state) => ({
             cookingRecords: [...state.cookingRecords, record],
-            userData: { ...state.userData, points: state.userData.points + 20 },
+            userData: {
+              ...state.userData,
+              points: state.userData.points + COOKING_RECORD_POINTS,
+            },
           }));
           get().updateMissionProgress("cooking");
           get().updateMissionProgress("record_habit");
@@ -307,7 +322,10 @@ export const useAppStore = create<AppStore>()(
         };
         set((state) => ({
           cookingRecords: [...state.cookingRecords, record],
-          userData: { ...state.userData, points: state.userData.points + 20 },
+          userData: {
+            ...state.userData,
+            points: state.userData.points + COOKING_RECORD_POINTS,
+          },
         }));
         get().updateMissionProgress("cooking");
         get().updateMissionProgress("record_habit");
@@ -325,9 +343,22 @@ export const useAppStore = create<AppStore>()(
       },
 
       deleteCookingRecord: (id) => {
-        set((state) => ({
-          cookingRecords: state.cookingRecords.filter((r) => r.id !== id),
-        }));
+        set((state) => {
+          const exists = state.cookingRecords.some((r) => r.id === id);
+
+          return {
+            cookingRecords: state.cookingRecords.filter((r) => r.id !== id),
+            userData: exists
+              ? {
+                  ...state.userData,
+                  points: Math.max(
+                    0,
+                    state.userData.points - COOKING_RECORD_POINTS
+                  ),
+                }
+              : state.userData,
+          };
+        });
         get().updateMonthlyData();
       },
 

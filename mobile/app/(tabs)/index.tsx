@@ -7,11 +7,13 @@ import { CircularProgress } from '@/components/CircularProgress';
 import { InputModal } from '@/components/InputModal';
 import { CookingModal } from '@/components/CookingModal';
 import type { ExpenseCategory, MealTime } from '@/types';
+import { COOKING_RECORD_POINTS } from '@/constants/game';
 
 const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] = [
   { key: 'スーパー', icon: '🛒', label: 'スーパー' },
   { key: '自販機', icon: '🥤', label: '自販機' },
   { key: 'コンビニ', icon: '🏪', label: 'コンビニ' },
+  { key: '外食', icon: '🍽️', label: '外食' },
   { key: '飲み会', icon: '🍻', label: '飲み会' },
   { key: 'デート', icon: '💕', label: 'デート' },
   { key: 'その他', icon: '📝', label: 'その他' },
@@ -25,14 +27,15 @@ export default function HomeTab() {
   const [showCookingModal, setShowCookingModal] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
-  const currentMonth = today.slice(0, 7);
 
   const todayTotal = expenses
     .filter((e) => e.date === today)
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const remaining = goals.monthlyExpenseGoal - userData.monthlyExpense;
-  const budgetPercent = Math.min((userData.monthlyExpense / goals.monthlyExpenseGoal) * 100, 100);
+  const remaining = Math.max(0, goals.monthlyExpenseGoal - userData.monthlyExpense);
+  const budgetPercent = goals.monthlyExpenseGoal > 0
+    ? Math.min((remaining / goals.monthlyExpenseGoal) * 100, 100)
+    : 0;
 
   const dailyList = Object.values(missions.daily);
   const completedDaily = dailyList.filter((m) => m.completed).length;
@@ -41,10 +44,10 @@ export default function HomeTab() {
     .filter((m) => m.completed && !m.claimed)
     .reduce((sum, m) => sum + m.reward, 0);
 
-  const allowancePercent = Math.min(
-    (userData.allowanceUsed / goals.allowanceGoal) * 100,
-    100
-  );
+  const allowanceRemaining = Math.max(0, goals.allowanceGoal - userData.allowanceUsed);
+  const allowancePercent = goals.allowanceGoal > 0
+    ? Math.min((allowanceRemaining / goals.allowanceGoal) * 100, 100)
+    : 0;
 
   const gachaPointsNeeded = 100 - (userData.points % 100);
   const gachaProgress = (userData.points % 100) / 100;
@@ -83,12 +86,14 @@ export default function HomeTab() {
                 percent={budgetPercent}
                 size={72}
                 strokeWidth={7}
-                color={budgetPercent >= 90 ? '#F44336' : '#4CAF50'}
+                color={budgetPercent <= 10 ? '#F44336' : budgetPercent <= 30 ? '#FF9800' : '#4CAF50'}
               >
                 <Text style={styles.circlePercent}>{Math.round(budgetPercent)}%</Text>
               </CircularProgress>
-              <Text style={styles.budgetAmount}>{formatCurrency(userData.monthlyExpense)}</Text>
-              <Text style={styles.budgetGoal}>/ {formatCurrency(goals.monthlyExpenseGoal)}</Text>
+              <Text style={styles.budgetAmount}>残り {formatCurrency(remaining)}</Text>
+              <Text style={styles.budgetGoal}>
+                使用 {formatCurrency(userData.monthlyExpense)} / {formatCurrency(goals.monthlyExpenseGoal)}
+              </Text>
             </View>
             <View style={styles.budgetRight}>
               <Text style={styles.allowanceLabel}>お小遣い</Text>
@@ -96,12 +101,15 @@ export default function HomeTab() {
                 <View
                   style={[
                     styles.allowanceBarFill,
-                    { width: `${allowancePercent}%`, backgroundColor: allowancePercent >= 90 ? '#F44336' : '#FF9800' },
+                    {
+                      width: `${allowancePercent}%`,
+                      backgroundColor: allowancePercent <= 10 ? '#F44336' : allowancePercent <= 30 ? '#FF9800' : '#4CAF50',
+                    },
                   ]}
                 />
               </View>
               <Text style={styles.allowanceText}>
-                {formatCurrency(userData.allowanceUsed)} / {formatCurrency(goals.allowanceGoal)}
+                残り {formatCurrency(allowanceRemaining)} / {formatCurrency(goals.allowanceGoal)}
               </Text>
             </View>
           </View>
@@ -142,7 +150,7 @@ export default function HomeTab() {
                 {allMealsComplete ? '全食完了！' : todayMeals.length > 0 ? `${todayMeals.length}/3食 記録済み` : '未記録'}
               </Text>
               <View style={styles.pointBadge}>
-                <Text style={styles.pointBadgeText}>+20pt</Text>
+                <Text style={styles.pointBadgeText}>+{COOKING_RECORD_POINTS}pt</Text>
               </View>
             </TouchableOpacity>
 
@@ -180,7 +188,7 @@ export default function HomeTab() {
             style={styles.gachaBtn}
             onPress={() => router.push('/(tabs)/collection')}
           >
-            <Text style={styles.gachaBtnText}>報酬をチェック　→</Text>
+            <Text style={styles.gachaBtnText}>報酬をチェック →</Text>
           </TouchableOpacity>
         </View>
 

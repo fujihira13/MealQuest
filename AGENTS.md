@@ -2,6 +2,16 @@
 
 This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
+## Primary Work Target
+
+Unless the user explicitly says otherwise, all future implementation requests in this repository target the **mobile app under `mobile/`**.
+
+- Treat `mobile/` as the active application for feature work, bug fixes, UI changes, validation, and build checks.
+- Do **not** modify the web app under root `src/` unless the user clearly requests a web app change.
+- When a request mentions "the app", "home screen", "settings", "stats", "categories", "points", "budget", or similar product behavior without specifying a platform, assume it means the mobile app in `mobile/`.
+- Run mobile validation commands from `mobile/`, such as `npm run typecheck` and `npm run lint`, unless the requested work explicitly targets the web app.
+- The root web/PWA implementation may be used only as reference when helpful; do not copy changes into `src/` by default.
+
 ## Project Overview
 
 This is a **gamified household expense tracking web application** focused specifically on food expense management. The app is designed as a Progressive Web App (PWA) using React + TypeScript to help users reduce wasteful spending and encourage home cooking through game mechanics.

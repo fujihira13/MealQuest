@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import type { MealTime } from '@/types';
+import { COOKING_RECORD_POINTS } from '@/constants/game';
 
 const MEAL_OPTIONS: { value: MealTime; label: string; icon: string }[] = [
   { value: 'morning', label: '朝食', icon: '🌅' },
@@ -44,7 +45,7 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.title}>自炊を記録する</Text>
-          <Text style={styles.subtitle}>今日の自炊：+20pt 獲得</Text>
+          <Text style={styles.subtitle}>今日の自炊：+{COOKING_RECORD_POINTS}pt 獲得</Text>
 
           <Text style={styles.label}>食事の時間帯を選択</Text>
           <View style={styles.grid}>
@@ -84,7 +85,7 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
               onPress={handleSave}
               disabled={todayMeals.includes(meal)}
             >
-              <Text style={styles.saveText}>🍳 記録する（+20pt）</Text>
+              <Text style={styles.saveText}>🍳 記録する（+{COOKING_RECORD_POINTS}pt）</Text>
             </TouchableOpacity>
           </View>
         </View>

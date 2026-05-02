@@ -1,0 +1,1 @@
+export const COOKING_RECORD_POINTS = 20;
