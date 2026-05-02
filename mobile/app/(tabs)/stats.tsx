@@ -55,6 +55,9 @@ export default function StatsTab() {
 
   const budgetPercent = Math.min((total / goals.monthlyExpenseGoal) * 100, 100);
   const remaining = goals.monthlyExpenseGoal - total;
+  const budgetStatusText = remaining >= 0
+    ? `残り ${formatCurrency(remaining)}`
+    : `超過 ${formatCurrency(Math.abs(remaining))}`;
 
   const byCategory = CATEGORIES.map((cat) => ({
     label: cat,
@@ -129,7 +132,7 @@ export default function StatsTab() {
           <Text style={styles.summaryChange}>節約 {formatCurrency(savingsEstimate)}</Text>
         </View>
         <View style={[styles.card, styles.flex1, styles.alignCenter]}>
-          <Text style={styles.summaryLabel}>予算達成率</Text>
+          <Text style={styles.summaryLabel}>予算使用率</Text>
           <CircularProgress
             percent={budgetPercent}
             size={56}
@@ -138,7 +141,9 @@ export default function StatsTab() {
           >
             <Text style={styles.circleSmall}>{Math.round(budgetPercent)}%</Text>
           </CircularProgress>
-          <Text style={styles.summaryChange}>残り {formatCurrency(remaining)}</Text>
+          <Text style={[styles.summaryChange, remaining < 0 && styles.changeBad]}>
+            {budgetStatusText}
+          </Text>
         </View>
       </View>
 

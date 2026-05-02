@@ -1,7 +1,8 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import {
   addDaysToDateKey,
-  formatDateForDisplay,
+  formatDateKey,
   getDaysAgo,
   getCurrentDate,
   isValidDateKey,
@@ -12,17 +13,76 @@ interface Props {
   onChange: (value: string) => void;
 }
 
+const WEEK_DAYS = ['日', '月', '火', '水', '木', '金', '土'];
+
+function parseDateKey(value: string): Date {
+  if (!isValidDateKey(value)) return new Date();
+
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function addMonths(date: Date, delta: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + delta, 1);
+}
+
+function getMonthLabel(date: Date): string {
+  return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+}
+
+function formatDateForInputDisplay(dateKey: string): string {
+  if (!isValidDateKey(dateKey)) return '日付を選択';
+
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return `${year}/${month}/${day}`;
+}
+
+function getCalendarDates(monthDate: Date): (Date | null)[] {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDate = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dates: (Date | null)[] = [];
+
+  for (let i = 0; i < firstDate.getDay(); i += 1) {
+    dates.push(null);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    dates.push(new Date(year, month, day));
+  }
+
+  while (dates.length % 7 !== 0) {
+    dates.push(null);
+  }
+
+  return dates;
+}
+
 export function DateSelector({ value, onChange }: Props) {
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => parseDateKey(value));
   const isValid = isValidDateKey(value);
   const quickDates = [
     { label: '今日', value: getCurrentDate() },
     { label: '昨日', value: getDaysAgo(1) },
     { label: '一昨日', value: getDaysAgo(2) },
   ];
+  const calendarDates = useMemo(() => getCalendarDates(visibleMonth), [visibleMonth]);
 
   const handleShift = (days: number) => {
     if (!isValid) return;
     onChange(addDaysToDateKey(value, days));
+  };
+
+  const handleOpenCalendar = () => {
+    setVisibleMonth(parseDateKey(value));
+    setIsCalendarOpen(true);
+  };
+
+  const handleSelectDate = (dateKey: string) => {
+    onChange(dateKey);
+    setIsCalendarOpen(false);
   };
 
   return (
@@ -52,17 +112,13 @@ export function DateSelector({ value, onChange }: Props) {
         >
           <Text style={styles.shiftText}>前日</Text>
         </TouchableOpacity>
-        <View style={[styles.inputWrap, !isValid && styles.inputWrapError]}>
-          <TextInput
-            style={styles.dateInput}
-            value={value}
-            onChangeText={onChange}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#BDBDBD"
-            keyboardType="numbers-and-punctuation"
-          />
-          {isValid && <Text style={styles.displayDate}>{formatDateForDisplay(value)}</Text>}
-        </View>
+        <TouchableOpacity
+          style={[styles.inputWrap, !isValid && styles.inputWrapError]}
+          onPress={handleOpenCalendar}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.dateInput}>{formatDateForInputDisplay(value)}</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.shiftBtn, !isValid && styles.shiftBtnDisabled]}
           onPress={() => handleShift(1)}
@@ -75,6 +131,95 @@ export function DateSelector({ value, onChange }: Props) {
       {!isValid && (
         <Text style={styles.errorText}>日付は YYYY-MM-DD 形式で入力してください</Text>
       )}
+
+      <Modal
+        visible={isCalendarOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setIsCalendarOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarCard}>
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity
+                style={styles.monthBtn}
+                onPress={() => setVisibleMonth((current) => addMonths(current, -1))}
+              >
+                <Text style={styles.monthBtnText}>＜</Text>
+              </TouchableOpacity>
+              <Text style={styles.calendarTitle}>{getMonthLabel(visibleMonth)}</Text>
+              <TouchableOpacity
+                style={styles.monthBtn}
+                onPress={() => setVisibleMonth((current) => addMonths(current, 1))}
+              >
+                <Text style={styles.monthBtnText}>＞</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.calendarQuickRow}>
+              {quickDates.map((date) => {
+                const active = value === date.value;
+                return (
+                  <TouchableOpacity
+                    key={`calendar-${date.label}`}
+                    style={[styles.calendarQuickBtn, active && styles.quickBtnActive]}
+                    onPress={() => handleSelectDate(date.value)}
+                  >
+                    <Text style={[styles.quickText, active && styles.quickTextActive]}>
+                      {date.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.weekRow}>
+              {WEEK_DAYS.map((day) => (
+                <Text key={day} style={styles.weekText}>{day}</Text>
+              ))}
+            </View>
+
+            <View style={styles.calendarGrid}>
+              {calendarDates.map((date, index) => {
+                const dateKey = date ? formatDateKey(date) : `empty-${index}`;
+                const selected = date !== null && dateKey === value;
+                const today = date !== null && dateKey === getCurrentDate();
+
+                return (
+                  <TouchableOpacity
+                    key={dateKey}
+                    style={[
+                      styles.dayCell,
+                      selected && styles.dayCellSelected,
+                      today && !selected && styles.dayCellToday,
+                    ]}
+                    onPress={() => date && handleSelectDate(dateKey)}
+                    disabled={!date}
+                    activeOpacity={date ? 0.75 : 1}
+                  >
+                    {date && (
+                      <Text style={[
+                        styles.dayText,
+                        selected && styles.dayTextSelected,
+                        today && !selected && styles.dayTextToday,
+                      ]}>
+                        {date.getDate()}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setIsCalendarOpen(false)}
+            >
+              <Text style={styles.closeBtnText}>閉じる</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -150,15 +295,111 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#212121',
     fontWeight: '700',
-    paddingVertical: 2,
-  },
-  displayDate: {
-    fontSize: 11,
-    color: '#757575',
-    marginTop: -2,
   },
   errorText: {
     fontSize: 11,
     color: '#F44336',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  calendarCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  calendarTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#212121',
+  },
+  monthBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  monthBtnText: {
+    fontSize: 18,
+    color: '#4CAF50',
+    fontWeight: '800',
+  },
+  calendarQuickRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  calendarQuickBtn: {
+    flex: 1,
+    minHeight: 38,
+    borderRadius: 19,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FAFAFA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weekRow: {
+    flexDirection: 'row',
+  },
+  weekText: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#757575',
+    fontWeight: '700',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCell: {
+    width: `${100 / 7}%`,
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+  },
+  dayCellToday: {
+    backgroundColor: '#F1F8E9',
+  },
+  dayCellSelected: {
+    backgroundColor: '#4CAF50',
+  },
+  dayText: {
+    fontSize: 14,
+    color: '#424242',
+    fontWeight: '600',
+  },
+  dayTextToday: {
+    color: '#2E7D32',
+    fontWeight: '800',
+  },
+  dayTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  closeBtn: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: {
+    fontSize: 14,
+    color: '#424242',
+    fontWeight: '700',
   },
 });

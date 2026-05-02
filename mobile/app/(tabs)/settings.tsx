@@ -1,5 +1,17 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Switch,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { formatCurrency } from '@/utils/formatHelpers';
 
@@ -7,25 +19,25 @@ export default function SettingsTab() {
   const { userData, goals, updateGoals, resetAllData } = useAppStore();
   const [dailyNotif, setDailyNotif] = useState(true);
   const [missionNotif, setMissionNotif] = useState(true);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [budgetInput, setBudgetInput] = useState(String(goals.monthlyExpenseGoal));
 
   const handleBudgetChange = () => {
-    if (Platform.OS === 'ios') {
-      Alert.prompt(
-        '月の食費予算',
-        '新しい予算を入力してください（円）',
-        (text) => {
-          const parsed = parseInt(text, 10);
-          if (!isNaN(parsed) && parsed > 0) {
-            updateGoals('expense', parsed);
-          }
-        },
-        'plain-text',
-        String(goals.monthlyExpenseGoal),
-        'numeric'
-      );
-    } else {
-      Alert.alert('近日実装予定', '予算変更機能はiOSのみ対応しています');
+    setBudgetInput(String(goals.monthlyExpenseGoal));
+    setIsBudgetModalOpen(true);
+  };
+
+  const handleSaveBudget = () => {
+    const normalized = budgetInput.replace(/,/g, '').trim();
+    const parsed = Number(normalized);
+
+    if (!/^\d+$/.test(normalized) || !Number.isSafeInteger(parsed) || parsed <= 0) {
+      Alert.alert('入力エラー', '予算は1円以上の整数で入力してください');
+      return;
     }
+
+    updateGoals('expense', parsed);
+    setIsBudgetModalOpen(false);
   };
 
   const handleExport = () => {
@@ -59,7 +71,8 @@ export default function SettingsTab() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
       {/* アカウント */}
       <Text style={styles.sectionLabel}>アカウント</Text>
@@ -173,7 +186,48 @@ export default function SettingsTab() {
         <Text style={styles.arrow}>{'>'}</Text>
       </TouchableOpacity>
 
-    </ScrollView>
+      </ScrollView>
+
+      <Modal
+        visible={isBudgetModalOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setIsBudgetModalOpen(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.budgetModal}>
+            <Text style={styles.modalTitle}>月の食費予算</Text>
+            <Text style={styles.modalDescription}>新しい予算を入力してください</Text>
+            <View style={styles.budgetInputRow}>
+              <Text style={styles.yen}>¥</Text>
+              <TextInput
+                style={styles.budgetInput}
+                value={budgetInput}
+                onChangeText={setBudgetInput}
+                keyboardType="numeric"
+                placeholder="25000"
+                placeholderTextColor="#BDBDBD"
+                autoFocus
+              />
+            </View>
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setIsBudgetModalOpen(false)}
+              >
+                <Text style={styles.modalCancelText}>キャンセル</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveBudget}>
+                <Text style={styles.modalSaveText}>保存する</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 }
 
@@ -330,5 +384,79 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontSize: 14,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  budgetModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#212121',
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: 13,
+    color: '#757575',
+    textAlign: 'center',
+  },
+  budgetInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#FAFAFA',
+  },
+  yen: {
+    fontSize: 20,
+    color: '#424242',
+    marginRight: 4,
+  },
+  budgetInput: {
+    flex: 1,
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#212121',
+    paddingVertical: 10,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 14,
+    color: '#757575',
+    fontWeight: '600',
+  },
+  modalSaveBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+  },
+  modalSaveText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });
