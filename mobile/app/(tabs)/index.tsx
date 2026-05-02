@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
+import { calculateLevelProgress } from '@/utils/calculationHelpers';
 import { formatCurrency } from '@/utils/formatHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { InputModal } from '@/components/InputModal';
@@ -51,6 +52,9 @@ export default function HomeTab() {
 
   const gachaPointsNeeded = 100 - (userData.points % 100);
   const gachaProgress = (userData.points % 100) / 100;
+  const { pointsToNext: xpToNext, progressPercent: levelProgressPercent } =
+    calculateLevelProgress(userData.totalXp, userData.level);
+  const levelProgressWidth = Math.min(Math.max(levelProgressPercent, 0), 100);
 
   const COOKING_MEALS: MealTime[] = ['morning', 'lunch', 'dinner'];
   const todayMeals = cookingRecords
@@ -75,6 +79,23 @@ export default function HomeTab() {
           </View>
           <Text style={styles.todayAmount}>{formatCurrency(todayTotal)}</Text>
           <Text style={styles.subLabel}>残り {formatCurrency(remaining)}</Text>
+        </View>
+
+        {/* レベル進捗 */}
+        <View style={styles.card}>
+          <View style={styles.levelHeader}>
+            <View>
+              <Text style={styles.cardLabel}>レベル進捗</Text>
+              <Text style={styles.levelValue}>Lv.{userData.level}</Text>
+            </View>
+            <View style={styles.levelMeta}>
+              <Text style={styles.levelNext}>次のレベルまであと {xpToNext}XP</Text>
+              <Text style={styles.levelTotal}>累計 {userData.totalXp.toLocaleString()}XP</Text>
+            </View>
+          </View>
+          <View style={styles.levelBarBg}>
+            <View style={[styles.levelBarFill, { width: `${levelProgressWidth}%` }]} />
+          </View>
         </View>
 
         {/* 今月の予算 + お小遣い */}
@@ -272,6 +293,45 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9E9E9E',
     marginTop: -6,
+  },
+  levelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  levelValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#2E7D32',
+    marginTop: 2,
+  },
+  levelMeta: {
+    flex: 1,
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  levelNext: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#212121',
+    textAlign: 'right',
+  },
+  levelTotal: {
+    fontSize: 11,
+    color: '#757575',
+    textAlign: 'right',
+  },
+  levelBarBg: {
+    height: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  levelBarFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    borderRadius: 4,
   },
   sectionHeader: {
     flexDirection: 'row',

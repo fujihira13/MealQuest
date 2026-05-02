@@ -37,7 +37,7 @@ export default function SettingsTab() {
   };
 
   const handleHelp = () => {
-    Alert.alert('ヘルプ', 'MealQuest は食費管理に特化したゲーミフィケーション付き家計簿アプリです。\n\n支出を記録してポイントを貯め、バッジを集めて節約上手を目指しましょう！');
+    Alert.alert('ヘルプ', 'MealQuest は食費管理に特化したゲーミフィケーション付き家計簿アプリです。\n\n自炊・節約・ミッション達成でXPを貯めてレベルアップし、ポイントでガチャや報酬を楽しみましょう！');
   };
 
   const handleReset = () => {

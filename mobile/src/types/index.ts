@@ -2,6 +2,7 @@
 export interface UserData {
   level: number;
   points: number;
+  totalXp: number;
   totalSavings: number;
   monthlySavings: number;
   monthlyExpense: number;

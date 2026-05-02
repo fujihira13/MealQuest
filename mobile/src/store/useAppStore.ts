@@ -20,11 +20,17 @@ import type {
   MissionType,
 } from "@/types";
 import { COOKING_RECORD_POINTS } from "@/constants/game";
+import {
+  applyXpChange,
+  calculateLevelFromTotalXp,
+  getTotalXpRequiredForLevel,
+} from "@/utils/levelHelpers";
 
 // 初期データ定義
 const initialUserData: UserData = {
   level: 1,
   points: 0,
+  totalXp: 0,
   totalSavings: 0,
   monthlySavings: 0,
   monthlyExpense: 0,
@@ -98,6 +104,11 @@ const savingsEquivalents: SavingsEquivalent[] = [
   { amount: 8000, item: "マッサージ1回", icon: "💆" },
   { amount: 10000, item: "良質なオリーブオイル", icon: "🫒" },
 ];
+
+type PersistedAppState = Partial<AppState> & {
+  userData?: Partial<UserData>;
+  allDayCookingBonusDates?: string[];
+};
 
 // ストアインターフェース
 interface AppStore extends AppState {
@@ -246,10 +257,13 @@ export const useAppStore = create<AppStore>()(
             cookingRecords: state.cookingRecords.filter(
               (r) => !(r.date === today && r.meal === meal)
             ),
-            userData: {
-              ...state.userData,
-              points: Math.max(0, state.userData.points - COOKING_RECORD_POINTS),
-            },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: Math.max(0, state.userData.points - COOKING_RECORD_POINTS),
+              },
+              -COOKING_RECORD_POINTS
+            ),
           }));
         } else {
           const record: CookingRecord = {
@@ -260,10 +274,13 @@ export const useAppStore = create<AppStore>()(
           };
           set((state) => ({
             cookingRecords: [...state.cookingRecords, record],
-            userData: {
-              ...state.userData,
-              points: state.userData.points + COOKING_RECORD_POINTS,
-            },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: state.userData.points + COOKING_RECORD_POINTS,
+              },
+              COOKING_RECORD_POINTS
+            ),
           }));
           get().updateMissionProgress("cooking");
           get().updateMissionProgress("record_habit");
@@ -284,10 +301,13 @@ export const useAppStore = create<AppStore>()(
             cookingRecords: state.cookingRecords.filter(
               (r) => !(r.date === date && r.meal === meal)
             ),
-            userData: {
-              ...state.userData,
-              points: Math.max(0, state.userData.points - COOKING_RECORD_POINTS),
-            },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: Math.max(0, state.userData.points - COOKING_RECORD_POINTS),
+              },
+              -COOKING_RECORD_POINTS
+            ),
           }));
         } else {
           const record: CookingRecord = {
@@ -299,10 +319,13 @@ export const useAppStore = create<AppStore>()(
           };
           set((state) => ({
             cookingRecords: [...state.cookingRecords, record],
-            userData: {
-              ...state.userData,
-              points: state.userData.points + COOKING_RECORD_POINTS,
-            },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: state.userData.points + COOKING_RECORD_POINTS,
+              },
+              COOKING_RECORD_POINTS
+            ),
           }));
           get().updateMissionProgress("cooking");
           get().updateMissionProgress("record_habit");
@@ -322,10 +345,13 @@ export const useAppStore = create<AppStore>()(
         };
         set((state) => ({
           cookingRecords: [...state.cookingRecords, record],
-          userData: {
-            ...state.userData,
-            points: state.userData.points + COOKING_RECORD_POINTS,
-          },
+          userData: applyXpChange(
+            {
+              ...state.userData,
+              points: state.userData.points + COOKING_RECORD_POINTS,
+            },
+            COOKING_RECORD_POINTS
+          ),
         }));
         get().updateMissionProgress("cooking");
         get().updateMissionProgress("record_habit");
@@ -349,13 +375,16 @@ export const useAppStore = create<AppStore>()(
           return {
             cookingRecords: state.cookingRecords.filter((r) => r.id !== id),
             userData: exists
-              ? {
-                  ...state.userData,
-                  points: Math.max(
-                    0,
-                    state.userData.points - COOKING_RECORD_POINTS
-                  ),
-                }
+              ? applyXpChange(
+                  {
+                    ...state.userData,
+                    points: Math.max(
+                      0,
+                      state.userData.points - COOKING_RECORD_POINTS
+                    ),
+                  },
+                  -COOKING_RECORD_POINTS
+                )
               : state.userData,
           };
         });
@@ -363,6 +392,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       addSavingsRecord: (amount) => {
+        const reward = Math.floor(amount / 10);
         const record: SavingsRecord = {
           id: Date.now(),
           date: new Date().toISOString().split("T")[0],
@@ -371,11 +401,14 @@ export const useAppStore = create<AppStore>()(
         };
         set((state) => ({
           savingsRecords: [...state.savingsRecords, record],
-          userData: {
-            ...state.userData,
-            totalSavings: state.userData.totalSavings + amount,
-            points: state.userData.points + Math.floor(amount / 10),
-          },
+          userData: applyXpChange(
+            {
+              ...state.userData,
+              totalSavings: state.userData.totalSavings + amount,
+              points: state.userData.points + reward,
+            },
+            reward
+          ),
         }));
         get().updateMissionProgress("savings");
         get().updateMissionProgress("total_savings", amount);
@@ -426,16 +459,15 @@ export const useAppStore = create<AppStore>()(
 
       checkLevelUp: () => {
         const state = get();
-        const requiredPoints = state.userData.level * 100;
-        if (state.userData.points >= requiredPoints) {
+        const level = calculateLevelFromTotalXp(state.userData.totalXp);
+        if (level !== state.userData.level) {
           set((state) => ({
             userData: {
               ...state.userData,
-              level: state.userData.level + 1,
-              points: state.userData.points - requiredPoints,
+              level,
             },
           }));
-          return true;
+          return level > state.userData.level;
         }
         return false;
       },
@@ -446,11 +478,14 @@ export const useAppStore = create<AppStore>()(
         if (newLevel > state.userData.savingsLevel) {
           const bonus = (newLevel - state.userData.savingsLevel) * 20;
           set((state) => ({
-            userData: {
-              ...state.userData,
-              savingsLevel: newLevel,
-              points: state.userData.points + bonus,
-            },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                savingsLevel: newLevel,
+                points: state.userData.points + bonus,
+              },
+              bonus
+            ),
           }));
           return true;
         }
@@ -568,9 +603,16 @@ export const useAppStore = create<AppStore>()(
           });
           return {
             missions: newMissions,
-            userData: { ...state.userData, points: state.userData.points + mission.reward },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: state.userData.points + mission.reward,
+              },
+              mission.reward
+            ),
           };
         });
+        get().checkBadgeProgress();
         return true;
       },
 
@@ -606,11 +648,18 @@ export const useAppStore = create<AppStore>()(
 
         if (hasBreakfast && hasLunch && hasDinner) {
           set((state) => ({
-            userData: { ...state.userData, points: state.userData.points + 50 },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: state.userData.points + 50,
+              },
+              50
+            ),
             allDayCookingBonusDates: [...state.allDayCookingBonusDates, date],
           }));
           const { showNotification } = useUIStore.getState();
           showNotification("success", "🎉 一日完全自炊達成！ボーナス50ポイントを獲得しました！");
+          get().checkBadgeProgress();
         }
       },
 
@@ -682,6 +731,7 @@ export const useAppStore = create<AppStore>()(
         set((state) => {
           const newStreak =
             state.streaks.lastNoWasteDate === yesterdayStr ? state.streaks.noWasteStreak + 1 : 1;
+          const bonus = Math.min(newStreak * 5, 50);
           return {
             streaks: {
               ...state.streaks,
@@ -689,12 +739,16 @@ export const useAppStore = create<AppStore>()(
               lastNoWasteDate: today,
               bestNoWasteStreak: Math.max(newStreak, state.streaks.bestNoWasteStreak),
             },
-            userData: {
-              ...state.userData,
-              points: state.userData.points + Math.min(newStreak * 5, 50),
-            },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: state.userData.points + bonus,
+              },
+              bonus
+            ),
           };
         });
+        get().checkBadgeProgress();
       },
 
       recordSnackFreeDay: () => {
@@ -709,6 +763,7 @@ export const useAppStore = create<AppStore>()(
         set((state) => {
           const newStreak =
             state.streaks.lastSnackFreeDate === yesterdayStr ? state.streaks.snackFreeStreak + 1 : 1;
+          const bonus = Math.min(newStreak * 3, 30);
           return {
             streaks: {
               ...state.streaks,
@@ -716,12 +771,16 @@ export const useAppStore = create<AppStore>()(
               lastSnackFreeDate: today,
               bestSnackFreeStreak: Math.max(newStreak, state.streaks.bestSnackFreeStreak),
             },
-            userData: {
-              ...state.userData,
-              points: state.userData.points + Math.min(newStreak * 3, 30),
-            },
+            userData: applyXpChange(
+              {
+                ...state.userData,
+                points: state.userData.points + bonus,
+              },
+              bonus
+            ),
           };
         });
+        get().checkBadgeProgress();
       },
 
       resetStreakIfNeeded: (category) => {
@@ -791,7 +850,28 @@ export const useAppStore = create<AppStore>()(
     {
       name: "food-expense-app-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
+      migrate: (persistedState) => {
+        const state = persistedState as PersistedAppState;
+        if (!state?.userData) return persistedState;
+
+        const currentLevel = state.userData.level ?? initialUserData.level;
+        const currentPoints = state.userData.points ?? initialUserData.points;
+        const totalXp = Math.max(
+          state.userData.totalXp ?? currentPoints,
+          getTotalXpRequiredForLevel(currentLevel)
+        );
+
+        return {
+          ...state,
+          userData: {
+            ...initialUserData,
+            ...state.userData,
+            totalXp,
+            level: Math.max(currentLevel, calculateLevelFromTotalXp(totalXp)),
+          },
+        };
+      },
     }
   )
 );

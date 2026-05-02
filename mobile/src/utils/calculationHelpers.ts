@@ -1,5 +1,6 @@
 import type { ExpenseRecord } from "@/types";
 import { getCurrentMonth } from "./dateHelpers";
+import { getTotalXpRequiredForLevel } from "./levelHelpers";
 
 export const calculateMonthlyExpenses = (expenses: ExpenseRecord[]): number => {
   const currentMonth = getCurrentMonth();
@@ -24,11 +25,15 @@ export const calculateBudgetPercent = (
 };
 
 export const calculateLevelProgress = (
-  points: number,
+  totalXp: number,
   level: number
 ): { pointsToNext: number; progressPercent: number } => {
-  const pointsToNext = level * 100 - points;
-  const progressPercent = (points / (level * 100)) * 100;
+  const currentLevelXp = getTotalXpRequiredForLevel(level);
+  const nextLevelXp = getTotalXpRequiredForLevel(level + 1);
+  const xpInLevel = Math.max(0, totalXp - currentLevelXp);
+  const xpNeededForLevel = nextLevelXp - currentLevelXp;
+  const pointsToNext = Math.max(0, nextLevelXp - totalXp);
+  const progressPercent = xpNeededForLevel > 0 ? (xpInLevel / xpNeededForLevel) * 100 : 0;
   return { pointsToNext, progressPercent };
 };
 
