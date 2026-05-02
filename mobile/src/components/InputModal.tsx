@@ -9,10 +9,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
-import type { ExpenseCategory, MealTime } from '@/types';
+import type { ExpenseCategory, ExpenseRecord, MealTime } from '@/types';
 
 const CATEGORIES: ExpenseCategory[] = [
   'スーパー', '自販機', 'コンビニ', '外食', '飲み会', 'デート', 'その他',
@@ -34,13 +33,18 @@ interface Props {
   visible: boolean;
   initialCategory: ExpenseCategory | null;
   onClose: () => void;
+  editingRecord?: ExpenseRecord | null;
 }
 
-export function InputModal({ visible, initialCategory, onClose }: Props) {
-  const { addExpenseRecord } = useAppStore();
-  const [category, setCategory] = useState<ExpenseCategory>(initialCategory ?? 'その他');
-  const [amount, setAmount] = useState('');
-  const [meal, setMeal] = useState<MealTime>('lunch');
+export function InputModal({ visible, initialCategory, onClose, editingRecord = null }: Props) {
+  const { addExpenseRecord, updateExpenseRecord } = useAppStore();
+  const isEditing = editingRecord !== null;
+
+  const [category, setCategory] = useState<ExpenseCategory>(
+    editingRecord?.category ?? initialCategory ?? 'その他'
+  );
+  const [amount, setAmount] = useState(editingRecord?.amount?.toString() ?? '');
+  const [meal, setMeal] = useState<MealTime>(editingRecord?.meal ?? 'lunch');
 
   const handleCategoryChange = (cat: ExpenseCategory) => {
     setCategory(cat);
@@ -54,9 +58,11 @@ export function InputModal({ visible, initialCategory, onClose }: Props) {
       return;
     }
     const finalMeal: MealTime = category === 'スーパー' ? 'lunch' : meal;
-    addExpenseRecord(category, parsed, finalMeal);
-    setAmount('');
-    setMeal('lunch');
+    if (isEditing) {
+      updateExpenseRecord(editingRecord.id, category, parsed, finalMeal);
+    } else {
+      addExpenseRecord(category, parsed, finalMeal);
+    }
     onClose();
   };
 
@@ -68,7 +74,7 @@ export function InputModal({ visible, initialCategory, onClose }: Props) {
       >
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>食費を記録する</Text>
+          <Text style={styles.title}>{isEditing ? '支出を編集' : '食費を記録する'}</Text>
 
           {/* カテゴリー選択 */}
           <Text style={styles.label}>カテゴリー</Text>
@@ -127,7 +133,7 @@ export function InputModal({ visible, initialCategory, onClose }: Props) {
               <Text style={styles.cancelText}>キャンセル</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-              <Text style={styles.saveText}>記録する</Text>
+              <Text style={styles.saveText}>{isEditing ? '更新する' : '記録する'}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { formatCurrency, getCategoryIcon } from '@/utils/formatHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { PieChart } from '@/components/PieChart';
 import { LineChart } from '@/components/LineChart';
-import type { ExpenseCategory } from '@/types';
+import { InputModal } from '@/components/InputModal';
+import type { ExpenseCategory, ExpenseRecord } from '@/types';
 
 const CATEGORIES: ExpenseCategory[] = [
   'スーパー', '自販機', 'コンビニ', '外食', '飲み会', 'デート', 'その他',
@@ -28,8 +29,9 @@ function addMonths(yearMonth: string, delta: number): string {
 }
 
 export default function StatsTab() {
-  const { expenses, cookingRecords, goals, userData } = useAppStore();
+  const { expenses, cookingRecords, goals, userData, deleteExpenseRecord } = useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
 
   const prevMonth = addMonths(selectedMonth, -1);
 
@@ -95,6 +97,7 @@ export default function StatsTab() {
   }, [momChange, cookingCount, byCategory, prevExpenses]);
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
       {/* 月ナビゲーション */}
@@ -183,19 +186,45 @@ export default function StatsTab() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>支出記録</Text>
           {monthExpenses.slice(0, 8).map((e) => (
-            <View key={e.id} style={styles.expRow}>
+            <TouchableOpacity
+              key={e.id}
+              style={styles.expRow}
+              onPress={() => setEditingExpense(e)}
+              activeOpacity={0.7}
+            >
               <Text style={styles.expIcon}>{getCategoryIcon(e.category)}</Text>
               <View style={styles.flex1}>
                 <Text style={styles.expCat}>{e.category}</Text>
                 <Text style={styles.expDate}>{e.date}</Text>
               </View>
               <Text style={styles.expAmt}>{formatCurrency(e.amount)}</Text>
-            </View>
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={() =>
+                  Alert.alert('削除確認', `${e.category} ${formatCurrency(e.amount)} を削除しますか？`, [
+                    { text: 'キャンセル', style: 'cancel' },
+                    { text: '削除', style: 'destructive', onPress: () => deleteExpenseRecord(e.id) },
+                  ])
+                }
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.deleteBtnText}>🗑</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
           ))}
         </View>
       )}
 
     </ScrollView>
+
+    <InputModal
+      key={editingExpense?.id ?? 'edit'}
+      visible={editingExpense !== null}
+      initialCategory={editingExpense?.category ?? null}
+      editingRecord={editingExpense}
+      onClose={() => setEditingExpense(null)}
+    />
+    </>
   );
 }
 
@@ -349,5 +378,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#F44336',
+  },
+  deleteBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  deleteBtnText: {
+    fontSize: 16,
   },
 });

@@ -13,19 +13,27 @@ const MEAL_OPTIONS: { value: MealTime; label: string; icon: string }[] = [
   { value: 'morning', label: '朝食', icon: '🌅' },
   { value: 'lunch', label: '昼食', icon: '☀️' },
   { value: 'dinner', label: '夕食', icon: '🌙' },
-  { value: 'snack', label: '間食', icon: '🍪' },
 ];
 
 interface Props {
   visible: boolean;
   onClose: () => void;
+  todayMeals: MealTime[];
 }
 
-export function CookingModal({ visible, onClose }: Props) {
+export function CookingModal({ visible, onClose, todayMeals }: Props) {
   const { toggleCookingRecord } = useAppStore();
-  const [meal, setMeal] = useState<MealTime>('dinner');
+
+  const defaultMeal = (): MealTime => {
+    if (!todayMeals.includes('dinner')) return 'dinner';
+    const unrecorded = MEAL_OPTIONS.find((opt) => !todayMeals.includes(opt.value));
+    return unrecorded?.value ?? 'dinner';
+  };
+
+  const [meal, setMeal] = useState<MealTime>(defaultMeal);
 
   const handleSave = () => {
+    if (todayMeals.includes(meal)) return;
     toggleCookingRecord(meal);
     onClose();
   };
@@ -36,30 +44,47 @@ export function CookingModal({ visible, onClose }: Props) {
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.title}>自炊を記録する</Text>
-          <Text style={styles.subtitle}>今日の自炊：+30pt 獲得</Text>
+          <Text style={styles.subtitle}>今日の自炊：+20pt 獲得</Text>
 
           <Text style={styles.label}>食事の時間帯を選択</Text>
           <View style={styles.grid}>
-            {MEAL_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[styles.mealBtn, meal === opt.value && styles.mealBtnActive]}
-                onPress={() => setMeal(opt.value)}
-              >
-                <Text style={styles.mealIcon}>{opt.icon}</Text>
-                <Text style={[styles.mealText, meal === opt.value && styles.mealTextActive]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {MEAL_OPTIONS.map((opt) => {
+              const done = todayMeals.includes(opt.value);
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.mealBtn,
+                    meal === opt.value && !done && styles.mealBtnActive,
+                    done && styles.mealBtnDone,
+                  ]}
+                  onPress={() => !done && setMeal(opt.value)}
+                  activeOpacity={done ? 1 : 0.7}
+                >
+                  <Text style={styles.mealIcon}>{opt.icon}</Text>
+                  <Text style={[
+                    styles.mealText,
+                    meal === opt.value && !done && styles.mealTextActive,
+                    done && styles.mealTextDone,
+                  ]}>
+                    {opt.label}
+                  </Text>
+                  {done && <Text style={styles.doneLabel}>済み</Text>}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <View style={styles.btnRow}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
               <Text style={styles.cancelText}>キャンセル</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-              <Text style={styles.saveText}>🍳 記録する（+30pt）</Text>
+            <TouchableOpacity
+              style={[styles.saveBtn, todayMeals.includes(meal) && styles.saveBtnDisabled]}
+              onPress={handleSave}
+              disabled={todayMeals.includes(meal)}
+            >
+              <Text style={styles.saveText}>🍳 記録する（+20pt）</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -127,6 +152,11 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
     backgroundColor: '#E8F5E9',
   },
+  mealBtnDone: {
+    borderColor: '#BDBDBD',
+    backgroundColor: '#F5F5F5',
+    opacity: 0.6,
+  },
   mealIcon: {
     fontSize: 24,
   },
@@ -138,6 +168,14 @@ const styles = StyleSheet.create({
   mealTextActive: {
     color: '#2E7D32',
     fontWeight: '700',
+  },
+  mealTextDone: {
+    color: '#9E9E9E',
+  },
+  doneLabel: {
+    fontSize: 10,
+    color: '#9E9E9E',
+    marginTop: -2,
   },
   btnRow: {
     flexDirection: 'row',
@@ -163,6 +201,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#4CAF50',
     alignItems: 'center',
+  },
+  saveBtnDisabled: {
+    backgroundColor: '#BDBDBD',
   },
   saveText: {
     fontSize: 14,

@@ -6,7 +6,7 @@ import { formatCurrency } from '@/utils/formatHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { InputModal } from '@/components/InputModal';
 import { CookingModal } from '@/components/CookingModal';
-import type { ExpenseCategory } from '@/types';
+import type { ExpenseCategory, MealTime } from '@/types';
 
 const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] = [
   { key: 'スーパー', icon: '🛒', label: 'スーパー' },
@@ -49,7 +49,11 @@ export default function HomeTab() {
   const gachaPointsNeeded = 100 - (userData.points % 100);
   const gachaProgress = (userData.points % 100) / 100;
 
-  const todayCookingCount = cookingRecords.filter((r) => r.date === today).length;
+  const COOKING_MEALS: MealTime[] = ['morning', 'lunch', 'dinner'];
+  const todayMeals = cookingRecords
+    .filter((r) => r.date === today && COOKING_MEALS.includes(r.meal))
+    .map((r) => r.meal) as MealTime[];
+  const allMealsComplete = COOKING_MEALS.every((m) => todayMeals.includes(m));
 
   const handleCategoryPress = (cat: ExpenseCategory) => {
     setSelectedCategory(cat);
@@ -128,16 +132,17 @@ export default function HomeTab() {
           </View>
           <View style={styles.row}>
             <TouchableOpacity
-              style={[styles.actionCard, styles.flex1]}
-              onPress={() => setShowCookingModal(true)}
+              style={[styles.actionCard, styles.flex1, allMealsComplete && styles.actionCardDone]}
+              onPress={() => !allMealsComplete && setShowCookingModal(true)}
+              activeOpacity={allMealsComplete ? 1 : 0.7}
             >
               <Text style={styles.actionIcon}>🍳</Text>
               <Text style={styles.actionTitle}>自炊を記録</Text>
               <Text style={styles.actionSub}>
-                {todayCookingCount > 0 ? `今日 ${todayCookingCount}回済み` : '未記録'}
+                {allMealsComplete ? '全食完了！' : todayMeals.length > 0 ? `${todayMeals.length}/3食 記録済み` : '未記録'}
               </Text>
               <View style={styles.pointBadge}>
-                <Text style={styles.pointBadgeText}>+30pt</Text>
+                <Text style={styles.pointBadgeText}>+20pt</Text>
               </View>
             </TouchableOpacity>
 
@@ -190,6 +195,7 @@ export default function HomeTab() {
       <CookingModal
         visible={showCookingModal}
         onClose={() => setShowCookingModal(false)}
+        todayMeals={todayMeals}
       />
     </>
   );
@@ -311,6 +317,9 @@ const styles = StyleSheet.create({
   missionCard: {
     backgroundColor: '#F3F8FF',
     borderColor: '#BBDEFB',
+  },
+  actionCardDone: {
+    opacity: 0.55,
   },
   actionIcon: {
     fontSize: 28,
