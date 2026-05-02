@@ -12,8 +12,12 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useAppStore } from '@/store/useAppStore';
-import { formatCurrency } from '@/utils/formatHelpers';
+import { formatCurrency, getMealLabel } from '@/utils/formatHelpers';
+import { getCurrentDate } from '@/utils/dateHelpers';
+import type { ExpenseRecord } from '@/types';
 
 type EditableBudgetType = 'expense' | 'allowance';
 
@@ -22,8 +26,36 @@ const BUDGET_LABELS: Record<EditableBudgetType, string> = {
   allowance: '月のお小遣い予算',
 };
 
+const CSV_HEADERS = ['日付', 'カテゴリ', '食事時間帯', '金額', '記録日時'];
+
+function escapeCsvValue(value: string | number): string {
+  const text = String(value);
+  if (/[",\r\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function createExpensesCsv(expenses: ExpenseRecord[]): string {
+  const sortedExpenses = [...expenses].sort((a, b) => {
+    const dateDiff = a.date.localeCompare(b.date);
+    return dateDiff !== 0 ? dateDiff : a.timestamp.localeCompare(b.timestamp);
+  });
+  const rows = sortedExpenses.map((expense) => [
+    expense.date,
+    expense.category,
+    getMealLabel(expense.meal),
+    expense.amount,
+    expense.timestamp,
+  ]);
+  const csvLines = [CSV_HEADERS, ...rows].map((row) =>
+    row.map(escapeCsvValue).join(',')
+  );
+  return `\uFEFF${csvLines.join('\r\n')}`;
+}
+
 export default function SettingsTab() {
-  const { userData, goals, updateGoals, resetAllData } = useAppStore();
+  const { userData, goals, expenses, updateGoals, resetAllData } = useAppStore();
   const [dailyNotif, setDailyNotif] = useState(true);
   const [missionNotif, setMissionNotif] = useState(true);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
@@ -50,12 +82,31 @@ export default function SettingsTab() {
     setIsBudgetModalOpen(false);
   };
 
-  const handleExport = () => {
-    Alert.alert('データを書き出す', 'この機能は近日実装予定です');
-  };
+  const handleExport = async () => {
+    if (expenses.length === 0) {
+      Alert.alert('データを書き出す', '書き出すデータがありません');
+      return;
+    }
 
-  const handleImport = () => {
-    Alert.alert('データを読み込む', 'この機能は近日実装予定です');
+    try {
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) {
+        Alert.alert('書き出しエラー', 'この端末ではCSVファイルの共有を利用できません');
+        return;
+      }
+
+      const fileName = `mealquest-expenses-${getCurrentDate()}.csv`;
+      const file = new File(Paths.cache, fileName);
+      file.write(createExpensesCsv(expenses), { encoding: 'utf8' });
+
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'text/csv',
+        UTI: 'public.comma-separated-values-text',
+        dialogTitle: 'MealQuestの食費記録CSVを書き出す',
+      });
+    } catch {
+      Alert.alert('書き出しエラー', 'CSVファイルの書き出しに失敗しました');
+    }
   };
 
   const handleHelp = () => {
@@ -186,20 +237,13 @@ export default function SettingsTab() {
         <View style={styles.settingRow}>
           <View style={styles.settingLeft}>
             <Text style={styles.settingIcon}>📤</Text>
-            <Text style={styles.settingLabel}>データを書き出す</Text>
+            <View>
+              <Text style={styles.settingLabel}>CSVを書き出す</Text>
+              <Text style={styles.settingSub}>食費記録を表計算用に保存</Text>
+            </View>
           </View>
           <TouchableOpacity style={styles.actionBtn} onPress={handleExport}>
             <Text style={styles.actionBtnText}>書き出す</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.separator} />
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>📥</Text>
-            <Text style={styles.settingLabel}>データを読み込む</Text>
-          </View>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleImport}>
-            <Text style={styles.actionBtnText}>読み込む</Text>
           </TouchableOpacity>
         </View>
       </View>
