@@ -29,6 +29,19 @@ function addMonths(yearMonth: string, delta: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function getChartDataWithRecordedDays(data: { label: string; value: number }[]) {
+  if (data.length <= 2) return data;
+
+  const selectedIndexes = new Set<number>([0, data.length - 1]);
+  data.forEach((point, index) => {
+    if (point.value > 0) selectedIndexes.add(index);
+  });
+
+  return Array.from(selectedIndexes)
+    .sort((a, b) => a - b)
+    .map((index) => data[index]);
+}
+
 export default function StatsTab() {
   const { expenses, cookingRecords, goals, deleteExpenseRecord } = useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
@@ -53,8 +66,9 @@ export default function StatsTab() {
   const cookingCount = monthCooking.length;
   const savingsEstimate = cookingCount * 700;
 
-  const budgetPercent = Math.min((total / goals.monthlyExpenseGoal) * 100, 100);
-  const remaining = goals.monthlyExpenseGoal - total;
+  const totalBudgetGoal = goals.monthlyExpenseGoal + goals.allowanceGoal;
+  const budgetPercent = totalBudgetGoal > 0 ? Math.min((total / totalBudgetGoal) * 100, 100) : 0;
+  const remaining = totalBudgetGoal - total;
   const budgetStatusText = remaining >= 0
     ? `残り ${formatCurrency(remaining)}`
     : `超過 ${formatCurrency(Math.abs(remaining))}`;
@@ -77,6 +91,7 @@ export default function StatsTab() {
       return { label: `${i + 1}`, value: amount };
     });
   }, [monthExpenses, selectedMonth]);
+  const dailyChartData = useMemo(() => getChartDataWithRecordedDays(dailyData), [dailyData]);
 
   const insights = useMemo(() => {
     const result: { icon: string; text: string; sub: string }[] = [];
@@ -164,7 +179,7 @@ export default function StatsTab() {
         </View>
         <View style={[styles.card, styles.flex1]}>
           <Text style={styles.cardTitle}>日別推移</Text>
-          <LineChart data={dailyData.filter((_, i) => i % 2 === 0)} width={150} height={110} />
+          <LineChart data={dailyChartData} width={150} height={110} />
           {monthExpenses.length === 0 && (
             <Text style={styles.empty}>まだ記録がありません</Text>
           )}

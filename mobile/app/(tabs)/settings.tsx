@@ -15,15 +15,25 @@ import {
 import { useAppStore } from '@/store/useAppStore';
 import { formatCurrency } from '@/utils/formatHelpers';
 
+type EditableBudgetType = 'expense' | 'allowance';
+
+const BUDGET_LABELS: Record<EditableBudgetType, string> = {
+  expense: '月のスーパー予算',
+  allowance: '月のお小遣い予算',
+};
+
 export default function SettingsTab() {
   const { userData, goals, updateGoals, resetAllData } = useAppStore();
   const [dailyNotif, setDailyNotif] = useState(true);
   const [missionNotif, setMissionNotif] = useState(true);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [editingBudgetType, setEditingBudgetType] = useState<EditableBudgetType>('expense');
   const [budgetInput, setBudgetInput] = useState(String(goals.monthlyExpenseGoal));
+  const totalBudgetGoal = goals.monthlyExpenseGoal + goals.allowanceGoal;
 
-  const handleBudgetChange = () => {
-    setBudgetInput(String(goals.monthlyExpenseGoal));
+  const handleBudgetChange = (type: EditableBudgetType) => {
+    setEditingBudgetType(type);
+    setBudgetInput(String(type === 'expense' ? goals.monthlyExpenseGoal : goals.allowanceGoal));
     setIsBudgetModalOpen(true);
   };
 
@@ -36,7 +46,7 @@ export default function SettingsTab() {
       return;
     }
 
-    updateGoals('expense', parsed);
+    updateGoals(editingBudgetType, parsed);
     setIsBudgetModalOpen(false);
   };
 
@@ -88,22 +98,57 @@ export default function SettingsTab() {
         <Text style={styles.arrow}>{'>'}</Text>
       </TouchableOpacity>
 
-        {/* 予算設定 */}
-        <Text style={styles.sectionLabel}>予算設定</Text>
-        <View style={styles.card}>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>📊</Text>
+      {/* 予算設定 */}
+      <Text style={styles.sectionLabel}>予算設定</Text>
+      <View style={styles.card}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingLeft}>
+            <Text style={styles.settingIcon}>📊</Text>
+            <View>
               <Text style={styles.settingLabel}>月のスーパー予算</Text>
+              <Text style={styles.settingSub}>ホームのスーパー予算に反映</Text>
             </View>
-            <View style={styles.settingRight}>
-              <Text style={styles.settingValue}>{formatCurrency(goals.monthlyExpenseGoal)}</Text>
-              <TouchableOpacity style={styles.changeBtn} onPress={handleBudgetChange}>
-                <Text style={styles.changeBtnText}>変更</Text>
-              </TouchableOpacity>
+          </View>
+          <View style={styles.settingRight}>
+            <Text style={styles.settingValue}>{formatCurrency(goals.monthlyExpenseGoal)}</Text>
+            <TouchableOpacity style={styles.changeBtn} onPress={() => handleBudgetChange('expense')}>
+              <Text style={styles.changeBtnText}>変更</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.separator} />
+        <View style={styles.settingRow}>
+          <View style={styles.settingLeft}>
+            <Text style={styles.settingIcon}>👛</Text>
+            <View>
+              <Text style={styles.settingLabel}>月のお小遣い予算</Text>
+              <Text style={styles.settingSub}>スーパー以外の予算に反映</Text>
+            </View>
+          </View>
+          <View style={styles.settingRight}>
+            <Text style={styles.settingValue}>{formatCurrency(goals.allowanceGoal)}</Text>
+            <TouchableOpacity style={styles.changeBtn} onPress={() => handleBudgetChange('allowance')}>
+              <Text style={styles.changeBtnText}>変更</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.separator} />
+        <View style={styles.settingRow}>
+          <View style={styles.settingLeft}>
+            <Text style={styles.settingIcon}>🧾</Text>
+            <View>
+              <Text style={styles.settingLabel}>食費合計予算</Text>
+              <Text style={styles.settingSub}>スーパー予算 + お小遣い予算</Text>
+            </View>
+          </View>
+          <View style={styles.settingRight}>
+            <Text style={styles.settingValue}>{formatCurrency(totalBudgetGoal)}</Text>
+            <View style={styles.autoBadge}>
+              <Text style={styles.autoBadgeText}>自動</Text>
             </View>
           </View>
         </View>
+      </View>
 
       {/* 通知 */}
       <Text style={styles.sectionLabel}>通知</Text>
@@ -199,7 +244,7 @@ export default function SettingsTab() {
           style={styles.modalOverlay}
         >
           <View style={styles.budgetModal}>
-            <Text style={styles.modalTitle}>月のスーパー予算</Text>
+            <Text style={styles.modalTitle}>{BUDGET_LABELS[editingBudgetType]}</Text>
             <Text style={styles.modalDescription}>新しい予算を入力してください</Text>
             <View style={styles.budgetInputRow}>
               <Text style={styles.yen}>¥</Text>
@@ -326,6 +371,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#424242',
   },
+  settingSub: {
+    fontSize: 11,
+    color: '#9E9E9E',
+    marginTop: 2,
+  },
   settingRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -345,6 +395,19 @@ const styles = StyleSheet.create({
   changeBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
+    fontWeight: '700',
+  },
+  autoBadge: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  autoBadgeText: {
+    fontSize: 13,
+    color: '#757575',
     fontWeight: '700',
   },
   actionBtn: {
