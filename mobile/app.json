@@ -4,6 +4,7 @@
     "slug": "mealquest",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
     "scheme": "mealquest",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -13,10 +14,24 @@
     },
     "android": {
       "package": "com.mealquest.app",
-      "minSdkVersion": 26
+      "minSdkVersion": 26,
+      "icon": "./assets/images/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#4CAF50"
+      }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#4CAF50"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
