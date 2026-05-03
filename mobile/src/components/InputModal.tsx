@@ -87,7 +87,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
 
             {/* 日付選択 */}
             <Text style={styles.label}>日付</Text>
-            <DateSelector value={date} onChange={setDate} />
+            <DateSelector value={date} onChange={setDate} disableFuture />
 
             {/* カテゴリー選択 */}
             <Text style={styles.label}>カテゴリー</Text>

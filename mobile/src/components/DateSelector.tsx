@@ -11,6 +11,7 @@ import {
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  disableFuture?: boolean;
 }
 
 const WEEK_DAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -59,12 +60,13 @@ function getCalendarDates(monthDate: Date): (Date | null)[] {
   return dates;
 }
 
-export function DateSelector({ value, onChange }: Props) {
+export function DateSelector({ value, onChange, disableFuture = false }: Props) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => parseDateKey(value));
   const isValid = isValidDateKey(value);
+  const today = getCurrentDate();
   const quickDates = [
-    { label: '今日', value: getCurrentDate() },
+    { label: '今日', value: today },
     { label: '昨日', value: getDaysAgo(1) },
     { label: '一昨日', value: getDaysAgo(2) },
   ];
@@ -120,9 +122,12 @@ export function DateSelector({ value, onChange }: Props) {
           <Text style={styles.dateInput}>{formatDateForInputDisplay(value)}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.shiftBtn, !isValid && styles.shiftBtnDisabled]}
+          style={[
+            styles.shiftBtn,
+            (!isValid || (disableFuture && value >= today)) && styles.shiftBtnDisabled,
+          ]}
           onPress={() => handleShift(1)}
-          disabled={!isValid}
+          disabled={!isValid || (disableFuture && value >= today)}
         >
           <Text style={styles.shiftText}>翌日</Text>
         </TouchableOpacity>
@@ -183,7 +188,8 @@ export function DateSelector({ value, onChange }: Props) {
               {calendarDates.map((date, index) => {
                 const dateKey = date ? formatDateKey(date) : `empty-${index}`;
                 const selected = date !== null && dateKey === value;
-                const today = date !== null && dateKey === getCurrentDate();
+                const isToday = date !== null && dateKey === today;
+                const isFuture = disableFuture && date !== null && dateKey > today;
 
                 return (
                   <TouchableOpacity
@@ -191,17 +197,19 @@ export function DateSelector({ value, onChange }: Props) {
                     style={[
                       styles.dayCell,
                       selected && styles.dayCellSelected,
-                      today && !selected && styles.dayCellToday,
+                      isToday && !selected && styles.dayCellToday,
+                      isFuture && styles.dayCellDisabled,
                     ]}
-                    onPress={() => date && handleSelectDate(dateKey)}
-                    disabled={!date}
-                    activeOpacity={date ? 0.75 : 1}
+                    onPress={() => date && !isFuture && handleSelectDate(dateKey)}
+                    disabled={!date || isFuture}
+                    activeOpacity={date && !isFuture ? 0.75 : 1}
                   >
                     {date && (
                       <Text style={[
                         styles.dayText,
                         selected && styles.dayTextSelected,
-                        today && !selected && styles.dayTextToday,
+                        isToday && !selected && styles.dayTextToday,
+                        isFuture && styles.dayTextDisabled,
                       ]}>
                         {date.getDate()}
                       </Text>
@@ -372,6 +380,12 @@ const styles = StyleSheet.create({
   },
   dayCellToday: {
     backgroundColor: '#F1F8E9',
+  },
+  dayCellDisabled: {
+    opacity: 0.3,
+  },
+  dayTextDisabled: {
+    color: '#BDBDBD',
   },
   dayCellSelected: {
     backgroundColor: '#4CAF50',

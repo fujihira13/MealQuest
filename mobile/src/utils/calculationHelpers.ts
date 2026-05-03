@@ -16,13 +16,6 @@ export const calculateBudgetRemaining = (
   return Math.max(0, allowanceGoal - allowanceUsed);
 };
 
-export const calculateBudgetPercent = (
-  remaining: number,
-  allowanceGoal: number
-): number => {
-  if (allowanceGoal <= 0) return 0;
-  return Math.max(0, (remaining / allowanceGoal) * 100);
-};
 
 export const calculateLevelProgress = (
   totalXp: number,
