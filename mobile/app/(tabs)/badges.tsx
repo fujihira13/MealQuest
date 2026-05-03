@@ -5,7 +5,17 @@ import type { Badge } from '@/types';
 
 type Filter = 'all' | 'earned' | 'notEarned';
 
-function BadgeCard({ badge, earned }: { badge: Badge; earned: boolean }) {
+function BadgeCard({
+  badge, earned, currentValue,
+}: { badge: Badge; earned: boolean; currentValue: number }) {
+  const req = badge.requirement;
+  const progressPct = req.type === 'monthly_goal_achieved'
+    ? (earned ? 100 : 0)
+    : Math.min((currentValue / req.value) * 100, 100);
+  const remaining = req.type === 'monthly_goal_achieved'
+    ? null
+    : Math.max(req.value - currentValue, 0);
+
   return (
     <View style={[styles.card, earned ? styles.cardEarned : styles.cardLocked]}>
       <Text style={[styles.icon, !earned && styles.iconLocked]}>{badge.icon}</Text>
@@ -20,9 +30,14 @@ function BadgeCard({ badge, earned }: { badge: Badge; earned: boolean }) {
           <Text style={styles.earnedBtnText}>獲得済み</Text>
         </View>
       ) : (
-        <View style={styles.notEarnedBtn}>
-          <Text style={styles.notEarnedBtnText}>まだ</Text>
-        </View>
+        <>
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${progressPct}%` }]} />
+          </View>
+          {remaining !== null && (
+            <Text style={styles.remainingText}>あと {remaining.toLocaleString()}</Text>
+          )}
+        </>
       )}
       {earned && <Text style={styles.checkMark}>✓</Text>}
     </View>
@@ -30,7 +45,10 @@ function BadgeCard({ badge, earned }: { badge: Badge; earned: boolean }) {
 }
 
 export default function BadgesTab() {
-  const { badgeDefinitions, badges } = useAppStore();
+  const {
+    badgeDefinitions, badges, cookingRecords, savingsRecords, userData,
+    streaks, collection, missions, expenses,
+  } = useAppStore();
   const [filter, setFilter] = useState<Filter>('all');
 
   const earned = badgeDefinitions.filter((b) => badges.earned.includes(b.id));
@@ -40,7 +58,48 @@ export default function BadgesTab() {
   const filtered =
     filter === 'earned' ? earned : filter === 'notEarned' ? notEarned : sorted;
 
-  const nextMilestone = notEarned.length > 0 ? notEarned.length : 0;
+  const getBadgeCurrentValue = (badge: Badge): number => {
+    const req = badge.requirement;
+    switch (req.type) {
+      case 'cooking_count': return cookingRecords.length;
+      case 'total_savings': return userData.totalSavings;
+      case 'savings_count': return savingsRecords.length;
+      case 'level': return userData.level;
+      case 'savings_level': return userData.savingsLevel;
+      case 'no_waste_streak': return streaks.noWasteStreak;
+      case 'gacha_items': return collection.length;
+      case 'missions_completed': return missions.completedHistory.length;
+      case 'consecutive_days': {
+        const dateDayMs = 24 * 60 * 60 * 1000;
+        const recordedDates = new Set([
+          ...expenses.map((e) => e.date),
+          ...cookingRecords.map((r) => r.date),
+        ]);
+        const sortedDates = Array.from(recordedDates).sort();
+        let maxStreak = sortedDates.length > 0 ? 1 : 0;
+        let streak = 1;
+        for (let i = 1; i < sortedDates.length; i++) {
+          const diff = new Date(sortedDates[i]).getTime() - new Date(sortedDates[i - 1]).getTime();
+          streak = diff === dateDayMs ? streak + 1 : 1;
+          if (streak > maxStreak) maxStreak = streak;
+        }
+        return maxStreak;
+      }
+      case 'monthly_goal_achieved': return badges.earned.includes(badge.id) ? 1 : 0;
+      default: return 0;
+    }
+  };
+
+  const closestBadge = notEarned.reduce<{ badge: Badge | null; ratio: number }>(
+    (best, badge) => {
+      const cur = getBadgeCurrentValue(badge);
+      const ratio = badge.requirement.type === 'monthly_goal_achieved'
+        ? 0
+        : cur / badge.requirement.value;
+      return ratio > best.ratio ? { badge, ratio } : best;
+    },
+    { badge: null, ratio: -1 }
+  );
 
   const FILTERS: { key: Filter; label: string }[] = [
     { key: 'all', label: 'すべて' },
@@ -62,10 +121,17 @@ export default function BadgesTab() {
           </View>
           <View style={styles.divider} />
           <View style={styles.statBlock}>
-            <Text style={styles.statLabel}>次の達成まで</Text>
-            <Text style={styles.statValue}>
-              あと<Text style={styles.statHighlight}>{nextMilestone}</Text>回
-            </Text>
+            <Text style={styles.statLabel}>次に近いバッジ</Text>
+            {closestBadge.badge ? (
+              <Text style={styles.statValue} numberOfLines={1}>
+                {closestBadge.badge.icon}{' '}
+                <Text style={[styles.statTotal, { fontSize: 13 }]}>
+                  {closestBadge.badge.title}
+                </Text>
+              </Text>
+            ) : (
+              <Text style={styles.statValue}>全取得！</Text>
+            )}
           </View>
         </View>
 
@@ -92,7 +158,11 @@ export default function BadgesTab() {
         numColumns={2}
         contentContainerStyle={styles.grid}
         renderItem={({ item }) => (
-          <BadgeCard badge={item} earned={badges.earned.includes(item.id)} />
+          <BadgeCard
+            badge={item}
+            earned={badges.earned.includes(item.id)}
+            currentValue={getBadgeCurrentValue(item)}
+          />
         )}
         ListEmptyComponent={
           <Text style={styles.empty}>該当するバッジがありません</Text>
@@ -100,7 +170,7 @@ export default function BadgesTab() {
         ListFooterComponent={
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              🏅 バッジを集めて、もっと節約上手に！達成するたびにポイントをGET!
+              🏅 バッジを集めて、もっと節約上手になろう！
             </Text>
           </View>
         }
@@ -249,18 +319,23 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  notEarnedBtn: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  progressBarBg: {
+    width: '100%',
+    height: 5,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginTop: 6,
   },
-  notEarnedBtnText: {
-    color: '#BDBDBD',
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#81C784',
+    borderRadius: 3,
+  },
+  remainingText: {
     fontSize: 10,
+    color: '#9E9E9E',
+    marginTop: 3,
   },
   checkMark: {
     position: 'absolute',
