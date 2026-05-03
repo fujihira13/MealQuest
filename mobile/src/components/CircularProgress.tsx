@@ -18,7 +18,8 @@ export function CircularProgress({
 }: Props) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - Math.min(percent, 100) / 100);
+  const clampedPercent = Math.max(0, Math.min(percent, 100));
+  const strokeDashoffset = circumference * (1 - clampedPercent / 100);
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>

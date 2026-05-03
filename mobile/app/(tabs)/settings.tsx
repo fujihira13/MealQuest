@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Switch,
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -56,8 +55,7 @@ function createExpensesCsv(expenses: ExpenseRecord[]): string {
 
 export default function SettingsTab() {
   const { userData, goals, expenses, updateGoals, resetAllData } = useAppStore();
-  const [dailyNotif, setDailyNotif] = useState(true);
-  const [missionNotif, setMissionNotif] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingBudgetType, setEditingBudgetType] = useState<EditableBudgetType>('expense');
   const [budgetInput, setBudgetInput] = useState(String(goals.monthlyExpenseGoal));
@@ -83,11 +81,13 @@ export default function SettingsTab() {
   };
 
   const handleExport = async () => {
+    if (isExporting) return;
     if (expenses.length === 0) {
       Alert.alert('データを書き出す', '書き出すデータがありません');
       return;
     }
 
+    setIsExporting(true);
     try {
       const canShare = await Sharing.isAvailableAsync();
       if (!canShare) {
@@ -106,6 +106,8 @@ export default function SettingsTab() {
       });
     } catch {
       Alert.alert('書き出しエラー', 'CSVファイルの書き出しに失敗しました');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -207,27 +209,27 @@ export default function SettingsTab() {
         <View style={styles.settingRow}>
           <View style={styles.settingLeft}>
             <Text style={styles.settingIcon}>🕐</Text>
-            <Text style={styles.settingLabel}>デイリー通知</Text>
+            <View>
+              <Text style={styles.settingLabel}>デイリー通知</Text>
+              <Text style={styles.settingSub}>毎日のリマインダー</Text>
+            </View>
           </View>
-          <Switch
-            value={dailyNotif}
-            onValueChange={setDailyNotif}
-            trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
-            thumbColor={dailyNotif ? '#4CAF50' : '#BDBDBD'}
-          />
+          <View style={styles.comingSoonBadge}>
+            <Text style={styles.comingSoonText}>近日対応予定</Text>
+          </View>
         </View>
         <View style={styles.separator} />
         <View style={styles.settingRow}>
           <View style={styles.settingLeft}>
             <Text style={styles.settingIcon}>🚩</Text>
-            <Text style={styles.settingLabel}>ミッション通知</Text>
+            <View>
+              <Text style={styles.settingLabel}>ミッション通知</Text>
+              <Text style={styles.settingSub}>ミッション達成のお知らせ</Text>
+            </View>
           </View>
-          <Switch
-            value={missionNotif}
-            onValueChange={setMissionNotif}
-            trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
-            thumbColor={missionNotif ? '#4CAF50' : '#BDBDBD'}
-          />
+          <View style={styles.comingSoonBadge}>
+            <Text style={styles.comingSoonText}>近日対応予定</Text>
+          </View>
         </View>
       </View>
 
@@ -242,8 +244,12 @@ export default function SettingsTab() {
               <Text style={styles.settingSub}>食費記録を表計算用に保存</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleExport}>
-            <Text style={styles.actionBtnText}>書き出す</Text>
+          <TouchableOpacity
+            style={[styles.actionBtn, isExporting && styles.actionBtnDisabled]}
+            onPress={handleExport}
+            disabled={isExporting}
+          >
+            <Text style={styles.actionBtnText}>{isExporting ? '書き出し中...' : '書き出す'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -461,6 +467,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+  },
+  actionBtnDisabled: {
+    opacity: 0.5,
+  },
+  comingSoonBadge: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  comingSoonText: {
+    fontSize: 11,
+    color: '#F57F17',
+    fontWeight: '600',
   },
   actionBtnText: {
     fontSize: 13,

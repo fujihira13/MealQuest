@@ -71,7 +71,7 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
             <Text style={styles.subtitle}>自炊1食：+{COOKING_RECORD_POINTS}pt 獲得</Text>
 
             <Text style={styles.label}>日付</Text>
-            <DateSelector value={date} onChange={setDate} />
+            <DateSelector value={date} onChange={setDate} disableFuture />
 
             <Text style={styles.label}>食事の時間帯を選択</Text>
             <View style={styles.grid}>

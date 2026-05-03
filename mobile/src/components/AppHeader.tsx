@@ -8,7 +8,7 @@ export function AppHeader() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Text style={styles.appName}>節約マスター</Text>
+      <Text style={styles.appName}>MealQuest</Text>
       <View style={styles.levelBadge}>
         <Text style={styles.crown}>👑</Text>
         <Text style={styles.levelText}>Lv.{userData.level}</Text>
