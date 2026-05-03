@@ -4,19 +4,10 @@ import { useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function RootLayout() {
-  const { resetDailyMissions, resetWeeklyMissions, generateDailyMissions, generateWeeklyMissions, missions } =
-    useAppStore();
+  const { initializeMissions } = useAppStore();
 
   useEffect(() => {
-    resetDailyMissions();
-    resetWeeklyMissions();
-
-    if (Object.keys(missions.daily).length === 0) {
-      generateDailyMissions();
-    }
-    if (Object.keys(missions.weekly).length === 0) {
-      generateWeeklyMissions();
-    }
+    initializeMissions();
   }, []);
 
   return (
