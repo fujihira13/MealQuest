@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Switch,
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -56,8 +55,6 @@ function createExpensesCsv(expenses: ExpenseRecord[]): string {
 
 export default function SettingsTab() {
   const { userData, goals, expenses, updateGoals, resetAllData } = useAppStore();
-  const [dailyNotif, setDailyNotif] = useState(true);
-  const [missionNotif, setMissionNotif] = useState(true);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingBudgetType, setEditingBudgetType] = useState<EditableBudgetType>('expense');
   const [budgetInput, setBudgetInput] = useState(String(goals.monthlyExpenseGoal));
@@ -207,27 +204,27 @@ export default function SettingsTab() {
         <View style={styles.settingRow}>
           <View style={styles.settingLeft}>
             <Text style={styles.settingIcon}>🕐</Text>
-            <Text style={styles.settingLabel}>デイリー通知</Text>
+            <View>
+              <Text style={styles.settingLabel}>デイリー通知</Text>
+              <Text style={styles.settingSub}>毎日のリマインダー</Text>
+            </View>
           </View>
-          <Switch
-            value={dailyNotif}
-            onValueChange={setDailyNotif}
-            trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
-            thumbColor={dailyNotif ? '#4CAF50' : '#BDBDBD'}
-          />
+          <View style={styles.comingSoonBadge}>
+            <Text style={styles.comingSoonText}>近日対応予定</Text>
+          </View>
         </View>
         <View style={styles.separator} />
         <View style={styles.settingRow}>
           <View style={styles.settingLeft}>
             <Text style={styles.settingIcon}>🚩</Text>
-            <Text style={styles.settingLabel}>ミッション通知</Text>
+            <View>
+              <Text style={styles.settingLabel}>ミッション通知</Text>
+              <Text style={styles.settingSub}>ミッション達成のお知らせ</Text>
+            </View>
           </View>
-          <Switch
-            value={missionNotif}
-            onValueChange={setMissionNotif}
-            trackColor={{ false: '#E0E0E0', true: '#A5D6A7' }}
-            thumbColor={missionNotif ? '#4CAF50' : '#BDBDBD'}
-          />
+          <View style={styles.comingSoonBadge}>
+            <Text style={styles.comingSoonText}>近日対応予定</Text>
+          </View>
         </View>
       </View>
 
@@ -471,6 +468,19 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F5F5F5',
     marginHorizontal: -16,
+  },
+  comingSoonBadge: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+  },
+  comingSoonText: {
+    fontSize: 11,
+    color: '#F57F17',
+    fontWeight: '600',
   },
   resetBtn: {
     backgroundColor: '#FFEBEE',
