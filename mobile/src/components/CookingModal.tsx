@@ -46,6 +46,13 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
   const [meal, setMeal] = useState<MealTime>(defaultMeal(todayMeals));
 
   useEffect(() => {
+    if (visible) {
+      setDate(getCurrentDate());
+      setMeal(defaultMeal(todayMeals));
+    }
+  }, [visible]);
+
+  useEffect(() => {
     if (selectedDateMeals.includes(meal)) {
       setMeal(defaultMeal(selectedDateMeals));
     }

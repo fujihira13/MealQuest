@@ -56,8 +56,12 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
   };
 
   const handleSave = () => {
-    const parsed = parseInt(amount, 10);
-    if (!amount || isNaN(parsed) || parsed <= 0) {
+    if (!amount || !/^\d+$/.test(amount)) {
+      Alert.alert('入力エラー', '金額を正しく入力してください');
+      return;
+    }
+    const parsed = Number(amount);
+    if (parsed <= 0 || !Number.isSafeInteger(parsed)) {
       Alert.alert('入力エラー', '金額を正しく入力してください');
       return;
     }
