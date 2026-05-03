@@ -55,6 +55,7 @@ function createExpensesCsv(expenses: ExpenseRecord[]): string {
 
 export default function SettingsTab() {
   const { userData, goals, expenses, updateGoals, resetAllData } = useAppStore();
+  const [isExporting, setIsExporting] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingBudgetType, setEditingBudgetType] = useState<EditableBudgetType>('expense');
   const [budgetInput, setBudgetInput] = useState(String(goals.monthlyExpenseGoal));
@@ -80,11 +81,13 @@ export default function SettingsTab() {
   };
 
   const handleExport = async () => {
+    if (isExporting) return;
     if (expenses.length === 0) {
       Alert.alert('データを書き出す', '書き出すデータがありません');
       return;
     }
 
+    setIsExporting(true);
     try {
       const canShare = await Sharing.isAvailableAsync();
       if (!canShare) {
@@ -103,6 +106,8 @@ export default function SettingsTab() {
       });
     } catch {
       Alert.alert('書き出しエラー', 'CSVファイルの書き出しに失敗しました');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -239,8 +244,12 @@ export default function SettingsTab() {
               <Text style={styles.settingSub}>食費記録を表計算用に保存</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleExport}>
-            <Text style={styles.actionBtnText}>書き出す</Text>
+          <TouchableOpacity
+            style={[styles.actionBtn, isExporting && styles.actionBtnDisabled]}
+            onPress={handleExport}
+            disabled={isExporting}
+          >
+            <Text style={styles.actionBtnText}>{isExporting ? '書き出し中...' : '書き出す'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -459,15 +468,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  actionBtnText: {
-    fontSize: 13,
-    color: '#424242',
-    fontWeight: '600',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#F5F5F5',
-    marginHorizontal: -16,
+  actionBtnDisabled: {
+    opacity: 0.5,
   },
   comingSoonBadge: {
     backgroundColor: '#FFF8E1',
@@ -481,6 +483,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#F57F17',
     fontWeight: '600',
+  },
+  actionBtnText: {
+    fontSize: 13,
+    color: '#424242',
+    fontWeight: '600',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#F5F5F5',
+    marginHorizontal: -16,
   },
   resetBtn: {
     backgroundColor: '#FFEBEE',

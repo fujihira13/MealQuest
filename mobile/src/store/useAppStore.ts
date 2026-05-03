@@ -147,7 +147,7 @@ interface AppStore extends AppState {
 
   recordNoWasteDay: () => void;
   recordSnackFreeDay: () => void;
-  resetStreakIfNeeded: (category: ExpenseCategory) => void;
+  resetStreakIfNeeded: (category: ExpenseCategory, meal: MealTime) => void;
 
   updateGoals: (type: "expense" | "allowance" | "cooking" | "savings", value: number) => void;
   updateMonthlyData: () => void;
@@ -218,7 +218,7 @@ export const useAppStore = create<AppStore>()(
         }));
 
         if (recordDate === getCurrentDate()) {
-          get().resetStreakIfNeeded(category);
+          get().resetStreakIfNeeded(category, meal);
           get().updateMissionProgress("expense_record");
           get().updateMissionProgress("record_habit");
         }
@@ -767,18 +767,19 @@ export const useAppStore = create<AppStore>()(
         get().checkBadgeProgress();
       },
 
-      resetStreakIfNeeded: (category) => {
-        if (["コンビニ", "自販機"].includes(category)) {
-          set((state) => ({
-            streaks: {
-              ...state.streaks,
-              noWasteStreak: 0,
-              lastNoWasteDate: "",
-              snackFreeStreak: 0,
-              lastSnackFreeDate: "",
-            },
-          }));
-        }
+      resetStreakIfNeeded: (category, meal) => {
+        const resetNoWaste = ["コンビニ", "自販機"].includes(category);
+        const resetSnackFree = meal === "snack";
+
+        if (!resetNoWaste && !resetSnackFree) return;
+
+        set((state) => ({
+          streaks: {
+            ...state.streaks,
+            ...(resetNoWaste ? { noWasteStreak: 0, lastNoWasteDate: "" } : {}),
+            ...(resetSnackFree ? { snackFreeStreak: 0, lastSnackFreeDate: "" } : {}),
+          },
+        }));
       },
 
       updateGoals: (type, value) => {

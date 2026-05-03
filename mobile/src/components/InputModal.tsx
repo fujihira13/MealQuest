@@ -87,24 +87,31 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
 
             {/* 日付選択 */}
             <Text style={styles.label}>日付</Text>
-            <DateSelector value={date} onChange={setDate} />
+            <DateSelector value={date} onChange={setDate} disableFuture />
 
-            {/* カテゴリー選択 */}
+            {/* カテゴリー */}
             <Text style={styles.label}>カテゴリー</Text>
-            <View style={styles.categoryGrid}>
-              {CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
-                  onPress={() => handleCategoryChange(cat)}
-                >
-                  <Text style={styles.categoryIcon}>{CATEGORY_ICONS[cat]}</Text>
-                  <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {isEditing ? (
+              <View style={styles.categoryGrid}>
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
+                    onPress={() => handleCategoryChange(cat)}
+                  >
+                    <Text style={styles.categoryIcon}>{CATEGORY_ICONS[cat]}</Text>
+                    <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.categoryFixed}>
+                <Text style={styles.categoryFixedIcon}>{CATEGORY_ICONS[category]}</Text>
+                <Text style={styles.categoryFixedText}>{category}</Text>
+              </View>
+            )}
 
             {/* 金額入力 */}
             <Text style={styles.label}>金額（円）</Text>
@@ -190,6 +197,26 @@ const styles = StyleSheet.create({
     color: '#757575',
     marginBottom: 8,
     marginTop: 12,
+  },
+  categoryFixed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#4CAF50',
+    backgroundColor: '#E8F5E9',
+    alignSelf: 'flex-start',
+  },
+  categoryFixedIcon: {
+    fontSize: 20,
+  },
+  categoryFixedText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2E7D32',
   },
   categoryGrid: {
     flexDirection: 'row',
