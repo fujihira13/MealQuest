@@ -5,7 +5,6 @@ import { formatCurrency, getCategoryIcon } from '@/utils/formatHelpers';
 import { getCurrentMonth } from '@/utils/dateHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { PieChart } from '@/components/PieChart';
-import { LineChart } from '@/components/LineChart';
 import { InputModal } from '@/components/InputModal';
 import type { ExpenseCategory, ExpenseRecord } from '@/types';
 
@@ -29,18 +28,6 @@ function addMonths(yearMonth: string, delta: number): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function getChartDataWithRecordedDays(data: { label: string; value: number }[]) {
-  if (data.length <= 2) return data;
-
-  const selectedIndexes = new Set<number>([0, data.length - 1]);
-  data.forEach((point, index) => {
-    if (point.value > 0) selectedIndexes.add(index);
-  });
-
-  return Array.from(selectedIndexes)
-    .sort((a, b) => a - b)
-    .map((index) => data[index]);
-}
 
 export default function StatsTab() {
   const { expenses, cookingRecords, goals, deleteExpenseRecord } = useAppStore();
@@ -91,7 +78,6 @@ export default function StatsTab() {
       return { label: `${i + 1}`, value: amount };
     });
   }, [monthExpenses, selectedMonth]);
-  const dailyChartData = useMemo(() => getChartDataWithRecordedDays(dailyData), [dailyData]);
 
   const insights = useMemo(() => {
     const result: { icon: string; text: string; sub: string }[] = [];
@@ -179,9 +165,40 @@ export default function StatsTab() {
         </View>
         <View style={[styles.card, styles.flex1]}>
           <Text style={styles.cardTitle}>日別推移</Text>
-          <LineChart data={dailyChartData} width={150} height={110} />
-          {monthExpenses.length === 0 && (
+          {monthExpenses.length === 0 ? (
             <Text style={styles.empty}>まだ記録がありません</Text>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.barChartScroll}
+            >
+              <View style={styles.barChartContainer}>
+                {(() => {
+                  const maxVal = Math.max(...dailyData.map((d) => d.value), 1);
+                  return dailyData.map((d) => {
+                    const heightPct = d.value / maxVal;
+                    const barH = Math.max(Math.round(heightPct * 80), d.value > 0 ? 4 : 0);
+                    return (
+                      <View key={d.label} style={styles.barCol}>
+                        <View style={styles.barTrack}>
+                          <View
+                            style={[
+                              styles.barFill,
+                              {
+                                height: barH,
+                                backgroundColor: heightPct > 0.8 ? '#F44336' : '#4CAF50',
+                              },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.barLabel}>{d.label}</Text>
+                      </View>
+                    );
+                  });
+                })()}
+              </View>
+            </ScrollView>
           )}
         </View>
       </View>
@@ -354,6 +371,32 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     textAlign: 'center',
     paddingVertical: 8,
+  },
+  barChartScroll: {
+    marginTop: 4,
+  },
+  barChartContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingBottom: 2,
+    gap: 3,
+  },
+  barCol: {
+    alignItems: 'center',
+    width: 14,
+  },
+  barTrack: {
+    height: 80,
+    justifyContent: 'flex-end',
+  },
+  barFill: {
+    width: 10,
+    borderRadius: 3,
+  },
+  barLabel: {
+    fontSize: 8,
+    color: '#9E9E9E',
+    marginTop: 3,
   },
   insightRow: {
     flexDirection: 'row',
