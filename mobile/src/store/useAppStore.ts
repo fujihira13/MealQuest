@@ -549,74 +549,94 @@ export const useAppStore = create<AppStore>()(
 
       updateMissionProgress: (actionType, value = 1, options = {}) => {
         set((state) => {
-          const newMissions = { ...state.missions };
-          let updated = false;
           const updateDaily = options.updateDaily ?? true;
           const updateWeekly = options.updateWeekly ?? true;
+          let updated = false;
 
-          if (updateDaily) {
-            Object.keys(newMissions.daily).forEach((missionId) => {
-              const mission = newMissions.daily[missionId];
-              if (!mission.completed && mission.type === actionType) {
-                mission.progress = Math.min(mission.progress + value, mission.target);
-                if (mission.progress >= mission.target) mission.completed = true;
+          const applyProgress = (
+            map: Record<string, Mission>,
+            computeProgress: (m: Mission) => number
+          ): Record<string, Mission> => {
+            const next: Record<string, Mission> = {};
+            Object.keys(map).forEach((id) => {
+              const m = map[id];
+              if (!m.completed && m.type === actionType) {
+                const progress = Math.min(computeProgress(m), m.target);
+                next[id] = { ...m, progress, completed: progress >= m.target };
                 updated = true;
+              } else {
+                next[id] = m;
               }
             });
-          }
+            return next;
+          };
 
-          if (updateWeekly) {
-            Object.keys(newMissions.weekly).forEach((missionId) => {
-              const mission = newMissions.weekly[missionId];
-              if (!mission.completed && mission.type === actionType) {
-                if (actionType === "total_savings") {
-                  const weekStart = newMissions.lastWeeklyReset;
-                  const weekEnd = new Date(weekStart);
-                  weekEnd.setDate(weekEnd.getDate() + 7);
-                  mission.progress = state.savingsRecords
-                    .filter((r) => r.date >= weekStart && r.date < formatDateKey(weekEnd))
-                    .reduce((sum, r) => sum + r.amount, 0);
-                } else if (actionType === "cooking") {
-                  const weekStart = newMissions.lastWeeklyReset;
-                  const weekEnd = new Date(weekStart);
-                  weekEnd.setDate(weekEnd.getDate() + 7);
-                  mission.progress = state.cookingRecords.filter(
-                    (r) => r.date >= weekStart && r.date < formatDateKey(weekEnd)
-                  ).length;
-                } else {
-                  mission.progress = Math.min(mission.progress + value, mission.target);
-                }
-                if (mission.progress >= mission.target) mission.completed = true;
-                updated = true;
-              }
-            });
-          }
+          const weekStart = state.missions.lastWeeklyReset;
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 7);
+          const weekEndKey = formatDateKey(weekEnd);
 
-          return updated ? { missions: newMissions } : state;
+          const weeklyProgress = (m: Mission): number => {
+            if (actionType === "total_savings") {
+              return state.savingsRecords
+                .filter((r) => r.date >= weekStart && r.date < weekEndKey)
+                .reduce((sum, r) => sum + r.amount, 0);
+            }
+            if (actionType === "cooking") {
+              return state.cookingRecords.filter(
+                (r) => r.date >= weekStart && r.date < weekEndKey
+              ).length;
+            }
+            return m.progress + value;
+          };
+
+          const newDaily = updateDaily
+            ? applyProgress(state.missions.daily, (m) => m.progress + value)
+            : state.missions.daily;
+          const newWeekly = updateWeekly
+            ? applyProgress(state.missions.weekly, weeklyProgress)
+            : state.missions.weekly;
+
+          if (!updated) return state;
+          return {
+            missions: { ...state.missions, daily: newDaily, weekly: newWeekly },
+          };
         });
       },
 
       claimMissionReward: (missionId) => {
         const state = get();
-        const mission = state.missions.daily[missionId] || state.missions.weekly[missionId];
+        const isDaily = missionId in state.missions.daily;
+        const mission = isDaily
+          ? state.missions.daily[missionId]
+          : state.missions.weekly[missionId];
         if (!mission || !mission.completed || mission.claimed) return false;
 
         set((state) => {
-          const newMissions = { ...state.missions };
-          if (newMissions.daily[missionId]) {
-            newMissions.daily[missionId].claimed = true;
-          } else if (newMissions.weekly[missionId]) {
-            newMissions.weekly[missionId].claimed = true;
-          }
-          newMissions.completedHistory.push({
-            id: missionId,
-            title: mission.title,
-            reward: mission.reward,
-            claimedAt: new Date().toISOString(),
-            type: state.missions.daily[missionId] ? "daily" : "weekly",
-          });
+          const updatedEntry = { ...mission, claimed: true };
+          const newDaily = isDaily
+            ? { ...state.missions.daily, [missionId]: updatedEntry }
+            : state.missions.daily;
+          const newWeekly = !isDaily
+            ? { ...state.missions.weekly, [missionId]: updatedEntry }
+            : state.missions.weekly;
+
           return {
-            missions: newMissions,
+            missions: {
+              ...state.missions,
+              daily: newDaily,
+              weekly: newWeekly,
+              completedHistory: [
+                ...state.missions.completedHistory,
+                {
+                  id: missionId,
+                  title: mission.title,
+                  reward: mission.reward,
+                  claimedAt: new Date().toISOString(),
+                  type: isDaily ? "daily" : "weekly",
+                },
+              ],
+            },
             userData: applyXpChange(
               {
                 ...state.userData,
