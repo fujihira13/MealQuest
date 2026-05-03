@@ -20,6 +20,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9db64b7c-7530-46fa-806a-f87b850ff5fc"
+      }
+    },
+    "owner": "sakana1113"
   }
 }
