@@ -1,31 +1,44 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAppStore } from '@/store/useAppStore';
-import { calculateGachaProgress, calculateLevelProgress } from '@/utils/calculationHelpers';
-import { formatCurrency } from '@/utils/formatHelpers';
-import { getCurrentDate } from '@/utils/dateHelpers';
-import { InputModal } from '@/components/InputModal';
-import { CookingModal } from '@/components/CookingModal';
-import type { ExpenseCategory, MealTime } from '@/types';
-import { COOKING_RECORD_POINTS } from '@/constants/game';
+import { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useAppStore } from "@/store/useAppStore";
+import {
+  calculateGachaProgress,
+  calculateLevelProgress,
+} from "@/utils/calculationHelpers";
+import { formatCurrency } from "@/utils/formatHelpers";
+import { getCurrentDate } from "@/utils/dateHelpers";
+import { InputModal } from "@/components/InputModal";
+import { CookingModal } from "@/components/CookingModal";
+import type { ExpenseCategory, MealTime } from "@/types";
+import { COOKING_RECORD_POINTS } from "@/constants/game";
 
-const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] = [
-  { key: 'スーパー', icon: '🛒', label: 'スーパー' },
-  { key: '自販機', icon: '🥤', label: '自販機' },
-  { key: 'コンビニ', icon: '🏪', label: 'コンビニ' },
-  { key: '外食', icon: '🍽️', label: '外食' },
-  { key: '飲み会', icon: '🍻', label: '飲み会' },
-  { key: 'デート', icon: '💕', label: 'デート' },
-  { key: 'その他', icon: '📝', label: 'その他' },
-];
+const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] =
+  [
+    { key: "スーパー", icon: "🛒", label: "スーパー" },
+    { key: "自販機", icon: "🥤", label: "自販機" },
+    { key: "コンビニ", icon: "🏪", label: "コンビニ" },
+    { key: "外食", icon: "🍽️", label: "外食" },
+    { key: "飲み会", icon: "🍻", label: "飲み会" },
+    { key: "デート", icon: "💕", label: "デート" },
+    { key: "その他", icon: "📝", label: "その他" },
+  ];
 
 function getBudgetPercent(used: number, goal: number): number {
   if (goal <= 0) return 0;
   return Math.min((used / goal) * 100, 100);
 }
 
-function getBudgetStatus(used: number, goal: number): { text: string; isOver: boolean } {
+function getBudgetStatus(
+  used: number,
+  goal: number,
+): { text: string; isOver: boolean } {
   const remaining = goal - used;
   if (remaining >= 0) {
     return { text: `残り ${formatCurrency(remaining)}`, isOver: false };
@@ -35,15 +48,17 @@ function getBudgetStatus(used: number, goal: number): { text: string; isOver: bo
 }
 
 function getBudgetColor(percent: number, isOver: boolean): string {
-  if (isOver || percent >= 100) return '#F44336';
-  if (percent >= 80) return '#FF9800';
-  return '#4CAF50';
+  if (isOver || percent >= 100) return "#F44336";
+  if (percent >= 80) return "#FF9800";
+  return "#4CAF50";
 }
 
 export default function HomeTab() {
   const router = useRouter();
-  const { userData, goals, expenses, missions, streaks, cookingRecords } = useAppStore();
-  const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | null>(null);
+  const { userData, goals, expenses, missions, streaks, cookingRecords } =
+    useAppStore();
+  const [selectedCategory, setSelectedCategory] =
+    useState<ExpenseCategory | null>(null);
   const [showInputModal, setShowInputModal] = useState(false);
   const [showCookingModal, setShowCookingModal] = useState(false);
 
@@ -55,7 +70,7 @@ export default function HomeTab() {
     .reduce((sum, e) => sum + e.amount, 0);
 
   const supermarketUsed = expenses
-    .filter((e) => e.date.startsWith(currentMonth) && e.category === 'スーパー')
+    .filter((e) => e.date.startsWith(currentMonth) && e.category === "スーパー")
     .reduce((sum, e) => sum + e.amount, 0);
   const allowanceUsed = userData.allowanceUsed;
   const totalUsed = userData.monthlyExpense;
@@ -64,21 +79,21 @@ export default function HomeTab() {
 
   const budgetItems = [
     {
-      label: 'スーパー予算',
+      label: "スーパーの予算",
       used: supermarketUsed,
       goal: goals.monthlyExpenseGoal,
       status: getBudgetStatus(supermarketUsed, goals.monthlyExpenseGoal),
       percent: getBudgetPercent(supermarketUsed, goals.monthlyExpenseGoal),
     },
     {
-      label: 'お小遣い',
+      label: "お小遣い",
       used: allowanceUsed,
       goal: goals.allowanceGoal,
       status: getBudgetStatus(allowanceUsed, goals.allowanceGoal),
       percent: getBudgetPercent(allowanceUsed, goals.allowanceGoal),
     },
     {
-      label: '食費合計',
+      label: "食費合計",
       used: totalUsed,
       goal: totalGoal,
       status: totalBudgetStatus,
@@ -98,7 +113,7 @@ export default function HomeTab() {
     calculateLevelProgress(userData.totalXp, userData.level);
   const levelProgressWidth = Math.min(Math.max(levelProgressPercent, 0), 100);
 
-  const COOKING_MEALS: MealTime[] = ['morning', 'lunch', 'dinner'];
+  const COOKING_MEALS: MealTime[] = ["morning", "lunch", "dinner"];
   const todayMeals = cookingRecords
     .filter((r) => r.date === today && COOKING_MEALS.includes(r.meal))
     .map((r) => r.meal) as MealTime[];
@@ -111,8 +126,10 @@ export default function HomeTab() {
 
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
         {/* 今日の食費 */}
         <View style={styles.card}>
           <View style={styles.cardIconRow}>
@@ -120,7 +137,12 @@ export default function HomeTab() {
             <Text style={styles.cardLabel}>今日の食費</Text>
           </View>
           <Text style={styles.todayAmount}>{formatCurrency(todayTotal)}</Text>
-          <Text style={[styles.subLabel, totalBudgetStatus.isOver && styles.textOver]}>
+          <Text
+            style={[
+              styles.subLabel,
+              totalBudgetStatus.isOver && styles.textOver,
+            ]}
+          >
             今月合計 {totalBudgetStatus.text}
           </Text>
         </View>
@@ -133,12 +155,18 @@ export default function HomeTab() {
               <Text style={styles.levelValue}>Lv.{userData.level}</Text>
             </View>
             <View style={styles.levelMeta}>
-              <Text style={styles.levelNext}>次のレベルまであと {xpToNext}XP</Text>
-              <Text style={styles.levelTotal}>累計 {userData.totalXp.toLocaleString()}XP</Text>
+              <Text style={styles.levelNext}>
+                次のレベルまであと {xpToNext}XP
+              </Text>
+              <Text style={styles.levelTotal}>
+                累計 {userData.totalXp.toLocaleString()}XP
+              </Text>
             </View>
           </View>
           <View style={styles.levelBarBg}>
-            <View style={[styles.levelBarFill, { width: `${levelProgressWidth}%` }]} />
+            <View
+              style={[styles.levelBarFill, { width: `${levelProgressWidth}%` }]}
+            />
           </View>
         </View>
 
@@ -153,7 +181,12 @@ export default function HomeTab() {
                 <View key={item.label} style={styles.budgetItem}>
                   <View style={styles.budgetHeader}>
                     <Text style={styles.budgetLabel}>{item.label}</Text>
-                    <Text style={[styles.budgetStatus, item.status.isOver && styles.textOver]}>
+                    <Text
+                      style={[
+                        styles.budgetStatus,
+                        item.status.isOver && styles.textOver,
+                      ]}
+                    >
                       {item.status.text}
                     </Text>
                   </View>
@@ -161,12 +194,16 @@ export default function HomeTab() {
                     <View
                       style={[
                         styles.budgetBarFill,
-                        { width: `${item.percent}%`, backgroundColor: barColor },
+                        {
+                          width: `${item.percent}%`,
+                          backgroundColor: barColor,
+                        },
                       ]}
                     />
                   </View>
                   <Text style={styles.budgetMeta}>
-                    使用 {formatCurrency(item.used)} / {formatCurrency(item.goal)}
+                    使用 {formatCurrency(item.used)} /{" "}
+                    {formatCurrency(item.goal)}
                   </Text>
                 </View>
               );
@@ -174,7 +211,7 @@ export default function HomeTab() {
           </View>
           <View style={styles.budgetNote}>
             <Text style={styles.budgetNoteText}>
-              食費合計はスーパー予算 + お小遣いを目安にしています
+              食費合計はスーパーの予算 + お小遣いを目安にしています
             </Text>
           </View>
         </View>
@@ -200,27 +237,39 @@ export default function HomeTab() {
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>今日のアクション</Text>
-            <Text style={styles.streakBadge}>🔥 連続{streaks.noWasteStreak}日</Text>
+            <Text style={styles.streakBadge}>
+              🔥 連続{streaks.noWasteStreak}日
+            </Text>
           </View>
           <View style={styles.row}>
             <TouchableOpacity
-              style={[styles.actionCard, styles.flex1, allMealsComplete && styles.actionCardDone]}
+              style={[
+                styles.actionCard,
+                styles.flex1,
+                allMealsComplete && styles.actionCardDone,
+              ]}
               onPress={() => setShowCookingModal(true)}
               activeOpacity={0.7}
             >
               <Text style={styles.actionIcon}>🍳</Text>
               <Text style={styles.actionTitle}>自炊を記録</Text>
               <Text style={styles.actionSub}>
-                {allMealsComplete ? '全食完了！' : todayMeals.length > 0 ? `${todayMeals.length}/3食 記録済み` : '未記録'}
+                {allMealsComplete
+                  ? "全食完了！"
+                  : todayMeals.length > 0
+                    ? `${todayMeals.length}/3食 記録済み`
+                    : "未記録"}
               </Text>
               <View style={styles.pointBadge}>
-                <Text style={styles.pointBadgeText}>+{COOKING_RECORD_POINTS}pt</Text>
+                <Text style={styles.pointBadgeText}>
+                  +{COOKING_RECORD_POINTS}pt
+                </Text>
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionCard, styles.flex1, styles.missionCard]}
-              onPress={() => router.push('/(tabs)/missions')}
+              onPress={() => router.push("/(tabs)/missions")}
             >
               <Text style={styles.actionIcon}>🚩</Text>
               <Text style={styles.actionTitle}>今日のミッション</Text>
@@ -229,7 +278,9 @@ export default function HomeTab() {
               </Text>
               {claimablePoints > 0 && (
                 <View style={[styles.pointBadge, styles.pointBadgeOrange]}>
-                  <Text style={styles.pointBadgeText}>+{claimablePoints}pt</Text>
+                  <Text style={styles.pointBadgeText}>
+                    +{claimablePoints}pt
+                  </Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -242,29 +293,40 @@ export default function HomeTab() {
             <Text style={styles.gachaIcon}>🎰</Text>
             <View style={styles.flex1}>
               <Text style={styles.gachaTitle}>
-                {gachaProgress.canPlay ? 'ガチャできます' : `ガチャまであと ${gachaProgress.pointsNeeded}pt`}
+                {gachaProgress.canPlay
+                  ? "ガチャできます"
+                  : `ガチャまであと ${gachaProgress.pointsNeeded}pt`}
               </Text>
               <View style={styles.gachaBarBg}>
-                <View style={[styles.gachaBarFill, { width: `${gachaProgress.progressPercent}%` }]} />
+                <View
+                  style={[
+                    styles.gachaBarFill,
+                    { width: `${gachaProgress.progressPercent}%` },
+                  ]}
+                />
               </View>
-              <Text style={styles.gachaSub}>{gachaProgress.currentCyclePoints} / 100 pt</Text>
+              <Text style={styles.gachaSub}>
+                {gachaProgress.currentCyclePoints} / 100 pt
+              </Text>
             </View>
           </View>
           <TouchableOpacity
             style={styles.gachaBtn}
-            onPress={() => router.push('/(tabs)/collection')}
+            onPress={() => router.push("/(tabs)/collection")}
           >
             <Text style={styles.gachaBtnText}>報酬をチェック →</Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
 
       <InputModal
-        key={selectedCategory ?? 'none'}
+        key={selectedCategory ?? "none"}
         visible={showInputModal}
         initialCategory={selectedCategory}
-        onClose={() => { setShowInputModal(false); setSelectedCategory(null); }}
+        onClose={() => {
+          setShowInputModal(false);
+          setSelectedCategory(null);
+        }}
       />
       <CookingModal
         visible={showCookingModal}
@@ -278,24 +340,24 @@ export default function HomeTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
   },
   content: {
     padding: 12,
     gap: 12,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   flex1: {
     flex: 1,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -303,8 +365,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cardIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   cardIcon: {
@@ -312,84 +374,84 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     fontSize: 12,
-    color: '#757575',
-    fontWeight: '500',
+    color: "#757575",
+    fontWeight: "500",
   },
   todayAmount: {
     fontSize: 26,
-    fontWeight: '800',
-    color: '#212121',
+    fontWeight: "800",
+    color: "#212121",
   },
   subLabel: {
     fontSize: 12,
-    color: '#9E9E9E',
+    color: "#9E9E9E",
   },
   textOver: {
-    color: '#F44336',
+    color: "#F44336",
   },
   levelHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
   },
   levelValue: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#2E7D32',
+    fontWeight: "800",
+    color: "#2E7D32",
     marginTop: 2,
   },
   levelMeta: {
     flex: 1,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     gap: 2,
   },
   levelNext: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#212121',
-    textAlign: 'right',
+    fontWeight: "700",
+    color: "#212121",
+    textAlign: "right",
   },
   levelTotal: {
     fontSize: 11,
-    color: '#757575',
-    textAlign: 'right',
+    color: "#757575",
+    textAlign: "right",
   },
   levelBarBg: {
     height: 8,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   levelBarFill: {
-    height: '100%',
-    backgroundColor: '#4CAF50',
+    height: "100%",
+    backgroundColor: "#4CAF50",
     borderRadius: 4,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#212121',
+    fontWeight: "700",
+    color: "#212121",
   },
   categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   categoryBtn: {
-    flexBasis: '30%',
+    flexBasis: "30%",
     flexGrow: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FAFAFA",
     gap: 4,
   },
   categoryIcon: {
@@ -397,68 +459,68 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontSize: 11,
-    color: '#424242',
-    fontWeight: '500',
+    color: "#424242",
+    fontWeight: "500",
   },
   streakBadge: {
     fontSize: 12,
-    color: '#FF9800',
-    fontWeight: '600',
+    color: "#FF9800",
+    fontWeight: "600",
   },
   actionCard: {
-    backgroundColor: '#F9FBF9',
+    backgroundColor: "#F9FBF9",
     borderRadius: 12,
     padding: 14,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 4,
     borderWidth: 1,
-    borderColor: '#E8F5E9',
-    position: 'relative',
+    borderColor: "#E8F5E9",
+    position: "relative",
   },
   missionCard: {
-    backgroundColor: '#F3F8FF',
-    borderColor: '#BBDEFB',
+    backgroundColor: "#F3F8FF",
+    borderColor: "#BBDEFB",
   },
   actionCardDone: {
-    backgroundColor: '#E8F5E9',
-    borderColor: '#A5D6A7',
+    backgroundColor: "#E8F5E9",
+    borderColor: "#A5D6A7",
   },
   actionIcon: {
     fontSize: 28,
   },
   actionTitle: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#212121',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#212121",
+    textAlign: "center",
   },
   actionSub: {
     fontSize: 11,
-    color: '#9E9E9E',
+    color: "#9E9E9E",
   },
   missionProgress: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#2196F3',
+    fontWeight: "700",
+    color: "#2196F3",
   },
   pointBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
     marginTop: 2,
   },
   pointBadgeOrange: {
-    backgroundColor: '#FF9800',
+    backgroundColor: "#FF9800",
   },
   pointBadgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   gachaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   gachaIcon: {
@@ -466,38 +528,38 @@ const styles = StyleSheet.create({
   },
   gachaTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#212121',
+    fontWeight: "700",
+    color: "#212121",
     marginBottom: 6,
   },
   gachaBarBg: {
     height: 8,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   gachaBarFill: {
-    height: '100%',
-    backgroundColor: '#FF9800',
+    height: "100%",
+    backgroundColor: "#FF9800",
     borderRadius: 4,
   },
   gachaSub: {
     fontSize: 11,
-    color: '#9E9E9E',
+    color: "#9E9E9E",
     marginTop: 4,
   },
   gachaBtn: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: "#FFF3E0",
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#FFE0B2',
+    borderColor: "#FFE0B2",
   },
   gachaBtnText: {
-    color: '#E65100',
+    color: "#E65100",
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   budgetList: {
     gap: 12,
@@ -506,45 +568,45 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   budgetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: 10,
   },
   budgetLabel: {
     flex: 1,
     fontSize: 13,
-    color: '#212121',
-    fontWeight: '700',
+    color: "#212121",
+    fontWeight: "700",
   },
   budgetStatus: {
     fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '700',
-    textAlign: 'right',
+    color: "#4CAF50",
+    fontWeight: "700",
+    textAlign: "right",
   },
   budgetBarBg: {
     height: 8,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   budgetBarFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 4,
   },
   budgetMeta: {
     fontSize: 11,
-    color: '#9E9E9E',
+    color: "#9E9E9E",
   },
   budgetNote: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
   budgetNoteText: {
     fontSize: 11,
-    color: '#757575',
+    color: "#757575",
   },
 });

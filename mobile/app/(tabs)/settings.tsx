@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   View,
   Text,
@@ -10,22 +10,22 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import { useAppStore } from '@/store/useAppStore';
-import { formatCurrency, getMealLabel } from '@/utils/formatHelpers';
-import { getCurrentDate } from '@/utils/dateHelpers';
-import type { ExpenseRecord } from '@/types';
+} from "react-native";
+import { File, Paths } from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import { useAppStore } from "@/store/useAppStore";
+import { formatCurrency, getMealLabel } from "@/utils/formatHelpers";
+import { getCurrentDate } from "@/utils/dateHelpers";
+import type { ExpenseRecord } from "@/types";
 
-type EditableBudgetType = 'expense' | 'allowance';
+type EditableBudgetType = "expense" | "allowance";
 
 const BUDGET_LABELS: Record<EditableBudgetType, string> = {
-  expense: '月のスーパー予算',
-  allowance: '月のお小遣い予算',
+  expense: "月のスーパーの予算",
+  allowance: "月のお小遣い予算",
 };
 
-const CSV_HEADERS = ['日付', 'カテゴリ', '食事時間帯', '金額', '記録日時'];
+const CSV_HEADERS = ["日付", "カテゴリ", "食事時間帯", "金額", "記録日時"];
 
 function escapeCsvValue(value: string | number): string {
   const text = String(value);
@@ -48,31 +48,43 @@ function createExpensesCsv(expenses: ExpenseRecord[]): string {
     expense.timestamp,
   ]);
   const csvLines = [CSV_HEADERS, ...rows].map((row) =>
-    row.map(escapeCsvValue).join(',')
+    row.map(escapeCsvValue).join(","),
   );
-  return `\uFEFF${csvLines.join('\r\n')}`;
+  return `\uFEFF${csvLines.join("\r\n")}`;
 }
 
 export default function SettingsTab() {
-  const { userData, goals, expenses, updateGoals, resetAllData } = useAppStore();
+  const { userData, goals, expenses, updateGoals, resetAllData } =
+    useAppStore();
   const [isExporting, setIsExporting] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
-  const [editingBudgetType, setEditingBudgetType] = useState<EditableBudgetType>('expense');
-  const [budgetInput, setBudgetInput] = useState(String(goals.monthlyExpenseGoal));
+  const [editingBudgetType, setEditingBudgetType] =
+    useState<EditableBudgetType>("expense");
+  const [budgetInput, setBudgetInput] = useState(
+    String(goals.monthlyExpenseGoal),
+  );
   const totalBudgetGoal = goals.monthlyExpenseGoal + goals.allowanceGoal;
 
   const handleBudgetChange = (type: EditableBudgetType) => {
     setEditingBudgetType(type);
-    setBudgetInput(String(type === 'expense' ? goals.monthlyExpenseGoal : goals.allowanceGoal));
+    setBudgetInput(
+      String(
+        type === "expense" ? goals.monthlyExpenseGoal : goals.allowanceGoal,
+      ),
+    );
     setIsBudgetModalOpen(true);
   };
 
   const handleSaveBudget = () => {
-    const normalized = budgetInput.replace(/,/g, '').trim();
+    const normalized = budgetInput.replace(/,/g, "").trim();
     const parsed = Number(normalized);
 
-    if (!/^\d+$/.test(normalized) || !Number.isSafeInteger(parsed) || parsed <= 0) {
-      Alert.alert('入力エラー', '予算は1円以上の整数で入力してください');
+    if (
+      !/^\d+$/.test(normalized) ||
+      !Number.isSafeInteger(parsed) ||
+      parsed <= 0
+    ) {
+      Alert.alert("入力エラー", "予算は1円以上の整数で入力してください");
       return;
     }
 
@@ -83,7 +95,7 @@ export default function SettingsTab() {
   const handleExport = async () => {
     if (isExporting) return;
     if (expenses.length === 0) {
-      Alert.alert('データを書き出す', '書き出すデータがありません');
+      Alert.alert("データを書き出す", "書き出すデータがありません");
       return;
     }
 
@@ -91,196 +103,226 @@ export default function SettingsTab() {
     try {
       const canShare = await Sharing.isAvailableAsync();
       if (!canShare) {
-        Alert.alert('書き出しエラー', 'この端末ではCSVファイルの共有を利用できません');
+        Alert.alert(
+          "書き出しエラー",
+          "この端末ではCSVファイルの共有を利用できません",
+        );
         return;
       }
 
       const fileName = `mealquest-expenses-${getCurrentDate()}.csv`;
       const file = new File(Paths.cache, fileName);
-      file.write(createExpensesCsv(expenses), { encoding: 'utf8' });
+      file.write(createExpensesCsv(expenses), { encoding: "utf8" });
 
       await Sharing.shareAsync(file.uri, {
-        mimeType: 'text/csv',
-        UTI: 'public.comma-separated-values-text',
-        dialogTitle: 'MealQuestの食費記録CSVを書き出す',
+        mimeType: "text/csv",
+        UTI: "public.comma-separated-values-text",
+        dialogTitle: "MealQuestの食費記録CSVを書き出す",
       });
     } catch {
-      Alert.alert('書き出しエラー', 'CSVファイルの書き出しに失敗しました');
+      Alert.alert("書き出しエラー", "CSVファイルの書き出しに失敗しました");
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleHelp = () => {
-    Alert.alert('ヘルプ', 'MealQuest は食費管理に特化したゲーミフィケーション付き家計簿アプリです。\n\n自炊・節約・ミッション達成でXPを貯めてレベルアップし、ポイントでガチャや報酬を楽しみましょう！');
+    Alert.alert(
+      "ヘルプ",
+      "MealQuest は食費管理に特化したゲーミフィケーション付き家計簿アプリです。\n\n自炊・節約・ミッション達成でXPを貯めてレベルアップし、ポイントでガチャや報酬を楽しみましょう！",
+    );
   };
 
   const handleReset = () => {
     Alert.alert(
-      'データをリセット',
-      '全てのデータが削除されます。本当によろしいですか？',
+      "データをリセット",
+      "全てのデータが削除されます。本当によろしいですか？",
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: "キャンセル", style: "cancel" },
         {
-          text: 'リセット',
-          style: 'destructive',
+          text: "リセット",
+          style: "destructive",
           onPress: () => {
             resetAllData();
-            Alert.alert('完了', 'データをリセットしました');
+            Alert.alert("完了", "データをリセットしました");
           },
         },
-      ]
+      ],
     );
   };
 
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
-      {/* アカウント */}
-      <Text style={styles.sectionLabel}>アカウント</Text>
-      <TouchableOpacity style={styles.accountCard}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarIcon}>👑</Text>
-        </View>
-        <View style={styles.accountInfo}>
-          <Text style={styles.accountName}>節約マスター</Text>
-          <Text style={styles.accountLevel}>Lv. {userData.level}</Text>
-          <Text style={styles.accountPoints}>🪙 {userData.points.toLocaleString()} pt</Text>
-        </View>
-        <Text style={styles.arrow}>{'>'}</Text>
-      </TouchableOpacity>
-
-      {/* 予算設定 */}
-      <Text style={styles.sectionLabel}>予算設定</Text>
-      <View style={styles.card}>
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>📊</Text>
-            <View>
-              <Text style={styles.settingLabel}>月のスーパー予算</Text>
-              <Text style={styles.settingSub}>ホームのスーパー予算に反映</Text>
-            </View>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        {/* アカウント */}
+        <Text style={styles.sectionLabel}>アカウント</Text>
+        <TouchableOpacity style={styles.accountCard}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarIcon}>👑</Text>
           </View>
-          <View style={styles.settingRight}>
-            <Text style={styles.settingValue}>{formatCurrency(goals.monthlyExpenseGoal)}</Text>
-            <TouchableOpacity style={styles.changeBtn} onPress={() => handleBudgetChange('expense')}>
-              <Text style={styles.changeBtnText}>変更</Text>
-            </TouchableOpacity>
+          <View style={styles.accountInfo}>
+            <Text style={styles.accountName}>節約マスター</Text>
+            <Text style={styles.accountLevel}>Lv. {userData.level}</Text>
+            <Text style={styles.accountPoints}>
+              🪙 {userData.points.toLocaleString()} pt
+            </Text>
           </View>
-        </View>
-        <View style={styles.separator} />
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>👛</Text>
-            <View>
-              <Text style={styles.settingLabel}>月のお小遣い予算</Text>
-              <Text style={styles.settingSub}>スーパー以外の予算に反映</Text>
-            </View>
-          </View>
-          <View style={styles.settingRight}>
-            <Text style={styles.settingValue}>{formatCurrency(goals.allowanceGoal)}</Text>
-            <TouchableOpacity style={styles.changeBtn} onPress={() => handleBudgetChange('allowance')}>
-              <Text style={styles.changeBtnText}>変更</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.separator} />
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>🧾</Text>
-            <View>
-              <Text style={styles.settingLabel}>食費合計予算</Text>
-              <Text style={styles.settingSub}>スーパー予算 + お小遣い予算</Text>
-            </View>
-          </View>
-          <View style={styles.settingRight}>
-            <Text style={styles.settingValue}>{formatCurrency(totalBudgetGoal)}</Text>
-            <View style={styles.autoBadge}>
-              <Text style={styles.autoBadgeText}>自動</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* 通知 */}
-      <Text style={styles.sectionLabel}>通知</Text>
-      <View style={styles.card}>
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>🕐</Text>
-            <View>
-              <Text style={styles.settingLabel}>デイリー通知</Text>
-              <Text style={styles.settingSub}>毎日のリマインダー</Text>
-            </View>
-          </View>
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonText}>近日対応予定</Text>
-          </View>
-        </View>
-        <View style={styles.separator} />
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>🚩</Text>
-            <View>
-              <Text style={styles.settingLabel}>ミッション通知</Text>
-              <Text style={styles.settingSub}>ミッション達成のお知らせ</Text>
-            </View>
-          </View>
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonText}>近日対応予定</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* データ管理 */}
-      <Text style={styles.sectionLabel}>データ管理</Text>
-      <View style={styles.card}>
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>📤</Text>
-            <View>
-              <Text style={styles.settingLabel}>CSVを書き出す</Text>
-              <Text style={styles.settingSub}>食費記録を表計算用に保存</Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={[styles.actionBtn, isExporting && styles.actionBtnDisabled]}
-            onPress={handleExport}
-            disabled={isExporting}
-          >
-            <Text style={styles.actionBtnText}>{isExporting ? '書き出し中...' : '書き出す'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* アプリ情報 */}
-      <Text style={styles.sectionLabel}>アプリ情報</Text>
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.settingRow} onPress={handleHelp}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>ℹ️</Text>
-            <Text style={styles.settingLabel}>ヘルプ</Text>
-          </View>
-          <Text style={styles.arrow}>{'>'}</Text>
+          <Text style={styles.arrow}>{">"}</Text>
         </TouchableOpacity>
-        <View style={styles.separator} />
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Text style={styles.settingIcon}>📱</Text>
-            <Text style={styles.settingLabel}>バージョン</Text>
+
+        {/* 予算設定 */}
+        <Text style={styles.sectionLabel}>予算設定</Text>
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>📊</Text>
+              <View>
+                <Text style={styles.settingLabel}>月のスーパーの予算</Text>
+                <Text style={styles.settingSub}>
+                  ホームのスーパーの予算に反映
+                </Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Text style={styles.settingValue}>
+                {formatCurrency(goals.monthlyExpenseGoal)}
+              </Text>
+              <TouchableOpacity
+                style={styles.changeBtn}
+                onPress={() => handleBudgetChange("expense")}
+              >
+                <Text style={styles.changeBtnText}>変更</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <Text style={styles.settingValue}>1.0.0</Text>
+          <View style={styles.separator} />
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>👛</Text>
+              <View>
+                <Text style={styles.settingLabel}>月のお小遣い予算</Text>
+                <Text style={styles.settingSub}>スーパー以外の予算に反映</Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Text style={styles.settingValue}>
+                {formatCurrency(goals.allowanceGoal)}
+              </Text>
+              <TouchableOpacity
+                style={styles.changeBtn}
+                onPress={() => handleBudgetChange("allowance")}
+              >
+                <Text style={styles.changeBtnText}>変更</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.separator} />
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>🧾</Text>
+              <View>
+                <Text style={styles.settingLabel}>食費合計予算</Text>
+                <Text style={styles.settingSub}>
+                  スーパーの予算 + お小遣い予算
+                </Text>
+              </View>
+            </View>
+            <View style={styles.settingRight}>
+              <Text style={styles.settingValue}>
+                {formatCurrency(totalBudgetGoal)}
+              </Text>
+              <View style={styles.autoBadge}>
+                <Text style={styles.autoBadgeText}>自動</Text>
+              </View>
+            </View>
+          </View>
         </View>
-      </View>
 
-      {/* リセット */}
-      <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-        <Text style={styles.resetIcon}>⚠️</Text>
-        <Text style={styles.resetText}>すべてのデータをリセット</Text>
-        <Text style={styles.arrow}>{'>'}</Text>
-      </TouchableOpacity>
+        {/* 通知 */}
+        <Text style={styles.sectionLabel}>通知</Text>
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>🕐</Text>
+              <View>
+                <Text style={styles.settingLabel}>デイリー通知</Text>
+                <Text style={styles.settingSub}>毎日のリマインダー</Text>
+              </View>
+            </View>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>近日対応予定</Text>
+            </View>
+          </View>
+          <View style={styles.separator} />
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>🚩</Text>
+              <View>
+                <Text style={styles.settingLabel}>ミッション通知</Text>
+                <Text style={styles.settingSub}>ミッション達成のお知らせ</Text>
+              </View>
+            </View>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>近日対応予定</Text>
+            </View>
+          </View>
+        </View>
 
+        {/* データ管理 */}
+        <Text style={styles.sectionLabel}>データ管理</Text>
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>📤</Text>
+              <View>
+                <Text style={styles.settingLabel}>CSVを書き出す</Text>
+                <Text style={styles.settingSub}>食費記録を表計算用に保存</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                isExporting && styles.actionBtnDisabled,
+              ]}
+              onPress={handleExport}
+              disabled={isExporting}
+            >
+              <Text style={styles.actionBtnText}>
+                {isExporting ? "書き出し中..." : "書き出す"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* アプリ情報 */}
+        <Text style={styles.sectionLabel}>アプリ情報</Text>
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.settingRow} onPress={handleHelp}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>ℹ️</Text>
+              <Text style={styles.settingLabel}>ヘルプ</Text>
+            </View>
+            <Text style={styles.arrow}>{">"}</Text>
+          </TouchableOpacity>
+          <View style={styles.separator} />
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Text style={styles.settingIcon}>📱</Text>
+              <Text style={styles.settingLabel}>バージョン</Text>
+            </View>
+            <Text style={styles.settingValue}>1.0.0</Text>
+          </View>
+        </View>
+
+        {/* リセット */}
+        <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
+          <Text style={styles.resetIcon}>⚠️</Text>
+          <Text style={styles.resetText}>すべてのデータをリセット</Text>
+          <Text style={styles.arrow}>{">"}</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <Modal
@@ -290,12 +332,16 @@ export default function SettingsTab() {
         onRequestClose={() => setIsBudgetModalOpen(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.modalOverlay}
         >
           <View style={styles.budgetModal}>
-            <Text style={styles.modalTitle}>{BUDGET_LABELS[editingBudgetType]}</Text>
-            <Text style={styles.modalDescription}>新しい予算を入力してください</Text>
+            <Text style={styles.modalTitle}>
+              {BUDGET_LABELS[editingBudgetType]}
+            </Text>
+            <Text style={styles.modalDescription}>
+              新しい予算を入力してください
+            </Text>
             <View style={styles.budgetInputRow}>
               <Text style={styles.yen}>¥</Text>
               <TextInput
@@ -315,7 +361,10 @@ export default function SettingsTab() {
               >
                 <Text style={styles.modalCancelText}>キャンセル</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveBudget}>
+              <TouchableOpacity
+                style={styles.modalSaveBtn}
+                onPress={handleSaveBudget}
+              >
                 <Text style={styles.modalSaveText}>保存する</Text>
               </TouchableOpacity>
             </View>
@@ -329,7 +378,7 @@ export default function SettingsTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
   },
   content: {
     padding: 16,
@@ -338,20 +387,20 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#757575',
+    fontWeight: "600",
+    color: "#757575",
     marginTop: 8,
     marginBottom: 4,
     paddingLeft: 4,
   },
   accountCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 14,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -361,11 +410,11 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: "#E8F5E9",
     borderWidth: 2,
-    borderColor: '#4CAF50',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#4CAF50",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarIcon: {
     fontSize: 26,
@@ -376,42 +425,42 @@ const styles = StyleSheet.create({
   },
   accountName: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#212121',
+    fontWeight: "700",
+    color: "#212121",
   },
   accountLevel: {
     fontSize: 13,
-    color: '#4CAF50',
-    fontWeight: '600',
+    color: "#4CAF50",
+    fontWeight: "600",
   },
   accountPoints: {
     fontSize: 13,
-    color: '#FF9800',
-    fontWeight: '600',
+    color: "#FF9800",
+    fontWeight: "600",
   },
   arrow: {
     fontSize: 16,
-    color: '#9E9E9E',
+    color: "#9E9E9E",
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
     paddingHorizontal: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.07,
     shadowRadius: 3,
     elevation: 2,
   },
   settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 14,
   },
   settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   settingIcon: {
@@ -419,90 +468,90 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 14,
-    color: '#424242',
+    color: "#424242",
   },
   settingSub: {
     fontSize: 11,
-    color: '#9E9E9E',
+    color: "#9E9E9E",
     marginTop: 2,
   },
   settingRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   settingValue: {
     fontSize: 14,
-    color: '#757575',
-    fontWeight: '500',
+    color: "#757575",
+    fontWeight: "500",
   },
   changeBtn: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
   changeBtnText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   autoBadge: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   autoBadgeText: {
     fontSize: 13,
-    color: '#757575',
-    fontWeight: '700',
+    color: "#757575",
+    fontWeight: "700",
   },
   actionBtn: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
   },
   actionBtnDisabled: {
     opacity: 0.5,
   },
   comingSoonBadge: {
-    backgroundColor: '#FFF8E1',
+    backgroundColor: "#FFF8E1",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: '#FFE082',
+    borderColor: "#FFE082",
   },
   comingSoonText: {
     fontSize: 11,
-    color: '#F57F17',
-    fontWeight: '600',
+    color: "#F57F17",
+    fontWeight: "600",
   },
   actionBtnText: {
     fontSize: 13,
-    color: '#424242',
-    fontWeight: '600',
+    color: "#424242",
+    fontWeight: "600",
   },
   separator: {
     height: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     marginHorizontal: -16,
   },
   resetBtn: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: "#FFEBEE",
     borderRadius: 14,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: "#FFCDD2",
     marginTop: 8,
   },
   resetIcon: {
@@ -510,56 +559,56 @@ const styles = StyleSheet.create({
   },
   resetText: {
     flex: 1,
-    color: '#F44336',
+    color: "#F44336",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
     padding: 20,
   },
   budgetModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
     gap: 12,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#212121',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "#212121",
+    textAlign: "center",
   },
   modalDescription: {
     fontSize: 13,
-    color: '#757575',
-    textAlign: 'center',
+    color: "#757575",
+    textAlign: "center",
   },
   budgetInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1.5,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 12,
     paddingHorizontal: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: "#FAFAFA",
   },
   yen: {
     fontSize: 20,
-    color: '#424242',
+    color: "#424242",
     marginRight: 4,
   },
   budgetInput: {
     flex: 1,
     fontSize: 26,
-    fontWeight: '700',
-    color: '#212121',
+    fontWeight: "700",
+    color: "#212121",
     paddingVertical: 10,
   },
   modalBtnRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 4,
   },
@@ -568,24 +617,24 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    alignItems: 'center',
+    borderColor: "#E0E0E0",
+    alignItems: "center",
   },
   modalCancelText: {
     fontSize: 14,
-    color: '#757575',
-    fontWeight: '600',
+    color: "#757575",
+    fontWeight: "600",
   },
   modalSaveBtn: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: '#4CAF50',
-    alignItems: 'center',
+    backgroundColor: "#4CAF50",
+    alignItems: "center",
   },
   modalSaveText: {
     fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
 });
