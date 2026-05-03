@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Modal, TextInput, KeyboardAvoidingView, Platform, Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/store/useAppStore';
 import { calculateGachaProgress, calculateLevelProgress } from '@/utils/calculationHelpers';
@@ -42,10 +45,15 @@ function getBudgetColor(percent: number, isOver: boolean): string {
 
 export default function HomeTab() {
   const router = useRouter();
-  const { userData, goals, expenses, missions, streaks, cookingRecords } = useAppStore();
+  const {
+    userData, goals, expenses, missions, streaks, cookingRecords, savingsRecords,
+    addSavingsRecord, recordNoWasteDay, recordSnackFreeDay,
+  } = useAppStore();
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | null>(null);
   const [showInputModal, setShowInputModal] = useState(false);
   const [showCookingModal, setShowCookingModal] = useState(false);
+  const [showSavingsModal, setShowSavingsModal] = useState(false);
+  const [savingsAmount, setSavingsAmount] = useState('');
 
   const today = getCurrentDate();
   const currentMonth = today.slice(0, 7);
@@ -104,9 +112,28 @@ export default function HomeTab() {
     .map((r) => r.meal) as MealTime[];
   const allMealsComplete = COOKING_MEALS.every((m) => todayMeals.includes(m));
 
+  const noWasteToday = streaks.lastNoWasteDate === today;
+  const snackFreeToday = streaks.lastSnackFreeDate === today;
+  const savingsToday = savingsRecords.some((r) => r.date === today);
+
   const handleCategoryPress = (cat: ExpenseCategory) => {
     setSelectedCategory(cat);
     setShowInputModal(true);
+  };
+
+  const handleSaveSavings = () => {
+    if (!savingsAmount || !/^\d+$/.test(savingsAmount)) {
+      Alert.alert('入力エラー', '金額を正しく入力してください');
+      return;
+    }
+    const parsed = Number(savingsAmount);
+    if (parsed <= 0 || !Number.isSafeInteger(parsed)) {
+      Alert.alert('入力エラー', '金額を正しく入力してください');
+      return;
+    }
+    addSavingsRecord(parsed);
+    setSavingsAmount('');
+    setShowSavingsModal(false);
   };
 
   return (
@@ -234,6 +261,38 @@ export default function HomeTab() {
               )}
             </TouchableOpacity>
           </View>
+
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={[styles.actionCard, styles.flex1, savingsToday && styles.actionCardDone]}
+              onPress={() => { setSavingsAmount(''); setShowSavingsModal(true); }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.actionIcon}>💰</Text>
+              <Text style={styles.actionTitle}>節約を記録</Text>
+              <Text style={styles.actionSub}>{savingsToday ? '記録済み' : '節約した金額を入力'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, styles.flex1, noWasteToday && styles.actionCardDone]}
+              onPress={() => { if (!noWasteToday) recordNoWasteDay(); }}
+              activeOpacity={noWasteToday ? 1 : 0.7}
+            >
+              <Text style={styles.actionIcon}>✨</Text>
+              <Text style={styles.actionTitle}>無駄遣いなし</Text>
+              <Text style={styles.actionSub}>{noWasteToday ? '記録済み！' : `連続${streaks.noWasteStreak}日`}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, styles.flex1, snackFreeToday && styles.actionCardDone]}
+              onPress={() => { if (!snackFreeToday) recordSnackFreeDay(); }}
+              activeOpacity={snackFreeToday ? 1 : 0.7}
+            >
+              <Text style={styles.actionIcon}>🥗</Text>
+              <Text style={styles.actionTitle}>間食なし</Text>
+              <Text style={styles.actionSub}>{snackFreeToday ? '記録済み！' : `連続${streaks.snackFreeStreak}日`}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ガチャティザー */}
@@ -271,6 +330,46 @@ export default function HomeTab() {
         onClose={() => setShowCookingModal(false)}
         todayMeals={todayMeals}
       />
+
+      <Modal
+        visible={showSavingsModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowSavingsModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.savingsOverlay}
+        >
+          <View style={styles.savingsSheet}>
+            <Text style={styles.savingsTitle}>節約を記録する</Text>
+            <Text style={styles.savingsSub}>節約した金額を入力してください（¥10 = 1pt）</Text>
+            <View style={styles.savingsInputRow}>
+              <Text style={styles.savingsYen}>¥</Text>
+              <TextInput
+                style={styles.savingsInput}
+                value={savingsAmount}
+                onChangeText={setSavingsAmount}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#BDBDBD"
+                autoFocus
+              />
+            </View>
+            <View style={styles.savingsBtnRow}>
+              <TouchableOpacity
+                style={styles.savingsCancelBtn}
+                onPress={() => setShowSavingsModal(false)}
+              >
+                <Text style={styles.savingsCancelText}>キャンセル</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.savingsSaveBtn} onPress={handleSaveSavings}>
+                <Text style={styles.savingsSaveText}>記録する</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </>
   );
 }
@@ -546,5 +645,79 @@ const styles = StyleSheet.create({
   budgetNoteText: {
     fontSize: 11,
     color: '#757575',
+  },
+  savingsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  savingsSheet: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+  },
+  savingsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#212121',
+    textAlign: 'center',
+  },
+  savingsSub: {
+    fontSize: 12,
+    color: '#757575',
+    textAlign: 'center',
+  },
+  savingsInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#FAFAFA',
+  },
+  savingsYen: {
+    fontSize: 20,
+    color: '#424242',
+    marginRight: 4,
+  },
+  savingsInput: {
+    flex: 1,
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#212121',
+    paddingVertical: 10,
+  },
+  savingsBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  savingsCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+  },
+  savingsCancelText: {
+    fontSize: 14,
+    color: '#757575',
+    fontWeight: '600',
+  },
+  savingsSaveBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+  },
+  savingsSaveText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });
