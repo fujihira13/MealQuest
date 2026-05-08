@@ -17,7 +17,8 @@
       "minSdkVersion": 26,
       "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
+        "backgroundImage": "./assets/images/adaptive-icon-background.png",
         "backgroundColor": "#4CAF50"
       }
     },
