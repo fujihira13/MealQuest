@@ -1,7 +1,7 @@
 # アプリリリース用 画像・設定 手順書
 
 作成日: 2026-05-09  
-対象: `mobile/` の Expo / React Native アプリ `MealQuest`
+対象: `mobile/` の Expo / React Native アプリ
 
 ## 結論
 
@@ -15,19 +15,19 @@ MealQuest のリリースで必要な画像は、用途で分けると次の3種
 
 ## 必要画像一覧
 
-| 用途 | ファイル | サイズ | 形式 | 透過 | 必須/推奨 | 備考 |
-|---|---|---:|---|---|---|---|
-| Expo共通アプリアイコン | `mobile/assets/images/icon.png` | 1024 x 1024 | PNG | なし推奨 | 必須 | iOS/Androidビルド元。角丸は入れない |
-| Android legacy icon | `mobile/assets/images/icon.png` | 1024 x 1024 | PNG | 可 | 必須扱い | `android.icon` で指定 |
-| Android adaptive foreground | `mobile/assets/images/adaptive-icon-foreground.png` | 1024 x 1024 | PNG | あり | 必須扱い | ロゴや主役だけ。十分な余白を取る |
-| Android adaptive background | `mobile/assets/images/adaptive-icon-background.png` | 1024 x 1024 | PNG | なし | 必須扱い | foreground と同寸。背景色だけでも可 |
-| Android themed icon | `mobile/assets/images/adaptive-icon-monochrome.png` | 1024 x 1024 | PNG | あり推奨 | 任意/推奨 | Android 13+ のテーマアイコン用。現状未作成 |
-| Splash icon | `mobile/assets/images/splash-icon.png` | 1024 x 1024 | PNG | あり推奨 | 必須扱い | Expo公式は透明背景を推奨 |
-| Google Play アイコン | `store-assets/android/play-store-icon-512.png` | 512 x 512 | 32-bit PNG | あり可 | 必須 | 最大 1024KB |
-| Google Play フィーチャー画像 | `store-assets/android/feature-graphic-1024x500.png` | 1024 x 500 | JPEG または 24-bit PNG | なし | 必須 | 文字や細かすぎる要素は避ける |
-| Google Play スクリーンショット | 手動撮影 | 最小320px、最大3840px | JPEG または 24-bit PNG | なし | 必須 | 最低2枚。推奨はスマホ縦 1080 x 1920 を4枚以上 |
-| iOS App Store アイコン | `store-assets/ios/app-store-icon-1024.png` または `mobile/assets/images/icon.png` | 1024 x 1024 | PNG | なし | 必須 | EAS Build では `icon.png` から生成可能 |
-| iPhone スクリーンショット | 手動撮影 | 例: 1290 x 2796 / 1320 x 2868 | PNG/JPEG | なし | 必須 | App Store Connect は1〜10枚 |
+| 用途                           | ファイル                                                                          |                        サイズ | 形式                   | 透過     | 必須/推奨 | 備考                                          |
+| ------------------------------ | --------------------------------------------------------------------------------- | ----------------------------: | ---------------------- | -------- | --------- | --------------------------------------------- |
+| Expo共通アプリアイコン         | `mobile/assets/images/icon.png`                                                   |                   1024 x 1024 | PNG                    | なし推奨 | 必須      | iOS/Androidビルド元。角丸は入れない           |
+| Android legacy icon            | `mobile/assets/images/icon.png`                                                   |                   1024 x 1024 | PNG                    | 可       | 必須扱い  | `android.icon` で指定                         |
+| Android adaptive foreground    | `mobile/assets/images/adaptive-icon-foreground.png`                               |                   1024 x 1024 | PNG                    | あり     | 必須扱い  | ロゴや主役だけ。十分な余白を取る              |
+| Android adaptive background    | `mobile/assets/images/adaptive-icon-background.png`                               |                   1024 x 1024 | PNG                    | なし     | 必須扱い  | foreground と同寸。背景色だけでも可           |
+| Android themed icon            | `mobile/assets/images/adaptive-icon-monochrome.png`                               |                   1024 x 1024 | PNG                    | あり推奨 | 任意/推奨 | Android 13+ のテーマアイコン用。現状未作成    |
+| Splash icon                    | `mobile/assets/images/splash-icon.png`                                            |                   1024 x 1024 | PNG                    | あり推奨 | 必須扱い  | Expo公式は透明背景を推奨                      |
+| Google Play アイコン           | `store-assets/android/play-store-icon-512.png`                                    |                     512 x 512 | 32-bit PNG             | あり可   | 必須      | 最大 1024KB                                   |
+| Google Play フィーチャー画像   | `store-assets/android/feature-graphic-1024x500.png`                               |                    1024 x 500 | JPEG または 24-bit PNG | なし     | 必須      | 文字や細かすぎる要素は避ける                  |
+| Google Play スクリーンショット | 手動撮影                                                                          |         最小320px、最大3840px | JPEG または 24-bit PNG | なし     | 必須      | 最低2枚。推奨はスマホ縦 1080 x 1920 を4枚以上 |
+| iOS App Store アイコン         | `store-assets/ios/app-store-icon-1024.png` または `mobile/assets/images/icon.png` |                   1024 x 1024 | PNG                    | なし     | 必須      | EAS Build では `icon.png` から生成可能        |
+| iPhone スクリーンショット      | 手動撮影                                                                          | 例: 1290 x 2796 / 1320 x 2868 | PNG/JPEG               | なし     | 必須      | App Store Connect は1〜10枚                   |
 
 ## 現在の設定
 
