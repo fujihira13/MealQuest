@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.mealquest.app"
+      "bundleIdentifier": "com.sakana1113.mealquest"
     },
     "android": {
       "package": "com.mealquest.app",
