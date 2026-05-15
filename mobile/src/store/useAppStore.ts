@@ -236,6 +236,7 @@ export const useAppStore = create<AppStore>()(
           ),
         }));
         get().updateMonthlyData();
+        get().checkBadgeProgress();
       },
 
       deleteExpenseRecord: (id) => {
@@ -243,6 +244,7 @@ export const useAppStore = create<AppStore>()(
           expenses: state.expenses.filter((exp) => exp.id !== id),
         }));
         get().updateMonthlyData();
+        get().checkBadgeProgress();
       },
 
       toggleCookingRecord: (meal) => {
