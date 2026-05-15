@@ -752,14 +752,30 @@ export const useAppStore = create<AppStore>()(
               case "level": shouldEarn = state.userData.level >= req.value; break;
               case "savings_level": shouldEarn = state.userData.savingsLevel >= req.value; break;
               case "no_waste_streak": shouldEarn = state.streaks.noWasteStreak >= req.value; break;
-              case "consecutive_days":
-                shouldEarn = state.expenses.length > 0 || state.cookingRecords.length > 0;
+              case "consecutive_days": {
+                const dateDayMs = 24 * 60 * 60 * 1000;
+                const recordedDates = new Set([
+                  ...state.expenses.map((e) => e.date),
+                  ...state.cookingRecords.map((r) => r.date),
+                ]);
+                const sorted = Array.from(recordedDates).sort();
+                let maxStreak = 0;
+                let streak = 1;
+                for (let i = 1; i < sorted.length; i++) {
+                  const diff =
+                    new Date(sorted[i]).getTime() - new Date(sorted[i - 1]).getTime();
+                  streak = diff === dateDayMs ? streak + 1 : 1;
+                  if (streak > maxStreak) maxStreak = streak;
+                }
+                if (sorted.length === 1) maxStreak = 1;
+                shouldEarn = maxStreak >= req.value;
                 break;
+              }
               case "monthly_goal_achieved":
                 shouldEarn =
-                  state.userData.monthlyExpense <= 25000 &&
-                  state.userData.cookingCount >= 20 &&
-                  state.userData.allowanceUsed <= 15000;
+                  state.userData.monthlyExpense <= state.goals.monthlyExpenseGoal &&
+                  state.userData.cookingCount >= state.goals.cookingGoal &&
+                  state.userData.allowanceUsed <= state.goals.allowanceGoal;
                 break;
               case "gacha_items": shouldEarn = state.collection.length >= req.value; break;
               case "missions_completed":
