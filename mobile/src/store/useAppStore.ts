@@ -134,6 +134,7 @@ interface AppStore extends AppState {
 
   generateDailyMissions: () => void;
   generateWeeklyMissions: () => void;
+  initializeMissions: () => void;
   updateMissionProgress: (
     actionType: string,
     value?: number,
@@ -649,6 +650,70 @@ export const useAppStore = create<AppStore>()(
             missions: { ...state.missions, weekly: {}, lastWeeklyReset: weekKey },
           }));
         }
+      },
+
+      initializeMissions: () => {
+        const today = getCurrentDate();
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        const weekKey = formatDateKey(startOfWeek);
+
+        const dailyTemplates = [
+          { id: "daily_cooking_1", title: "自炊チャレンジ", description: "今日1回自炊する", target: 1, reward: 30, type: "cooking" as MissionType, icon: "🍳" },
+          { id: "daily_expenses_record", title: "記録の習慣", description: "支出または自炊を1回記録する", target: 1, reward: 20, type: "record_habit" as MissionType, icon: "📝" },
+          { id: "daily_savings", title: "節約成功", description: "誘惑に負けず節約を記録する", target: 1, reward: 25, type: "savings" as MissionType, icon: "💰" },
+        ];
+
+        const weeklyTemplates = [
+          { id: "weekly_cooking_goal", title: "週間自炊マスター", description: "1週間で10回自炊する", target: 10, reward: 100, type: "cooking" as MissionType, icon: "👨‍🍳" },
+          { id: "weekly_expense_goal", title: "支出管理上手", description: "1週間で食費を目標以下に抑える", target: 1, reward: 80, type: "expense_control" as MissionType, icon: "📊" },
+          { id: "weekly_savings_goal", title: "節約チャンピオン", description: "1週間で1000円節約する", target: 1000, reward: 120, type: "total_savings" as MissionType, icon: "🏆" },
+        ];
+
+        const current = get().missions;
+        let daily = current.daily;
+        let weekly = current.weekly;
+        let lastDailyReset = current.lastDailyReset;
+        let lastWeeklyReset = current.lastWeeklyReset;
+
+        if (current.lastDailyReset !== today) {
+          daily = {};
+          lastDailyReset = today;
+        }
+
+        if (current.lastWeeklyReset !== weekKey) {
+          weekly = {};
+          lastWeeklyReset = weekKey;
+        }
+
+        if (Object.keys(daily).length === 0) {
+          const newDaily: Record<string, Mission> = {};
+          dailyTemplates.forEach((t) => {
+            newDaily[t.id] = { ...t, progress: 0, completed: false, claimed: false };
+          });
+          daily = newDaily;
+          lastDailyReset = today;
+        }
+
+        if (Object.keys(weekly).length === 0) {
+          const newWeekly: Record<string, Mission> = {};
+          weeklyTemplates.forEach((t) => {
+            newWeekly[t.id] = { ...t, progress: 0, completed: false, claimed: false };
+          });
+          weekly = newWeekly;
+          lastWeeklyReset = weekKey;
+        }
+
+        set((state) => ({
+          missions: {
+            ...state.missions,
+            daily,
+            weekly,
+            lastDailyReset,
+            lastWeeklyReset,
+          },
+        }));
       },
 
       checkBadgeProgress: () => {
