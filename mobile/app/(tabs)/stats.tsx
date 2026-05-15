@@ -33,6 +33,9 @@ export default function StatsTab() {
   const { expenses, cookingRecords, goals, deleteExpenseRecord } = useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
+  const [showAllExpenses, setShowAllExpenses] = useState(false);
+
+  const currentMonth = getCurrentMonth();
 
   const prevMonth = addMonths(selectedMonth, -1);
 
@@ -111,22 +114,31 @@ export default function StatsTab() {
           <Text style={styles.navArrow}>{'＜'}</Text>
         </TouchableOpacity>
         <Text style={styles.monthLabel}>{getMonthLabel(selectedMonth)}</Text>
-        <TouchableOpacity onPress={() => setSelectedMonth(addMonths(selectedMonth, 1))}>
-          <Text style={styles.navArrow}>{'＞'}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            if (selectedMonth < currentMonth) setSelectedMonth(addMonths(selectedMonth, 1));
+          }}
+          disabled={selectedMonth >= currentMonth}
+        >
+          <Text style={[styles.navArrow, selectedMonth >= currentMonth && styles.navArrowDisabled]}>
+            {'＞'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* 3カラムサマリー */}
+      {/* サマリー — 1段目: 食費合計 大きく */}
+      <View style={[styles.card, styles.alignCenter]}>
+        <Text style={styles.summaryLabel}>食費合計</Text>
+        <Text style={styles.summaryAmountLarge}>{formatCurrency(total)}</Text>
+        {momChange !== null && (
+          <Text style={[styles.summaryChange, momChange < 0 ? styles.changeGood : styles.changeBad]}>
+            前月比 {momChange > 0 ? '+' : ''}{momChange}%{momChange < 0 ? '↓' : '↑'}
+          </Text>
+        )}
+      </View>
+
+      {/* サマリー — 2段目: 自炊回数 + 予算使用率 */}
       <View style={styles.row}>
-        <View style={[styles.card, styles.flex1, styles.alignCenter]}>
-          <Text style={styles.summaryLabel}>食費合計</Text>
-          <Text style={styles.summaryAmount}>{formatCurrency(total)}</Text>
-          {momChange !== null && (
-            <Text style={[styles.summaryChange, momChange < 0 ? styles.changeGood : styles.changeBad]}>
-              前月比 {momChange > 0 ? '+' : ''}{momChange}%{momChange < 0 ? '↓' : '↑'}
-            </Text>
-          )}
-        </View>
         <View style={[styles.card, styles.flex1, styles.alignCenter]}>
           <Text style={styles.summaryLabel}>自炊回数</Text>
           <Text style={styles.summaryAmount}>{cookingCount}回</Text>
@@ -154,7 +166,7 @@ export default function StatsTab() {
           <Text style={styles.cardTitle}>カテゴリー別</Text>
           <PieChart data={byCategory} size={110} />
           <View style={styles.legend}>
-            {byCategory.slice(0, 4).map((d) => (
+            {byCategory.map((d) => (
               <View key={d.label} style={styles.legendRow}>
                 <View style={[styles.legendDot, { backgroundColor: d.color }]} />
                 <Text style={styles.legendLabel}>{d.label}</Text>
@@ -219,11 +231,11 @@ export default function StatsTab() {
         </View>
       )}
 
-      {/* 直近支出リスト */}
+      {/* 支出リスト */}
       {monthExpenses.length > 0 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>支出記録</Text>
-          {monthExpenses.slice(0, 8).map((e) => (
+          {(showAllExpenses ? monthExpenses : monthExpenses.slice(0, 8)).map((e) => (
             <TouchableOpacity
               key={e.id}
               style={styles.expRow}
@@ -250,6 +262,18 @@ export default function StatsTab() {
               </TouchableOpacity>
             </TouchableOpacity>
           ))}
+          {monthExpenses.length > 8 && (
+            <TouchableOpacity
+              style={styles.showMoreBtn}
+              onPress={() => setShowAllExpenses((v) => !v)}
+            >
+              <Text style={styles.showMoreText}>
+                {showAllExpenses
+                  ? '折りたたむ'
+                  : `もっと見る（残り ${monthExpenses.length - 8} 件）`}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -323,10 +347,30 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#757575',
   },
+  summaryAmountLarge: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#212121',
+  },
   summaryAmount: {
     fontSize: 16,
     fontWeight: '800',
     color: '#212121',
+  },
+  navArrowDisabled: {
+    color: '#E0E0E0',
+  },
+  showMoreBtn: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F5F5F5',
+    marginTop: 4,
+  },
+  showMoreText: {
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '600',
   },
   summaryChange: {
     fontSize: 11,

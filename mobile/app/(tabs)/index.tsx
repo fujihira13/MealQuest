@@ -206,17 +206,28 @@ export default function HomeTab() {
           </View>
         </View>
 
-        {/* 今月の予算 */}
+        {/* 今月の使用状況 */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>今月の予算</Text>
+          <Text style={styles.sectionTitle}>今月の使用状況</Text>
           <View style={styles.budgetList}>
             {budgetItems.map((item) => {
               const barColor = getBudgetColor(item.percent, item.status.isOver);
+              const isTotal = item.label === '食費合計';
 
               return (
-                <View key={item.label} style={styles.budgetItem}>
+                <View
+                  key={item.label}
+                  style={[styles.budgetItem, isTotal && styles.budgetItemTotal]}
+                >
                   <View style={styles.budgetHeader}>
-                    <Text style={styles.budgetLabel}>{item.label}</Text>
+                    <Text
+                      style={[
+                        styles.budgetLabel,
+                        isTotal && styles.budgetLabelTotal,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
                     <Text
                       style={[
                         styles.budgetStatus,
@@ -674,6 +685,17 @@ const styles = StyleSheet.create({
   },
   budgetItem: {
     gap: 6,
+  },
+  budgetItemTotal: {
+    backgroundColor: '#F1F8E9',
+    borderRadius: 10,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+  },
+  budgetLabelTotal: {
+    color: '#2E7D32',
+    fontWeight: '800',
   },
   budgetHeader: {
     flexDirection: "row",

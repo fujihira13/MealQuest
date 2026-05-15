@@ -58,7 +58,7 @@ export default function MissionsTab() {
               <Text style={styles.timerLabel}>リセットまで</Text>
             </View>
             <Text style={styles.timer}>{timeLeft}</Text>
-            <Text style={styles.timerSub}>毎日 24:00 にリセット</Text>
+            <Text style={styles.timerSub}>次回起動時に更新</Text>
           </View>
         </View>
         <View style={styles.divider} />
