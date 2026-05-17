@@ -8,10 +8,10 @@
 - **修正**: `"package": "com.yourcompany.appname"` を追加
 
 ### android.versionCode
-- **正解**: 正の整数（例: `1`）が明示されている、または `eas.json` で `autoIncrement: true` が設定されている
+- **正解**: `eas.json` の `cli` に `"appVersionSource": "remote"` が設定されている（EAS がリモートで自動管理）
 - **問題**: 未設定 → 初回提出は通るが、2回目以降に Play Console で「既存より大きいバージョンコードが必要」エラー
-- **修正（推奨）**: `eas.json` の production に `"autoIncrement": true` を追加
-- **修正（代替）**: `app.json` に `"versionCode": 1` を追加して手動管理
+- **修正（推奨）**: `eas.json` の `cli` に `"appVersionSource": "remote"` を追加し、`app.json` の `versionCode` は削除
+- **修正（代替）**: `app.json` に `"versionCode": 1` を追加して手動管理（リリースのたびに手動インクリメントが必要）
 
 ### android.blockedPermissions
 - **正解**: 不要なパーミッションを明示除外している
@@ -52,10 +52,10 @@
 - **正解**: `"store"` （明示推奨）
 - **問題**: 未設定でもデフォルトが `"store"` なので動作上は問題ないが、意図が不明瞭になる
 
-### production.android.autoIncrement
-- **正解**: `true` に設定されている
-- **問題**: 未設定 → `versionCode` を手動管理する必要があり、更新忘れが起きやすい
-- **修正**: `"autoIncrement": true` を追加
+### production.android.autoIncrement（非推奨・旧方式）
+- **現在の推奨**: `eas.json` の `cli.appVersionSource: "remote"` を使う（CLIレベルで全プロファイルに適用される）
+- **このオプションについて**: プロファイル単位で個別に設定する旧方式。`appVersionSource: "remote"` を設定した場合は不要
+- **修正**: `cli.appVersionSource: "remote"` を使うことを推奨。両方設定した場合は `appVersionSource` が優先される
 
 ---
 
@@ -109,20 +109,25 @@
 }
 ```
 
-### eas.json — build セクション
+### eas.json — cli + build セクション
 ```json
-"build": {
-  "preview": {
-    "android": {
-      "buildType": "apk",
-      "distribution": "internal"
-    }
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
   },
-  "production": {
-    "android": {
-      "buildType": "app-bundle",
-      "distribution": "store",
-      "autoIncrement": true
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk",
+        "distribution": "internal"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle",
+        "distribution": "store"
+      }
     }
   }
 }
