@@ -58,6 +58,12 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
     }
   }, [meal, selectedDateMeals]);
 
+  const handleClear = () => {
+    setDate(getCurrentDate());
+    setMeal(defaultMeal(todayMeals));
+    Alert.alert('Clear！！');
+  };
+
   const handleSave = () => {
     if (!isValidDateKey(date)) {
       Alert.alert('入力エラー', '日付を YYYY-MM-DD 形式で入力してください');
@@ -112,6 +118,9 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
             <View style={styles.btnRow}>
               <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
                 <Text style={styles.cancelText}>キャンセル</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
+                <Text style={styles.clearText}>クリア</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.saveBtn, selectedDateMeals.includes(meal) && styles.saveBtnDisabled]}
@@ -230,6 +239,19 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 14,
     color: '#757575',
+    fontWeight: '600',
+  },
+  clearBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FF9800',
+    alignItems: 'center',
+  },
+  clearText: {
+    fontSize: 14,
+    color: '#FF9800',
     fontWeight: '600',
   },
   saveBtn: {

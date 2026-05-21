@@ -147,7 +147,7 @@ export default function StatsTab() {
         <View style={[styles.card, styles.flex1, styles.alignCenter]}>
           <Text style={styles.summaryLabel}>予算使用率</Text>
           <CircularProgress
-            percent={budgetPercent}
+            percent={100 - budgetPercent}
             size={56}
             strokeWidth={6}
             color={budgetPercent >= 90 ? '#F44336' : '#4CAF50'}
