@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { DateSelector } from '@/components/DateSelector';
-import { getCurrentDate, isValidDateKey } from '@/utils/dateHelpers';
+import { getCurrentDate, isValidDateKey, isToday, formatDateForDisplay } from '@/utils/dateHelpers';
 import { CATEGORY_LIST, CATEGORY_ICONS } from '@/constants/categories';
 import type { ExpenseCategory, ExpenseRecord, MealTime } from '@/types';
 
@@ -41,6 +41,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
   const [amount, setAmount] = useState(editingRecord?.amount?.toString() ?? '');
   const [meal, setMeal] = useState<MealTime>(editingRecord?.meal ?? 'lunch');
   const [date, setDate] = useState(editingRecord?.date ?? getCurrentDate());
+  const [isDateExpanded, setIsDateExpanded] = useState(false);
 
   const handleCategoryChange = (cat: ExpenseCategory) => {
     setCategory(cat);
@@ -70,23 +71,42 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
     onClose();
   };
 
+  const dateSummaryLabel = isValidDateKey(date)
+    ? isToday(date)
+      ? '今日'
+      : formatDateForDisplay(date)
+    : '日付を選択';
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
         <View style={styles.sheet}>
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <View style={styles.handle} />
-            <Text style={styles.title}>{isEditing ? '支出を編集' : '食費を記録する'}</Text>
+          <View style={styles.handle} />
 
-            {/* 日付選択 */}
-            <Text style={styles.label}>日付</Text>
-            <DateSelector value={date} onChange={setDate} disableFuture />
+          {isEditing && (
+            <View style={styles.editingBadge}>
+              <Text style={styles.editingBadgeText}>編集中</Text>
+            </View>
+          )}
 
+          <TouchableOpacity
+            style={styles.closeIconBtn}
+            onPress={onClose}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.closeIconText}>✕</Text>
+          </TouchableOpacity>
+
+          <ScrollView
+            style={styles.scrollArea}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             {/* カテゴリー */}
-            <Text style={styles.label}>カテゴリー</Text>
             {isEditing ? (
               <View style={styles.categoryGrid}>
                 {CATEGORY_LIST.map((cat) => (
@@ -103,56 +123,75 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
                 ))}
               </View>
             ) : (
-              <View style={styles.categoryFixed}>
-                <Text style={styles.categoryFixedIcon}>{CATEGORY_ICONS[category]}</Text>
-                <Text style={styles.categoryFixedText}>{category}</Text>
+              <View style={styles.categoryHeaderRow}>
+                <Text style={styles.categoryHeaderIcon}>{CATEGORY_ICONS[category]}</Text>
+                <Text style={styles.categoryHeaderText}>{category}</Text>
+                {category === 'スーパー' && (
+                  <View style={styles.categoryTag}>
+                    <Text style={styles.categoryTagText}>食材費</Text>
+                  </View>
+                )}
               </View>
             )}
 
             {/* 金額入力 */}
-            <Text style={styles.label}>金額（円）</Text>
-            <View style={styles.amountRow}>
-              <Text style={styles.yen}>¥</Text>
-              <TextInput
-                style={styles.amountInput}
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="numeric"
-                placeholder="0"
-                placeholderTextColor="#BDBDBD"
-              />
+            <View style={styles.amountSection}>
+              <View style={styles.amountRow}>
+                <Text style={styles.yen}>¥</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="number-pad"
+                  placeholder="0"
+                  placeholderTextColor="#BDBDBD"
+                  autoFocus
+                />
+              </View>
+              <View style={styles.amountUnderline} />
             </View>
 
             {/* 食事時間 */}
             {category !== 'スーパー' && (
-              <>
-                <Text style={styles.label}>食事の時間帯</Text>
-                <View style={styles.mealRow}>
-                  {MEAL_OPTIONS.map((opt) => (
-                    <TouchableOpacity
-                      key={opt.value}
-                      style={[styles.mealBtn, meal === opt.value && styles.mealBtnActive]}
-                      onPress={() => setMeal(opt.value)}
-                    >
-                      <Text style={[styles.mealText, meal === opt.value && styles.mealTextActive]}>
-                        {opt.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
+              <View style={styles.mealRow}>
+                {MEAL_OPTIONS.map((opt) => (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[styles.mealBtn, meal === opt.value && styles.mealBtnActive]}
+                    onPress={() => setMeal(opt.value)}
+                  >
+                    <Text style={[styles.mealText, meal === opt.value && styles.mealTextActive]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
 
-            {/* ボタン行 */}
-            <View style={styles.btnRow}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-                <Text style={styles.cancelText}>キャンセル</Text>
+            {/* 日付（折りたたみ） */}
+            <View style={styles.dateSection}>
+              <TouchableOpacity
+                style={styles.dateSummaryRow}
+                onPress={() => setIsDateExpanded((prev) => !prev)}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.dateSummaryText}>{'\u{1F4C5}'} {dateSummaryLabel}</Text>
+                <Text style={styles.dateSummaryChevron}>{isDateExpanded ? '▲' : '▾'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                <Text style={styles.saveText}>{isEditing ? '更新する' : '記録する'}</Text>
-              </TouchableOpacity>
+              {isDateExpanded && (
+                <View style={styles.dateExpandedWrap}>
+                  <DateSelector value={date} onChange={setDate} disableFuture />
+                </View>
+              )}
             </View>
           </ScrollView>
+
+          {/* フッター（スクロール領域の外に固定） */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+              <Text style={styles.saveText}>{isEditing ? '更新する' : '記録する'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -169,8 +208,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 36,
     maxHeight: '92%',
   },
   handle: {
@@ -179,38 +216,72 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#212121',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 13,
-    color: '#757575',
-    marginBottom: 8,
     marginTop: 12,
+    marginBottom: 8,
   },
-  categoryFixed: {
+  closeIconBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FAFAFA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeIconText: {
+    fontSize: 14,
+    color: '#757575',
+    fontWeight: '700',
+  },
+  scrollArea: {
+    flexShrink: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 44,
+    paddingBottom: 16,
+  },
+  editingBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#E8F5E9',
+  },
+  editingBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#2E7D32',
+  },
+  categoryHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#4CAF50',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  categoryHeaderIcon: {
+    fontSize: 22,
+  },
+  categoryHeaderText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#212121',
+  },
+  categoryTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     backgroundColor: '#E8F5E9',
-    alignSelf: 'flex-start',
   },
-  categoryFixedIcon: {
-    fontSize: 20,
-  },
-  categoryFixedText: {
-    fontSize: 15,
+  categoryTagText: {
+    fontSize: 11,
     fontWeight: '700',
     color: '#2E7D32',
   },
@@ -218,6 +289,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 4,
+    marginBottom: 12,
   },
   categoryBtn: {
     flexDirection: 'row',
@@ -245,30 +318,39 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
     fontWeight: '600',
   },
+  amountSection: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   amountRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    backgroundColor: '#FAFAFA',
+    alignItems: 'baseline',
+    justifyContent: 'center',
   },
   yen: {
-    fontSize: 20,
-    color: '#424242',
+    fontSize: 22,
+    color: '#757575',
     marginRight: 4,
   },
   amountInput: {
-    flex: 1,
-    fontSize: 28,
-    fontWeight: '700',
+    minWidth: 120,
+    fontSize: 40,
+    fontWeight: '800',
     color: '#212121',
-    paddingVertical: 10,
+    paddingVertical: 4,
+    textAlign: 'center',
+  },
+  amountUnderline: {
+    width: 160,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#4CAF50',
+    marginTop: 4,
   },
   mealRow: {
     flexDirection: 'row',
     gap: 8,
+    marginBottom: 16,
   },
   mealBtn: {
     flex: 1,
@@ -291,26 +373,41 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
     fontWeight: '600',
   },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
+  dateSection: {
+    marginBottom: 4,
   },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
+  dateSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#E0E0E0',
-    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
   },
-  cancelText: {
-    fontSize: 15,
-    color: '#757575',
+  dateSummaryText: {
+    fontSize: 14,
+    color: '#424242',
     fontWeight: '600',
   },
+  dateSummaryChevron: {
+    fontSize: 12,
+    color: '#9E9E9E',
+  },
+  dateExpandedWrap: {
+    marginTop: 10,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
+  },
   saveBtn: {
-    flex: 2,
     paddingVertical: 14,
     borderRadius: 12,
     backgroundColor: '#4CAF50',
