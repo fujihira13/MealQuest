@@ -23,17 +23,14 @@ import { InputModal } from "@/components/InputModal";
 import { CookingModal } from "@/components/CookingModal";
 import type { ExpenseCategory, MealTime } from "@/types";
 import { COOKING_RECORD_POINTS } from "@/constants/game";
+import { CATEGORY_LIST, CATEGORY_ICONS } from "@/constants/categories";
 
 const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] =
-  [
-    { key: "スーパー", icon: "🛒", label: "スーパー" },
-    { key: "自販機", icon: "🥤", label: "自販機" },
-    { key: "コンビニ", icon: "🏪", label: "コンビニ" },
-    { key: "外食", icon: "🍽️", label: "外食" },
-    { key: "飲み会", icon: "🍻", label: "飲み会" },
-    { key: "デート", icon: "💕", label: "デート" },
-    { key: "その他", icon: "📝", label: "その他" },
-  ];
+  CATEGORY_LIST.map((key) => ({
+    key,
+    icon: CATEGORY_ICONS[key],
+    label: key,
+  }));
 
 function getBudgetPercent(used: number, goal: number): number {
   if (goal <= 0) return 0;

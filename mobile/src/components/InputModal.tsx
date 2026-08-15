@@ -14,16 +14,8 @@ import {
 import { useAppStore } from '@/store/useAppStore';
 import { DateSelector } from '@/components/DateSelector';
 import { getCurrentDate, isValidDateKey } from '@/utils/dateHelpers';
+import { CATEGORY_LIST, CATEGORY_ICONS } from '@/constants/categories';
 import type { ExpenseCategory, ExpenseRecord, MealTime } from '@/types';
-
-const CATEGORIES: ExpenseCategory[] = [
-  'スーパー', '自販機', 'コンビニ', '外食', '飲み会', 'デート', 'その他',
-];
-
-const CATEGORY_ICONS: Record<ExpenseCategory, string> = {
-  'スーパー': '🛒', '自販機': '🥤', 'コンビニ': '🏪',
-  '外食': '🍽️', '飲み会': '🍻', 'デート': '💕', 'その他': '📝',
-};
 
 const MEAL_OPTIONS: { value: MealTime; label: string }[] = [
   { value: 'morning', label: '朝食' },
@@ -97,7 +89,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
             <Text style={styles.label}>カテゴリー</Text>
             {isEditing ? (
               <View style={styles.categoryGrid}>
-                {CATEGORIES.map((cat) => (
+                {CATEGORY_LIST.map((cat) => (
                   <TouchableOpacity
                     key={cat}
                     style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}

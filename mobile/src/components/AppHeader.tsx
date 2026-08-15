@@ -1,13 +1,21 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, useUIStore } from '@/store/useAppStore';
 
 export function AppHeader() {
   const insets = useSafeAreaInsets();
   const { userData } = useAppStore();
+  const { setAppHeaderHeight } = useUIStore();
+
+  // 実際に描画された高さ（ステータスバー分 + コンテンツ分）を計測し、
+  // Toast など他コンポーネントがヘッダー直下に正しく配置できるよう共有する。
+  // ハードコードした高さを使わないことで、ヘッダーのスタイル変更時にも自動で追従する。
+  const handleLayout = (event: LayoutChangeEvent) => {
+    setAppHeaderHeight(event.nativeEvent.layout.height);
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]} onLayout={handleLayout}>
       <Text style={styles.appName}>MealQuest</Text>
       <View style={styles.levelBadge}>
         <Text style={styles.crown}>👑</Text>

@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AppHeader } from '@/components/AppHeader';
+import { Toast } from '@/components/Toast';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
@@ -72,31 +73,34 @@ function ScrollableTabBar({ state, navigation, insets }: TabBarProps) {
 
 export default function TabLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <ScrollableTabBar {...props} />}
-      screenOptions={{
-        header: () => <AppHeader />,
-        tabBarActiveTintColor: '#4CAF50',
-        tabBarInactiveTintColor: '#9E9E9E',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#E0E0E0',
-        },
-      }}
-    >
-      {tabs.map((tab) => (
-        <Tabs.Screen
-          key={tab.name}
-          name={tab.name}
-          options={{
-            title: tab.title,
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name={tab.icon} size={size} color={color} />
-            ),
-          }}
-        />
-      ))}
-    </Tabs>
+    <>
+      <Tabs
+        tabBar={(props) => <ScrollableTabBar {...props} />}
+        screenOptions={{
+          header: () => <AppHeader />,
+          tabBarActiveTintColor: '#4CAF50',
+          tabBarInactiveTintColor: '#9E9E9E',
+          tabBarStyle: {
+            backgroundColor: '#FFFFFF',
+            borderTopColor: '#E0E0E0',
+          },
+        }}
+      >
+        {tabs.map((tab) => (
+          <Tabs.Screen
+            key={tab.name}
+            name={tab.name}
+            options={{
+              title: tab.title,
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name={tab.icon} size={size} color={color} />
+              ),
+            }}
+          />
+        ))}
+      </Tabs>
+      <Toast />
+    </>
   );
 }
 

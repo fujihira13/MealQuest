@@ -219,4 +219,5 @@ export interface UIState {
   confirmMessage: string;
   confirmAction: (() => void) | null;
   isHelpOpen: boolean;
+  appHeaderHeight: number;
 }

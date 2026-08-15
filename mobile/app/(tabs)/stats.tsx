@@ -6,16 +6,8 @@ import { getCurrentMonth } from '@/utils/dateHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { PieChart } from '@/components/PieChart';
 import { InputModal } from '@/components/InputModal';
-import type { ExpenseCategory, ExpenseRecord } from '@/types';
-
-const CATEGORIES: ExpenseCategory[] = [
-  'スーパー', '自販機', 'コンビニ', '外食', '飲み会', 'デート', 'その他',
-];
-
-const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  'スーパー': '#4CAF50', '自販機': '#2196F3', 'コンビニ': '#FF9800',
-  '外食': '#9C27B0', '飲み会': '#F44336', 'デート': '#E91E63', 'その他': '#9E9E9E',
-};
+import { CATEGORY_LIST, CATEGORY_COLORS } from '@/constants/categories';
+import type { ExpenseRecord } from '@/types';
 
 function getMonthLabel(yearMonth: string): string {
   const [y, m] = yearMonth.split('-');
@@ -63,7 +55,7 @@ export default function StatsTab() {
     ? `残り ${formatCurrency(remaining)}`
     : `超過 ${formatCurrency(Math.abs(remaining))}`;
 
-  const byCategory = CATEGORIES.map((cat) => ({
+  const byCategory = CATEGORY_LIST.map((cat) => ({
     label: cat,
     value: monthExpenses.filter((e) => e.category === cat).reduce((s, e) => s + e.amount, 0),
     color: CATEGORY_COLORS[cat],

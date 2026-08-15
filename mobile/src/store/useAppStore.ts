@@ -20,6 +20,7 @@ import type {
   MissionType,
 } from "@/types";
 import { COOKING_RECORD_POINTS } from "@/constants/game";
+import { WASTE_CATEGORIES } from "@/constants/categories";
 import {
   applyXpChange,
   calculateLevelFromTotalXp,
@@ -172,6 +173,7 @@ interface UIStore extends UIState {
   hideConfirmDialog: () => void;
   executeConfirmAction: () => void;
   setHelpOpen: (isOpen: boolean) => void;
+  setAppHeaderHeight: (height: number) => void;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -876,7 +878,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       resetStreakIfNeeded: (category, meal) => {
-        const resetNoWaste = ["コンビニ", "自販機"].includes(category);
+        const resetNoWaste = WASTE_CATEGORIES.includes(category);
         const resetSnackFree = meal === "snack";
 
         if (!resetNoWaste && !resetSnackFree) return;
@@ -992,6 +994,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   confirmMessage: "",
   confirmAction: null,
   isHelpOpen: false,
+  appHeaderHeight: 0,
 
   setCurrentTab: (tab) => set({ currentTab: tab }),
 
@@ -1027,4 +1030,6 @@ export const useUIStore = create<UIStore>((set, get) => ({
   },
 
   setHelpOpen: (isOpen) => set({ isHelpOpen: isOpen }),
+
+  setAppHeaderHeight: (height) => set({ appHeaderHeight: height }),
 }));
