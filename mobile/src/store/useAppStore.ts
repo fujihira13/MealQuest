@@ -13,7 +13,6 @@ import type {
   Badge,
   ExpenseCategory,
   MealTime,
-  TabType,
   NotificationType,
   GachaItem,
   SavingsEquivalent,
@@ -127,21 +126,14 @@ interface AppStore extends AppState {
   updateExpenseRecord: (id: number, category: ExpenseCategory, amount: number, meal: MealTime, date: string) => void;
   deleteExpenseRecord: (id: number) => void;
 
-  toggleCookingRecord: (meal: MealTime) => void;
   toggleCookingRecordWithDate: (meal: MealTime, date: string, memo?: string) => void;
-  addCookingRecord: (meal: MealTime, date: string, memo?: string) => void;
-  updateCookingRecordMemo: (meal: MealTime, date: string, memo: string) => void;
-  deleteCookingRecord: (id: number) => void;
 
   addSavingsRecord: (amount: number) => void;
 
   playGacha: () => { item: CollectionItem; bonusPoints: number } | null;
 
-  checkLevelUp: () => boolean;
   checkSavingsLevelUp: () => boolean;
 
-  generateDailyMissions: () => void;
-  generateWeeklyMissions: () => void;
   initializeMissions: () => void;
   updateMissionProgress: (
     actionType: string,
@@ -149,8 +141,6 @@ interface AppStore extends AppState {
     options?: { updateDaily?: boolean; updateWeekly?: boolean }
   ) => void;
   claimMissionReward: (missionId: string) => boolean;
-  resetDailyMissions: () => void;
-  resetWeeklyMissions: () => void;
 
   checkBadgeProgress: () => string[];
 
@@ -164,18 +154,8 @@ interface AppStore extends AppState {
 }
 
 interface UIStore extends UIState {
-  setCurrentTab: (tab: TabType) => void;
-  openInputModal: (category: ExpenseCategory) => void;
-  closeInputModal: () => void;
-  setAmount: (amount: string) => void;
-  setSelectedMeal: (meal: MealTime) => void;
-  setEditingRecord: (record: ExpenseRecord | null) => void;
   showNotification: (type: NotificationType, message: string) => void;
   removeNotification: (id: string) => void;
-  showConfirmDialog: (message: string, action: () => void) => void;
-  hideConfirmDialog: () => void;
-  executeConfirmAction: () => void;
-  setHelpOpen: (isOpen: boolean) => void;
   setAppHeaderHeight: (height: number) => void;
 }
 
@@ -256,50 +236,6 @@ export const useAppStore = create<AppStore>()(
         get().checkBadgeProgress();
       },
 
-      toggleCookingRecord: (meal) => {
-        const today = getCurrentDate();
-        const state = get();
-        const existingRecord = state.cookingRecords.find(
-          (r) => r.date === today && r.meal === meal
-        );
-
-        if (existingRecord) {
-          set((state) => ({
-            cookingRecords: state.cookingRecords.filter(
-              (r) => !(r.date === today && r.meal === meal)
-            ),
-            userData: applyXpChange(
-              {
-                ...state.userData,
-                points: Math.max(0, state.userData.points - COOKING_RECORD_POINTS),
-              },
-              -COOKING_RECORD_POINTS
-            ),
-          }));
-        } else {
-          const record: CookingRecord = {
-            id: Date.now(),
-            date: today,
-            meal,
-            timestamp: new Date().toISOString(),
-          };
-          set((state) => ({
-            cookingRecords: [...state.cookingRecords, record],
-            userData: applyXpChange(
-              {
-                ...state.userData,
-                points: state.userData.points + COOKING_RECORD_POINTS,
-              },
-              COOKING_RECORD_POINTS
-            ),
-          }));
-          get().updateMissionProgress("cooking");
-          get().updateMissionProgress("record_habit");
-          get().checkBadgeProgress();
-        }
-        get().updateMonthlyData();
-      },
-
       toggleCookingRecordWithDate: (meal, date, memo) => {
         const state = get();
         const existingRecord = state.cookingRecords.find(
@@ -377,67 +313,6 @@ export const useAppStore = create<AppStore>()(
         get().updateMonthlyData();
       },
 
-      addCookingRecord: (meal, date, memo) => {
-        const record: CookingRecord = {
-          id: Date.now(),
-          date,
-          meal,
-          memo,
-          timestamp: new Date().toISOString(),
-        };
-        set((state) => ({
-          cookingRecords: [...state.cookingRecords, record],
-          userData: applyXpChange(
-            {
-              ...state.userData,
-              points: state.userData.points + COOKING_RECORD_POINTS,
-            },
-            COOKING_RECORD_POINTS
-          ),
-        }));
-        const isTodayRecord = date === getCurrentDate();
-        get().updateMissionProgress("cooking", 1, {
-          updateDaily: isTodayRecord,
-          updateWeekly: true,
-        });
-        if (isTodayRecord) {
-          get().updateMissionProgress("record_habit");
-        }
-        get().checkBadgeProgress();
-        get().updateMonthlyData();
-      },
-
-      updateCookingRecordMemo: (meal, date, memo) => {
-        set((state) => ({
-          cookingRecords: state.cookingRecords.map((record) =>
-            record.date === date && record.meal === meal ? { ...record, memo } : record
-          ),
-        }));
-      },
-
-      deleteCookingRecord: (id) => {
-        set((state) => {
-          const exists = state.cookingRecords.some((r) => r.id === id);
-
-          return {
-            cookingRecords: state.cookingRecords.filter((r) => r.id !== id),
-            userData: exists
-              ? applyXpChange(
-                  {
-                    ...state.userData,
-                    points: Math.max(
-                      0,
-                      state.userData.points - COOKING_RECORD_POINTS
-                    ),
-                  },
-                  -COOKING_RECORD_POINTS
-                )
-              : state.userData,
-          };
-        });
-        get().updateMonthlyData();
-      },
-
       addSavingsRecord: (amount) => {
         const reward = Math.floor(amount / 10);
         const record: SavingsRecord = {
@@ -508,21 +383,6 @@ export const useAppStore = create<AppStore>()(
         };
       },
 
-      checkLevelUp: () => {
-        const state = get();
-        const level = calculateLevelFromTotalXp(state.userData.totalXp);
-        if (level !== state.userData.level) {
-          set((state) => ({
-            userData: {
-              ...state.userData,
-              level,
-            },
-          }));
-          return level > state.userData.level;
-        }
-        return false;
-      },
-
       checkSavingsLevelUp: () => {
         const state = get();
         const newLevel = calculateSavingsLevel(state.userData.totalSavings);
@@ -541,53 +401,6 @@ export const useAppStore = create<AppStore>()(
           return true;
         }
         return false;
-      },
-
-      generateDailyMissions: () => {
-        const templates = [
-          { id: "daily_cooking_1", title: "自炊チャレンジ", description: "今日1回自炊する", target: 1, reward: 30, type: "cooking" as MissionType, icon: "🍳" },
-          { id: "daily_expenses_record", title: "記録の習慣", description: "支出または自炊を1回記録する", target: 1, reward: 20, type: "record_habit" as MissionType, icon: "📝" },
-          { id: "daily_savings", title: "節約成功", description: "誘惑に負けず節約を記録する", target: 1, reward: 25, type: "savings" as MissionType, icon: "💰" },
-        ];
-
-        set((state) => {
-          const newDaily: Record<string, Mission> = {};
-          templates.forEach((t) => {
-            newDaily[t.id] = { ...t, progress: 0, completed: false, claimed: false };
-          });
-          return {
-            missions: {
-              ...state.missions,
-              daily: newDaily,
-              lastDailyReset: getCurrentDate(),
-            },
-          };
-        });
-      },
-
-      generateWeeklyMissions: () => {
-        const templates = [
-          { id: "weekly_cooking_goal", title: "週間自炊マスター", description: "1週間で10回自炊する", target: 10, reward: 100, type: "cooking" as MissionType, icon: "👨‍🍳" },
-          { id: "weekly_expense_goal", title: "支出管理上手", description: "1週間で食費を目標以下に抑える", target: 1, reward: 80, type: "expense_control" as MissionType, icon: "📊" },
-          { id: "weekly_savings_goal", title: "節約チャンピオン", description: "1週間で1000円節約する", target: 1000, reward: 120, type: "total_savings" as MissionType, icon: "🏆" },
-        ];
-
-        set((state) => {
-          const newWeekly: Record<string, Mission> = {};
-          templates.forEach((t) => {
-            newWeekly[t.id] = { ...t, progress: 0, completed: false, claimed: false };
-          });
-          const now = new Date();
-          const startOfWeek = new Date(now);
-          startOfWeek.setDate(now.getDate() - now.getDay());
-          return {
-            missions: {
-              ...state.missions,
-              weekly: newWeekly,
-              lastWeeklyReset: formatDateKey(startOfWeek),
-            },
-          };
-        });
       },
 
       updateMissionProgress: (actionType, value = 1, options = {}) => {
@@ -691,27 +504,6 @@ export const useAppStore = create<AppStore>()(
         });
         get().checkBadgeProgress();
         return true;
-      },
-
-      resetDailyMissions: () => {
-        const today = getCurrentDate();
-        if (get().missions.lastDailyReset !== today) {
-          set((state) => ({
-            missions: { ...state.missions, daily: {}, lastDailyReset: today },
-          }));
-        }
-      },
-
-      resetWeeklyMissions: () => {
-        const now = new Date();
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        const weekKey = formatDateKey(startOfWeek);
-        if (get().missions.lastWeeklyReset !== weekKey) {
-          set((state) => ({
-            missions: { ...state.missions, weekly: {}, lastWeeklyReset: weekKey },
-          }));
-        }
       },
 
       initializeMissions: () => {
@@ -1016,30 +808,8 @@ export const useAppStore = create<AppStore>()(
 
 // UI ストア
 export const useUIStore = create<UIStore>((set, get) => ({
-  currentTab: "home",
-  isInputModalOpen: false,
-  currentInputCategory: null,
-  currentAmount: "",
-  selectedMeal: null,
-  editingRecord: null,
   notifications: [],
-  isConfirmDialogOpen: false,
-  confirmMessage: "",
-  confirmAction: null,
-  isHelpOpen: false,
   appHeaderHeight: 0,
-
-  setCurrentTab: (tab) => set({ currentTab: tab }),
-
-  openInputModal: (category) =>
-    set({ isInputModalOpen: true, currentInputCategory: category, currentAmount: "", selectedMeal: null }),
-
-  closeInputModal: () =>
-    set({ isInputModalOpen: false, currentInputCategory: null, currentAmount: "", selectedMeal: null, editingRecord: null }),
-
-  setAmount: (amount) => set({ currentAmount: amount }),
-  setSelectedMeal: (meal) => set({ selectedMeal: meal }),
-  setEditingRecord: (record) => set({ editingRecord: record }),
 
   showNotification: (type, message) => {
     const notification = { id: Date.now().toString(), type, message, timestamp: Date.now() };
@@ -1049,20 +819,6 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   removeNotification: (id) =>
     set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
-
-  showConfirmDialog: (message, action) =>
-    set({ isConfirmDialogOpen: true, confirmMessage: message, confirmAction: action }),
-
-  hideConfirmDialog: () =>
-    set({ isConfirmDialogOpen: false, confirmMessage: "", confirmAction: null }),
-
-  executeConfirmAction: () => {
-    const { confirmAction } = get();
-    if (confirmAction) confirmAction();
-    get().hideConfirmDialog();
-  },
-
-  setHelpOpen: (isOpen) => set({ isHelpOpen: isOpen }),
 
   setAppHeaderHeight: (height) => set({ appHeaderHeight: height }),
 }));

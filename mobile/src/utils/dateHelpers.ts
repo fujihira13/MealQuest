@@ -51,11 +51,3 @@ export const getDaysAgo = (days: number): string => {
   date.setDate(date.getDate() - days);
   return formatDateKey(date);
 };
-
-export const getDateRange = (days: number): string[] => {
-  const dates: string[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    dates.push(getDaysAgo(i));
-  }
-  return dates;
-};

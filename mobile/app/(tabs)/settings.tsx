@@ -241,36 +241,6 @@ export default function SettingsTab() {
           </View>
         </View>
 
-        {/* 通知 */}
-        <Text style={styles.sectionLabel}>通知</Text>
-        <View style={styles.card}>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>🕐</Text>
-              <View>
-                <Text style={styles.settingLabel}>デイリー通知</Text>
-                <Text style={styles.settingSub}>毎日のリマインダー</Text>
-              </View>
-            </View>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonText}>近日対応予定</Text>
-            </View>
-          </View>
-          <View style={styles.separator} />
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Text style={styles.settingIcon}>🚩</Text>
-              <View>
-                <Text style={styles.settingLabel}>ミッション通知</Text>
-                <Text style={styles.settingSub}>ミッション達成のお知らせ</Text>
-              </View>
-            </View>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonText}>近日対応予定</Text>
-            </View>
-          </View>
-        </View>
-
         {/* データ管理 */}
         <Text style={styles.sectionLabel}>データ管理</Text>
         <View style={styles.card}>
@@ -519,19 +489,6 @@ const styles = StyleSheet.create({
   },
   actionBtnDisabled: {
     opacity: 0.5,
-  },
-  comingSoonBadge: {
-    backgroundColor: "#FFF8E1",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: "#FFE082",
-  },
-  comingSoonText: {
-    fontSize: 11,
-    color: "#F57F17",
-    fontWeight: "600",
   },
   actionBtnText: {
     fontSize: 13,

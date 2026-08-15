@@ -2,10 +2,6 @@ export const formatCurrency = (amount: number): string => {
   return `¥${amount.toLocaleString()}`;
 };
 
-export const formatPoints = (points: number): string => {
-  return `${points.toLocaleString()}pt`;
-};
-
 export const getCategoryIcon = (category: string): string => {
   const icons: { [key: string]: string } = {
     スーパー: "🛒",

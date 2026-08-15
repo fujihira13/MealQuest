@@ -187,15 +187,6 @@ export interface AppState {
   savingsEquivalents: SavingsEquivalent[];
 }
 
-// タブ型定義
-export type TabType =
-  | "home"
-  | "stats"
-  | "missions"
-  | "badges"
-  | "collection"
-  | "settings";
-
 // 通知型定義
 export type NotificationType = "success" | "error" | "info" | "warning";
 
@@ -208,16 +199,6 @@ export interface Notification {
 
 // UI状態型定義
 export interface UIState {
-  currentTab: TabType;
-  isInputModalOpen: boolean;
-  currentInputCategory: ExpenseCategory | null;
-  currentAmount: string;
-  selectedMeal: MealTime | null;
-  editingRecord: ExpenseRecord | null;
   notifications: Notification[];
-  isConfirmDialogOpen: boolean;
-  confirmMessage: string;
-  confirmAction: (() => void) | null;
-  isHelpOpen: boolean;
   appHeaderHeight: number;
 }
