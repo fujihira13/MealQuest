@@ -61,7 +61,7 @@ function NotOwnedCard({ item }: { item: { id: number; name: string; icon: string
   );
 }
 
-export default function CollectionTab() {
+export function CollectionList() {
   const { userData, collection, gachaItems, playGacha } = useAppStore();
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -97,10 +97,11 @@ export default function CollectionTab() {
       {/* ヘッダー */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          <View>
-            <Text style={styles.headerTitle}>コレクション</Text>
-            <Text style={styles.collectionCount}>
-              収集率 {collection.length}/{totalItems}
+          <View style={styles.statBlock}>
+            <Text style={styles.statLabel}>収集率</Text>
+            <Text style={styles.statValue}>
+              {collection.length}
+              <Text style={styles.statTotal}>/{totalItems}</Text>
             </Text>
           </View>
           <View style={styles.gachaNeeded}>
@@ -196,17 +197,24 @@ const styles = StyleSheet.create({
   headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#212121',
+  statBlock: {
+    gap: 2,
   },
-  collectionCount: {
+  statLabel: {
     fontSize: 12,
     color: '#757575',
-    marginTop: 2,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#212121',
+  },
+  statTotal: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#9E9E9E',
   },
   gachaNeeded: {
     alignItems: 'flex-end',

@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AppHeader } from '@/components/AppHeader';
 import { Toast } from '@/components/Toast';
 
@@ -16,21 +16,16 @@ interface TabConfig {
 
 const tabs: TabConfig[] = [
   { name: 'index', title: 'ホーム', icon: 'home-outline' },
-  { name: 'stats', title: '統計', icon: 'bar-chart-outline' },
+  { name: 'stats', title: 'ふりかえり', icon: 'bar-chart-outline' },
   { name: 'missions', title: 'ミッション', icon: 'flag-outline' },
-  { name: 'badges', title: 'バッジ', icon: 'ribbon-outline' },
-  { name: 'collection', title: 'コレクション', icon: 'star-outline' },
+  { name: 'achievements', title: '実績', icon: 'ribbon-outline' },
   { name: 'settings', title: '設定', icon: 'settings-outline' },
 ];
 
-function ScrollableTabBar({ state, navigation, insets }: TabBarProps) {
+function AppTabBar({ state, navigation, insets }: TabBarProps) {
   return (
     <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabContent}
-      >
+      <View style={styles.tabContent}>
         {state.routes.map((route, index) => {
           const config = tabs.find((tab) => tab.name === route.name);
           if (!config) return null;
@@ -66,7 +61,7 @@ function ScrollableTabBar({ state, navigation, insets }: TabBarProps) {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -75,7 +70,7 @@ export default function TabLayout() {
   return (
     <>
       <Tabs
-        tabBar={(props) => <ScrollableTabBar {...props} />}
+        tabBar={(props) => <AppTabBar {...props} />}
         screenOptions={{
           header: () => <AppHeader />,
           tabBarActiveTintColor: '#4CAF50',
@@ -112,11 +107,12 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   tabContent: {
+    flexDirection: 'row',
     paddingHorizontal: 8,
     gap: 4,
   },
   tabItem: {
-    width: 86,
+    flex: 1,
     minHeight: 56,
     borderRadius: 12,
     alignItems: 'center',

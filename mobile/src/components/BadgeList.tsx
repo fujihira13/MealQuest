@@ -44,7 +44,7 @@ function BadgeCard({
   );
 }
 
-export default function BadgesTab() {
+export function BadgeList() {
   const {
     badgeDefinitions, badges, cookingRecords, savingsRecords, userData,
     streaks, collection, missions, expenses,

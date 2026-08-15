@@ -456,7 +456,7 @@ export default function HomeTab() {
           </View>
           <TouchableOpacity
             style={styles.gachaBtn}
-            onPress={() => router.push("/(tabs)/collection")}
+            onPress={() => router.push("/(tabs)/achievements")}
           >
             <Text style={styles.gachaBtnText}>報酬をチェック →</Text>
           </TouchableOpacity>
