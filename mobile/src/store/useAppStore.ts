@@ -237,7 +237,7 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           expenses: state.expenses.map((exp) =>
             exp.id === id
-              ? { ...exp, category, amount, meal, date, timestamp: new Date().toISOString() }
+              ? { ...exp, category, amount, meal, date }
               : exp
           ),
         }));

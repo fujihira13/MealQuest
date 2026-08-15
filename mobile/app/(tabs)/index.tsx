@@ -23,7 +23,7 @@ import { InputModal } from "@/components/InputModal";
 import { CookingModal } from "@/components/CookingModal";
 import type { ExpenseCategory, MealTime } from "@/types";
 import { COOKING_RECORD_POINTS } from "@/constants/game";
-import { CATEGORY_LIST, CATEGORY_ICONS } from "@/constants/categories";
+import { CATEGORY_LIST, CATEGORY_ICONS, WASTE_CATEGORIES } from "@/constants/categories";
 
 const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] =
   CATEGORY_LIST.map((key) => ({
@@ -136,6 +136,10 @@ export default function HomeTab() {
   const noWasteToday = streaks.lastNoWasteDate === today;
   const snackFreeToday = streaks.lastSnackFreeDate === today;
   const savingsToday = savingsRecords.some((r) => r.date === today);
+  const wastedToday = expenses.some(
+    (e) => e.date === today && WASTE_CATEGORIES.includes(e.category)
+  );
+  const snackedToday = expenses.some((e) => e.date === today && e.meal === "snack");
 
   const handleCategoryPress = (cat: ExpenseCategory) => {
     setSelectedCategory(cat);
@@ -342,23 +346,37 @@ export default function HomeTab() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionCard, styles.flex1, noWasteToday && styles.actionCardDone]}
-              onPress={() => { if (!noWasteToday) recordNoWasteDay(); }}
-              activeOpacity={noWasteToday ? 1 : 0.7}
+              style={[
+                styles.actionCard,
+                styles.flex1,
+                noWasteToday && styles.actionCardDone,
+                !noWasteToday && wastedToday && styles.actionCardMissed,
+              ]}
+              onPress={() => { if (!noWasteToday && !wastedToday) recordNoWasteDay(); }}
+              activeOpacity={(noWasteToday || wastedToday) ? 1 : 0.7}
             >
               <Text style={styles.actionIcon}>✨</Text>
-              <Text style={styles.actionTitle}>無駄遣いなし</Text>
-              <Text style={styles.actionSub}>{noWasteToday ? '記録済み！' : `連続${streaks.noWasteStreak}日`}</Text>
+              <Text style={[styles.actionTitle, !noWasteToday && wastedToday && styles.actionTitleMissed]}>無駄遣いなし</Text>
+              <Text style={styles.actionSub}>
+                {noWasteToday ? '記録済み！' : wastedToday ? 'また明日' : `連続${streaks.noWasteStreak}日`}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionCard, styles.flex1, snackFreeToday && styles.actionCardDone]}
-              onPress={() => { if (!snackFreeToday) recordSnackFreeDay(); }}
-              activeOpacity={snackFreeToday ? 1 : 0.7}
+              style={[
+                styles.actionCard,
+                styles.flex1,
+                snackFreeToday && styles.actionCardDone,
+                !snackFreeToday && snackedToday && styles.actionCardMissed,
+              ]}
+              onPress={() => { if (!snackFreeToday && !snackedToday) recordSnackFreeDay(); }}
+              activeOpacity={(snackFreeToday || snackedToday) ? 1 : 0.7}
             >
               <Text style={styles.actionIcon}>🥗</Text>
-              <Text style={styles.actionTitle}>間食なし</Text>
-              <Text style={styles.actionSub}>{snackFreeToday ? '記録済み！' : `連続${streaks.snackFreeStreak}日`}</Text>
+              <Text style={[styles.actionTitle, !snackFreeToday && snackedToday && styles.actionTitleMissed]}>間食なし</Text>
+              <Text style={styles.actionSub}>
+                {snackFreeToday ? '記録済み！' : snackedToday ? 'また明日' : `連続${streaks.snackFreeStreak}日`}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -601,6 +619,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#E8F5E9",
     borderColor: "#A5D6A7",
   },
+  actionCardMissed: {
+    backgroundColor: "#F5F5F5",
+    borderColor: "#E0E0E0",
+  },
   actionIcon: {
     fontSize: 28,
   },
@@ -609,6 +631,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#212121",
     textAlign: "center",
+  },
+  actionTitleMissed: {
+    color: "#9E9E9E",
   },
   actionSub: {
     fontSize: 11,

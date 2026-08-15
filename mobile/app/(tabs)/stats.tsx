@@ -84,14 +84,14 @@ export default function StatsTab() {
       }
     }
     if (cookingCount > 10) {
-      result.push({ icon: '🍳', text: '自炊ペースが良好です', sub: `今月 ${cookingCount}回達成` });
+      result.push({ icon: '🍳', text: '自炊ペースが良好です', sub: `${cookingCount}回達成` });
     }
     const conbini = byCategory.find((d) => d.label === 'コンビニ');
     const prevConbini = prevExpenses
       .filter((e) => e.category === 'コンビニ')
       .reduce((s, e) => s + e.amount, 0);
     if (conbini && prevConbini > 0 && conbini.value < prevConbini) {
-      result.push({ icon: '🏪', text: 'コンビニ支出が減少', sub: `先月比 -${formatCurrency(prevConbini - conbini.value)}` });
+      result.push({ icon: '🏪', text: 'コンビニ支出が減少', sub: `前月比 -${formatCurrency(prevConbini - conbini.value)}` });
     }
     return result.slice(0, 3);
   }, [momChange, cookingCount, byCategory, prevExpenses]);
@@ -210,7 +210,7 @@ export default function StatsTab() {
       {/* 今月の気づき */}
       {insights.length > 0 && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>💡 今月の気づき</Text>
+          <Text style={styles.cardTitle}>💡 {getMonthLabel(selectedMonth)}の気づき</Text>
           {insights.map((ins, i) => (
             <View key={i} style={styles.insightRow}>
               <Text style={styles.insightIcon}>{ins.icon}</Text>
