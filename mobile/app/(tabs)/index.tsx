@@ -23,7 +23,12 @@ import { InputModal } from "@/components/InputModal";
 import { CookingModal } from "@/components/CookingModal";
 import type { ExpenseCategory, MealTime } from "@/types";
 import { COOKING_RECORD_POINTS } from "@/constants/game";
-import { CATEGORY_LIST, CATEGORY_ICONS, WASTE_CATEGORIES } from "@/constants/categories";
+import {
+  CATEGORY_LIST,
+  CATEGORY_ICONS,
+  CATEGORY_COLORS,
+  WASTE_CATEGORIES,
+} from "@/constants/categories";
 
 const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] =
   CATEGORY_LIST.map((key) => ({
@@ -32,9 +37,18 @@ const HOME_CATEGORIES: { key: ExpenseCategory; icon: string; label: string }[] =
     label: key,
   }));
 
+// スーパーは食材費として別枠のため1行目に単独配置し、残りをグリッドに並べる
+const SUPERMARKET_HOME_CATEGORY = HOME_CATEGORIES.find(
+  (cat) => cat.key === "スーパー",
+)!;
+const OTHER_HOME_CATEGORIES = HOME_CATEGORIES.filter(
+  (cat) => cat.key !== "スーパー",
+);
+
+// 残量（残り予算）の割合を返す。使い切った・超過した場合は 0。
 function getBudgetPercent(used: number, goal: number): number {
   if (goal <= 0) return 0;
-  return Math.min((used / goal) * 100, 100);
+  return Math.max(((goal - used) / goal) * 100, 0);
 }
 
 function getBudgetStatus(
@@ -49,9 +63,12 @@ function getBudgetStatus(
   return { text: `超過 ${formatCurrency(Math.abs(remaining))}`, isOver: true };
 }
 
-function getBudgetColor(percent: number, isOver: boolean): string {
-  if (isOver || percent >= 100) return "#F44336";
-  if (percent >= 80) return "#FF9800";
+// 残量の割合（getBudgetPercent の戻り値）が少ないほど警戒色にする。
+// 目標未設定（goal <= 0）は「使い切った」と区別するためグレーにする。
+function getBudgetColor(remainingPercent: number, goal: number): string {
+  if (goal <= 0) return "#9E9E9E";
+  if (remainingPercent <= 20) return "#F44336";
+  if (remainingPercent <= 40) return "#FF9800";
   return "#4CAF50";
 }
 
@@ -91,29 +108,24 @@ export default function HomeTab() {
   const totalGoal = goals.monthlyExpenseGoal + goals.allowanceGoal;
   const totalBudgetStatus = getBudgetStatus(totalUsed, totalGoal);
 
-  const budgetItems = [
-    {
-      label: "スーパーの予算",
-      used: supermarketUsed,
-      goal: goals.monthlyExpenseGoal,
-      status: getBudgetStatus(supermarketUsed, goals.monthlyExpenseGoal),
-      percent: getBudgetPercent(supermarketUsed, goals.monthlyExpenseGoal),
-    },
-    {
-      label: "お小遣い",
-      used: allowanceUsed,
-      goal: goals.allowanceGoal,
-      status: getBudgetStatus(allowanceUsed, goals.allowanceGoal),
-      percent: getBudgetPercent(allowanceUsed, goals.allowanceGoal),
-    },
-    {
-      label: "食費合計",
-      used: totalUsed,
-      goal: totalGoal,
-      status: totalBudgetStatus,
-      percent: getBudgetPercent(totalUsed, totalGoal),
-    },
-  ];
+  // お小遣い＝減らしたい支出（主役）
+  const allowanceStatus = getBudgetStatus(allowanceUsed, goals.allowanceGoal);
+  const allowancePercent = getBudgetPercent(allowanceUsed, goals.allowanceGoal);
+  const allowanceColor = getBudgetColor(allowancePercent, goals.allowanceGoal);
+
+  // スーパー＝自炊のための食材費（減らす必要のない支出・控えめ表示）
+  const supermarketStatus = getBudgetStatus(
+    supermarketUsed,
+    goals.monthlyExpenseGoal,
+  );
+  const supermarketPercent = getBudgetPercent(
+    supermarketUsed,
+    goals.monthlyExpenseGoal,
+  );
+  const supermarketColor = getBudgetColor(
+    supermarketPercent,
+    goals.monthlyExpenseGoal,
+  );
 
   const dailyList = Object.values(missions.daily);
   const completedDaily = dailyList.filter((m) => m.completed).length;
@@ -167,99 +179,70 @@ export default function HomeTab() {
         style={styles.container}
         contentContainerStyle={styles.content}
       >
-        {/* 今日の食費 */}
+        {/* 今月の残り予算（お小遣いが主役の残量メーター） */}
         <View style={styles.card}>
-          <View style={styles.cardIconRow}>
-            <Text style={styles.cardIcon}>🍽️</Text>
-            <Text style={styles.cardLabel}>今日の食費</Text>
-          </View>
-          <Text style={styles.todayAmount}>{formatCurrency(todayTotal)}</Text>
-          <Text
-            style={[
-              styles.subLabel,
-              totalBudgetStatus.isOver && styles.textOver,
-            ]}
-          >
-            今月合計 {totalBudgetStatus.text}
-          </Text>
-        </View>
+          <Text style={styles.sectionTitle}>今月あと使えるお金</Text>
 
-        {/* レベル進捗 */}
-        <View style={styles.card}>
-          <View style={styles.levelHeader}>
-            <View>
-              <Text style={styles.cardLabel}>レベル進捗</Text>
-              <Text style={styles.levelValue}>Lv.{userData.level}</Text>
-            </View>
-            <View style={styles.levelMeta}>
-              <Text style={styles.levelNext}>
-                次のレベルまであと {xpToNext}XP
+          <View style={styles.allowanceBlock}>
+            <Text style={styles.allowanceLabel}>👛 今月の無駄遣い枠</Text>
+            <View style={styles.allowanceAmountRow}>
+              <Text
+                style={[
+                  styles.allowanceAmount,
+                  allowanceStatus.isOver && styles.textOver,
+                ]}
+              >
+                {allowanceStatus.text}
               </Text>
-              <Text style={styles.levelTotal}>
-                累計 {userData.totalXp.toLocaleString()}XP
+              <Text style={styles.allowanceGoalText}>
+                / {formatCurrency(goals.allowanceGoal)}
               </Text>
             </View>
+            <View style={styles.allowanceBarBg}>
+              <View
+                style={[
+                  styles.allowanceBarFill,
+                  {
+                    width: `${allowancePercent}%`,
+                    backgroundColor: allowanceColor,
+                  },
+                ]}
+              />
+            </View>
           </View>
-          <View style={styles.levelBarBg}>
-            <View
-              style={[styles.levelBarFill, { width: `${levelProgressWidth}%` }]}
-            />
-          </View>
-        </View>
 
-        {/* 今月の使用状況 */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>今月の使用状況</Text>
-          <View style={styles.budgetList}>
-            {budgetItems.map((item) => {
-              const barColor = getBudgetColor(item.percent, item.status.isOver);
-              const isTotal = item.label === '食費合計';
-
-              return (
-                <View
-                  key={item.label}
-                  style={[styles.budgetItem, isTotal && styles.budgetItemTotal]}
-                >
-                  <View style={styles.budgetHeader}>
-                    <Text
-                      style={[
-                        styles.budgetLabel,
-                        isTotal && styles.budgetLabelTotal,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.budgetStatus,
-                        item.status.isOver && styles.textOver,
-                      ]}
-                    >
-                      {item.status.text}
-                    </Text>
-                  </View>
-                  <View style={styles.budgetBarBg}>
-                    <View
-                      style={[
-                        styles.budgetBarFill,
-                        {
-                          width: `${item.percent}%`,
-                          backgroundColor: barColor,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.budgetMeta}>
-                    使用 {formatCurrency(item.used)} /{" "}
-                    {formatCurrency(item.goal)}
-                  </Text>
-                </View>
-              );
-            })}
+          <View style={styles.supermarketBlock}>
+            <View style={styles.supermarketHeader}>
+              <Text style={styles.supermarketLabel}>
+                🛒 スーパー（食材費）
+              </Text>
+              <Text
+                style={[
+                  styles.supermarketStatus,
+                  supermarketStatus.isOver && styles.textOver,
+                ]}
+              >
+                {supermarketStatus.text} /{" "}
+                {formatCurrency(goals.monthlyExpenseGoal)}
+              </Text>
+            </View>
+            <View style={styles.supermarketBarBg}>
+              <View
+                style={[
+                  styles.supermarketBarFill,
+                  {
+                    width: `${supermarketPercent}%`,
+                    backgroundColor: supermarketColor,
+                  },
+                ]}
+              />
+            </View>
           </View>
-          <View style={styles.budgetNote}>
-            <Text style={styles.budgetNoteText}>
-              食費合計はスーパーの予算 + お小遣いを目安にしています
+
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>食費合計</Text>
+            <Text style={styles.totalValue}>
+              {formatCurrency(totalUsed)} / {formatCurrency(totalGoal)}
             </Text>
           </View>
         </View>
@@ -267,14 +250,43 @@ export default function HomeTab() {
         {/* カテゴリー入力 */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>カテゴリー入力</Text>
+          <TouchableOpacity
+            style={styles.categorySuperBtn}
+            onPress={() => handleCategoryPress(SUPERMARKET_HOME_CATEGORY.key)}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.categoryIconWrap,
+                { borderColor: CATEGORY_COLORS[SUPERMARKET_HOME_CATEGORY.key] },
+              ]}
+            >
+              <Text style={styles.categoryIcon}>
+                {SUPERMARKET_HOME_CATEGORY.icon}
+              </Text>
+            </View>
+            <Text style={styles.categorySuperLabel}>
+              {SUPERMARKET_HOME_CATEGORY.label}
+            </Text>
+            <View style={styles.categoryTag}>
+              <Text style={styles.categoryTagText}>食材費</Text>
+            </View>
+          </TouchableOpacity>
           <View style={styles.categoryGrid}>
-            {HOME_CATEGORIES.map((cat) => (
+            {OTHER_HOME_CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat.key}
                 style={styles.categoryBtn}
                 onPress={() => handleCategoryPress(cat.key)}
               >
-                <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                <View
+                  style={[
+                    styles.categoryIconWrap,
+                    { borderColor: CATEGORY_COLORS[cat.key] },
+                  ]}
+                >
+                  <Text style={styles.categoryIcon}>{cat.icon}</Text>
+                </View>
                 <Text style={styles.categoryLabel}>{cat.label}</Text>
               </TouchableOpacity>
             ))}
@@ -378,6 +390,44 @@ export default function HomeTab() {
                 {snackFreeToday ? '記録済み！' : snackedToday ? 'また明日' : `連続${streaks.snackFreeStreak}日`}
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 今日の食費・レベル進捗（コンパクト表示） */}
+        <View style={[styles.card, styles.compactCard]}>
+          <View style={styles.compactRow}>
+            <View style={styles.compactItem}>
+              <Text style={styles.compactLabel}>🍽️ 今日の食費</Text>
+              <Text style={styles.compactAmount}>
+                {formatCurrency(todayTotal)}
+              </Text>
+              <Text
+                style={[
+                  styles.compactSub,
+                  totalBudgetStatus.isOver && styles.textOver,
+                ]}
+              >
+                今月合計 {totalBudgetStatus.text}
+              </Text>
+            </View>
+            <View style={styles.compactDivider} />
+            <View style={styles.compactItem}>
+              <Text style={styles.compactLabel}>
+                Lv.{userData.level} ・ 累計{userData.totalXp.toLocaleString()}XP
+              </Text>
+              <Text style={styles.compactAmount}>
+                {xpToNext.toLocaleString()}XP
+              </Text>
+              <Text style={styles.compactSub}>次のレベルまで</Text>
+              <View style={styles.compactLevelBarBg}>
+                <View
+                  style={[
+                    styles.compactLevelBarFill,
+                    { width: `${levelProgressWidth}%` },
+                  ]}
+                />
+              </View>
+            </View>
           </View>
         </View>
 
@@ -498,69 +548,8 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 10,
   },
-  cardIconRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  cardIcon: {
-    fontSize: 16,
-  },
-  cardLabel: {
-    fontSize: 12,
-    color: "#757575",
-    fontWeight: "500",
-  },
-  todayAmount: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#212121",
-  },
-  subLabel: {
-    fontSize: 12,
-    color: "#9E9E9E",
-  },
   textOver: {
     color: "#F44336",
-  },
-  levelHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  levelValue: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#2E7D32",
-    marginTop: 2,
-  },
-  levelMeta: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  levelNext: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#212121",
-    textAlign: "right",
-  },
-  levelTotal: {
-    fontSize: 11,
-    color: "#757575",
-    textAlign: "right",
-  },
-  levelBarBg: {
-    height: 8,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  levelBarFill: {
-    height: "100%",
-    backgroundColor: "#4CAF50",
-    borderRadius: 4,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -588,8 +577,45 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAFAFA",
     gap: 4,
   },
+  categorySuperBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FAFAFA",
+  },
+  categoryIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
   categoryIcon: {
-    fontSize: 22,
+    fontSize: 20,
+  },
+  categorySuperLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: "#424242",
+    fontWeight: "600",
+  },
+  categoryTag: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  categoryTagText: {
+    fontSize: 11,
+    color: "#2E7D32",
+    fontWeight: "700",
   },
   categoryLabel: {
     fontSize: 11,
@@ -702,64 +728,127 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-  budgetList: {
-    gap: 12,
-  },
-  budgetItem: {
+  allowanceBlock: {
+    backgroundColor: "#F1F8E9",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#A5D6A7",
     gap: 6,
   },
-  budgetItemTotal: {
-    backgroundColor: '#F1F8E9',
-    borderRadius: 10,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#C8E6C9',
+  allowanceLabel: {
+    fontSize: 13,
+    color: "#2E7D32",
+    fontWeight: "700",
   },
-  budgetLabelTotal: {
-    color: '#2E7D32',
-    fontWeight: '800',
+  allowanceAmountRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
   },
-  budgetHeader: {
+  allowanceAmount: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#212121",
+  },
+  allowanceGoalText: {
+    fontSize: 13,
+    color: "#757575",
+  },
+  allowanceBarBg: {
+    height: 14,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 7,
+    overflow: "hidden",
+  },
+  allowanceBarFill: {
+    height: "100%",
+    borderRadius: 7,
+  },
+  supermarketBlock: {
+    gap: 4,
+  },
+  supermarketHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     gap: 10,
   },
-  budgetLabel: {
-    flex: 1,
-    fontSize: 13,
-    color: "#212121",
-    fontWeight: "700",
-  },
-  budgetStatus: {
+  supermarketLabel: {
     fontSize: 12,
-    color: "#4CAF50",
-    fontWeight: "700",
-    textAlign: "right",
+    color: "#757575",
+    fontWeight: "500",
   },
-  budgetBarBg: {
-    height: 8,
+  supermarketStatus: {
+    fontSize: 12,
+    color: "#757575",
+    fontWeight: "600",
+  },
+  supermarketBarBg: {
+    height: 5,
     backgroundColor: "#E0E0E0",
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: "hidden",
   },
-  budgetBarFill: {
+  supermarketBarFill: {
     height: "100%",
-    borderRadius: 4,
+    borderRadius: 3,
   },
-  budgetMeta: {
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  totalLabel: {
+    fontSize: 12,
+    color: "#9E9E9E",
+  },
+  totalValue: {
+    fontSize: 12,
+    color: "#9E9E9E",
+    fontWeight: "600",
+  },
+  compactCard: {
+    padding: 12,
+  },
+  compactRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 12,
+  },
+  compactItem: {
+    flex: 1,
+    gap: 2,
+  },
+  compactDivider: {
+    width: 1,
+    backgroundColor: "#E0E0E0",
+  },
+  compactLabel: {
+    fontSize: 11,
+    color: "#757575",
+    fontWeight: "500",
+  },
+  compactAmount: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#212121",
+  },
+  compactSub: {
     fontSize: 11,
     color: "#9E9E9E",
   },
-  budgetNote: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+  compactLevelBarBg: {
+    height: 6,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 3,
+    overflow: "hidden",
+    marginTop: 2,
   },
-  budgetNoteText: {
-    fontSize: 11,
-    color: "#757575",
+  compactLevelBarFill: {
+    height: "100%",
+    backgroundColor: "#4CAF50",
+    borderRadius: 3,
   },
   savingsOverlay: {
     flex: 1,
