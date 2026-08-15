@@ -19,7 +19,7 @@ import type {
   SavingsEquivalent,
   MissionType,
 } from "@/types";
-import { COOKING_RECORD_POINTS } from "@/constants/game";
+import { COOKING_RECORD_POINTS, ALL_DAY_COOKING_BONUS_POINTS } from "@/constants/game";
 import { WASTE_CATEGORIES } from "@/constants/categories";
 import {
   applyXpChange,
@@ -52,6 +52,9 @@ const initialGoals = {
 // 累計節約額から節約レベルを算出（1,000円ごとに1レベル）
 const calculateSavingsLevel = (totalSavings: number): number =>
   Math.floor(Math.max(0, totalSavings) / 1000) + 1;
+
+// 1日3食コンプリートボーナスの判定対象となる食事時間帯
+const ALL_DAY_MEALS: MealTime[] = ["morning", "lunch", "dinner"];
 
 const gachaItems: GachaItem[] = [
   { id: 1, name: "金のコイン", icon: "🪙", rarity: "common", description: "普通の金貨です" },
@@ -132,7 +135,7 @@ interface AppStore extends AppState {
 
   addSavingsRecord: (amount: number) => void;
 
-  playGacha: () => CollectionItem | null;
+  playGacha: () => { item: CollectionItem; bonusPoints: number } | null;
 
   checkLevelUp: () => boolean;
   checkSavingsLevelUp: () => boolean;
@@ -334,6 +337,8 @@ export const useAppStore = create<AppStore>()(
               COOKING_RECORD_POINTS
             ),
           }));
+          useUIStore.getState().showNotification("success", `🍳 +${COOKING_RECORD_POINTS}pt`);
+
           const isTodayRecord = date === getCurrentDate();
           get().updateMissionProgress("cooking", 1, {
             updateDaily: isTodayRecord,
@@ -342,6 +347,31 @@ export const useAppStore = create<AppStore>()(
           if (isTodayRecord) {
             get().updateMissionProgress("record_habit");
           }
+
+          // 1日3食（朝・昼・夜）すべて自炊したかどうかをこの日付について判定する
+          // （記録した日が今日かどうかではなく、対象の date について判定する）
+          const mealsForDate = new Set(
+            get()
+              .cookingRecords.filter((r) => r.date === date)
+              .map((r) => r.meal)
+          );
+          const allDayComplete = ALL_DAY_MEALS.every((m) => mealsForDate.has(m));
+          if (allDayComplete && !get().allDayCookingBonusDates.includes(date)) {
+            set((state) => ({
+              allDayCookingBonusDates: [...state.allDayCookingBonusDates, date],
+              userData: applyXpChange(
+                {
+                  ...state.userData,
+                  points: state.userData.points + ALL_DAY_COOKING_BONUS_POINTS,
+                },
+                ALL_DAY_COOKING_BONUS_POINTS
+              ),
+            }));
+            useUIStore
+              .getState()
+              .showNotification("success", `🎉 完全自炊達成！+${ALL_DAY_COOKING_BONUS_POINTS}pt`);
+          }
+
           get().checkBadgeProgress();
         }
         get().updateMonthlyData();
@@ -472,7 +502,10 @@ export const useAppStore = create<AppStore>()(
           };
         });
 
-        return { ...selectedItem, count: 1, obtained: new Date().toISOString() };
+        return {
+          item: { ...selectedItem, count: 1, obtained: new Date().toISOString() },
+          bonusPoints: bonusPoints[selectedRarity],
+        };
       },
 
       checkLevelUp: () => {

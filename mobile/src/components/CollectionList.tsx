@@ -1,32 +1,12 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { useAppStore } from '@/store/useAppStore';
-import { getRarityDisplay } from '@/utils/formatHelpers';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useAppStore, useUIStore } from '@/store/useAppStore';
 import { calculateGachaProgress } from '@/utils/calculationHelpers';
+import { GachaResultModal } from '@/components/GachaResultModal';
+import { RARITY_COLORS, RARITY_BG, RARITY_STARS } from '@/constants/rarity';
 import type { CollectionItem } from '@/types';
 
 type Filter = 'all' | 'rare' | 'notOwned';
-
-const RARITY_COLORS: Record<string, string> = {
-  common: '#9E9E9E',
-  rare: '#2196F3',
-  epic: '#9C27B0',
-  legendary: '#FF9800',
-};
-
-const RARITY_BG: Record<string, string> = {
-  common: '#FAFAFA',
-  rare: '#E3F2FD',
-  epic: '#F3E5F5',
-  legendary: '#FFF3E0',
-};
-
-const RARITY_STARS: Record<string, string> = {
-  common: '★',
-  rare: '★★',
-  epic: '★★★',
-  legendary: '★★★★',
-};
 
 function CollectionCard({ item }: { item: CollectionItem }) {
   return (
@@ -63,7 +43,9 @@ function NotOwnedCard({ item }: { item: { id: number; name: string; icon: string
 
 export function CollectionList() {
   const { userData, collection, gachaItems, playGacha } = useAppStore();
+  const { showNotification } = useUIStore();
   const [filter, setFilter] = useState<Filter>('all');
+  const [gachaResult, setGachaResult] = useState<{ item: CollectionItem; bonusPoints: number } | null>(null);
 
   const gachaProgress = calculateGachaProgress(userData.points);
   const totalItems = gachaItems.length;
@@ -74,15 +56,12 @@ export function CollectionList() {
 
   const handleGacha = () => {
     if (userData.points < 100) {
-      Alert.alert('ポイント不足', `ガチャには100ptが必要です\n現在: ${userData.points}pt`);
+      showNotification('warning', `ポイント不足：ガチャには100pt必要です（現在${userData.points}pt）`);
       return;
     }
     const result = playGacha();
     if (result) {
-      Alert.alert(
-        '🎰 ガチャ結果！',
-        `${RARITY_STARS[result.rarity] ?? ''} ${result.icon} ${result.name}\n${getRarityDisplay(result.rarity)}`
-      );
+      setGachaResult(result);
     }
   };
 
@@ -173,6 +152,12 @@ export function CollectionList() {
           ListFooterComponent={<View style={styles.footerBanner}><Text style={styles.footerText}>レアアイテムを集めて 特別なごほうびが GET!</Text></View>}
         />
       )}
+
+      <GachaResultModal
+        visible={gachaResult !== null}
+        result={gachaResult}
+        onClose={() => setGachaResult(null)}
+      />
     </View>
   );
 }

@@ -61,7 +61,6 @@ export function CookingModal({ visible, onClose, todayMeals }: Props) {
   const handleClear = () => {
     setDate(getCurrentDate());
     setMeal(defaultMeal(todayMeals));
-    Alert.alert('Clear！！');
   };
 
   const handleSave = () => {
