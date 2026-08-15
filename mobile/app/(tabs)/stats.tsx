@@ -22,7 +22,8 @@ function addMonths(yearMonth: string, delta: number): string {
 
 
 export default function StatsTab() {
-  const { expenses, cookingRecords, goals, deleteExpenseRecord } = useAppStore();
+  const { expenses, cookingRecords, savingsRecords, savingsEquivalents, goals, deleteExpenseRecord } =
+    useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
@@ -49,7 +50,9 @@ export default function StatsTab() {
   const savingsEstimate = cookingCount * 700;
 
   const totalBudgetGoal = goals.monthlyExpenseGoal + goals.allowanceGoal;
-  const budgetPercent = totalBudgetGoal > 0 ? Math.min((total / totalBudgetGoal) * 100, 100) : 0;
+  const rawBudgetPercent = totalBudgetGoal > 0 ? (total / totalBudgetGoal) * 100 : 0;
+  const budgetPercent = Math.min(rawBudgetPercent, 100);
+  const isOverBudget = rawBudgetPercent > 100;
   const remaining = totalBudgetGoal - total;
   const budgetStatusText = remaining >= 0
     ? `残り ${formatCurrency(remaining)}`
@@ -61,18 +64,48 @@ export default function StatsTab() {
     color: CATEGORY_COLORS[cat],
   })).filter((d) => d.value > 0);
 
-  const dailyData = useMemo(() => {
+  // 月内の日付を5区切り（1-7, 8-14, 15-21, 22-28, 29-末日）にした週別集計。
+  // カレンダー週（日曜始まり）ではなく月内の日付レンジで区切ることで、
+  // 月をまたがず「第1週」〜「第5週」のラベルが自然になる。
+  // 29日以降が存在しない月（2月など）は第5週を作らない。
+  const weeklyData = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
-    return Array.from({ length: daysInMonth }, (_, i) => {
-      const day = String(i + 1).padStart(2, '0');
-      const date = `${selectedMonth}-${day}`;
+    const ranges = [
+      { start: 1, end: 7 },
+      { start: 8, end: 14 },
+      { start: 15, end: 21 },
+      { start: 22, end: 28 },
+    ];
+    if (daysInMonth >= 29) {
+      ranges.push({ start: 29, end: daysInMonth });
+    }
+    return ranges.map((r, i) => {
       const amount = monthExpenses
-        .filter((e) => e.date === date)
+        .filter((e) => {
+          const day = parseInt(e.date.split('-')[2], 10);
+          return day >= r.start && day <= r.end;
+        })
         .reduce((s, e) => s + e.amount, 0);
-      return { label: `${i + 1}`, value: amount };
+      return { label: `第${i + 1}週`, amount };
     });
   }, [monthExpenses, selectedMonth]);
+
+  // 週予算 = 月の予算合計 ÷ その月の週数（4 or 5）
+  const weeklyBudget = weeklyData.length > 0 ? totalBudgetGoal / weeklyData.length : 0;
+  const maxWeekly = Math.max(...weeklyData.map((w) => w.amount), weeklyBudget, 1);
+
+  const monthSavings = useMemo(
+    () => savingsRecords.filter((r) => r.date.startsWith(selectedMonth)).reduce((s, r) => s + r.amount, 0),
+    [savingsRecords, selectedMonth]
+  );
+
+  // 節約額「以下」で最大の項目を、身近な物への言い換えとして採用する
+  const savingsEquivalentMatch = useMemo(() => {
+    const candidates = savingsEquivalents.filter((eq) => eq.amount <= monthSavings);
+    if (candidates.length === 0) return null;
+    return candidates.reduce((max, eq) => (eq.amount > max.amount ? eq : max));
+  }, [monthSavings, savingsEquivalents]);
 
   const insights = useMemo(() => {
     const result: { icon: string; text: string; sub: string }[] = [];
@@ -140,11 +173,16 @@ export default function StatsTab() {
           <Text style={styles.summaryLabel}>予算使用率</Text>
           <CircularProgress
             percent={100 - budgetPercent}
-            size={56}
+            size={64}
             strokeWidth={6}
-            color={budgetPercent >= 90 ? '#F44336' : '#4CAF50'}
+            color={isOverBudget ? '#F44336' : '#4CAF50'}
           >
-            <Text style={styles.circleSmall}>{Math.round(budgetPercent)}%</Text>
+            <View style={styles.alignCenter}>
+              <Text style={styles.circleSmall}>{Math.round(budgetPercent)}%</Text>
+              <Text style={[styles.circleResult, isOverBudget ? styles.changeBad : styles.changeGood]}>
+                {isOverBudget ? '超過' : '達成 🎉'}
+              </Text>
+            </View>
           </CircularProgress>
           <Text style={[styles.summaryChange, remaining < 0 && styles.changeBad]}>
             {budgetStatusText}
@@ -152,59 +190,78 @@ export default function StatsTab() {
         </View>
       </View>
 
-      {/* グラフ行 */}
-      <View style={styles.row}>
-        <View style={[styles.card, styles.flex1]}>
-          <Text style={styles.cardTitle}>カテゴリー別</Text>
-          <PieChart data={byCategory} size={110} />
-          <View style={styles.legend}>
-            {byCategory.map((d) => (
-              <View key={d.label} style={styles.legendRow}>
-                <View style={[styles.legendDot, { backgroundColor: d.color }]} />
-                <Text style={styles.legendLabel}>{d.label}</Text>
-                <Text style={styles.legendVal}>{formatCurrency(d.value)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        <View style={[styles.card, styles.flex1]}>
-          <Text style={styles.cardTitle}>日別推移</Text>
-          {monthExpenses.length === 0 ? (
-            <Text style={styles.empty}>まだ記録がありません</Text>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.barChartScroll}
-            >
-              <View style={styles.barChartContainer}>
-                {(() => {
-                  const maxVal = Math.max(...dailyData.map((d) => d.value), 1);
-                  return dailyData.map((d) => {
-                    const heightPct = d.value / maxVal;
-                    const barH = Math.max(Math.round(heightPct * 80), d.value > 0 ? 4 : 0);
-                    return (
-                      <View key={d.label} style={styles.barCol}>
-                        <View style={styles.barTrack}>
-                          <View
-                            style={[
-                              styles.barFill,
-                              {
-                                height: barH,
-                                backgroundColor: heightPct > 0.8 ? '#F44336' : '#4CAF50',
-                              },
-                            ]}
-                          />
-                        </View>
-                        <Text style={styles.barLabel}>{d.label}</Text>
-                      </View>
-                    );
-                  });
-                })()}
-              </View>
-            </ScrollView>
+      {/* 節約カード — savingsRecords はこれまでどの画面にも表示されていなかったため新設。
+          月合計を大きく見せたいので、支出合計・自炊/予算使用率と同じ「サマリー群」の並びに置く。
+          記録が1件もない月はカードごと非表示にする（他のセクションと同じ「空なら隠す」方針に合わせた）。 */}
+      {monthSavings > 0 && (
+        <View style={[styles.card, styles.alignCenter]}>
+          <Text style={styles.summaryLabel}>今月の節約</Text>
+          <Text style={styles.summaryAmount}>{formatCurrency(monthSavings)}</Text>
+          {savingsEquivalentMatch && (
+            <Text style={styles.savingsEquivalentText}>
+              = {savingsEquivalentMatch.item} {savingsEquivalentMatch.icon}
+            </Text>
           )}
         </View>
+      )}
+
+      {/* カテゴリー別内訳 */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>カテゴリー別</Text>
+        <PieChart data={byCategory} size={110} />
+        <View style={styles.legend}>
+          {byCategory.map((d) => (
+            <View key={d.label} style={styles.legendRow}>
+              <View style={[styles.legendDot, { backgroundColor: d.color }]} />
+              <Text style={styles.legendLabel}>{d.label}</Text>
+              <Text style={styles.legendVal}>{formatCurrency(d.value)}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* 週別推移 — 月内を日付で5区切り（1-7/8-14/15-21/22-28/29-末日）にした週別バー。
+          全日分（最大31本）の横スクロールバーは1本10px程度で傾向が読めなかったため、
+          5本のバーが1画面に収まる形に変更。週予算ラインとの比較で「勝敗」を一目で示す。 */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>週別推移</Text>
+        {monthExpenses.length === 0 ? (
+          <Text style={styles.empty}>まだ記録がありません</Text>
+        ) : (
+          <View style={styles.weeklyChartRow}>
+            {weeklyData.map((w, i) => {
+              const heightPct = maxWeekly > 0 ? w.amount / maxWeekly : 0;
+              const barH = Math.max(Math.round(heightPct * 70), w.amount > 0 ? 4 : 0);
+              const isOver = weeklyBudget > 0 && w.amount > weeklyBudget;
+              const budgetLineBottom =
+                weeklyBudget > 0 ? Math.min(Math.round((weeklyBudget / maxWeekly) * 70), 70) : null;
+              return (
+                <View key={i} style={styles.weekCol}>
+                  <Text style={styles.weekAmount} numberOfLines={1}>
+                    {formatCurrency(w.amount)}
+                  </Text>
+                  <View style={styles.weekTrack}>
+                    {budgetLineBottom !== null && (
+                      <View style={[styles.weekBudgetLine, { bottom: budgetLineBottom }]} />
+                    )}
+                    <View
+                      style={[
+                        styles.weekBarFill,
+                        { height: barH, backgroundColor: isOver ? '#F44336' : '#4CAF50' },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.weekLabel}>{w.label}</Text>
+                  {weeklyBudget > 0 && (
+                    <Text style={isOver ? styles.weekMarkBad : styles.weekMarkGood}>
+                      {isOver ? '✗' : '✓'}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
       </View>
 
       {/* 今月の気づき */}
@@ -379,6 +436,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#212121',
   },
+  circleResult: {
+    fontSize: 9,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  savingsEquivalentText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
   legend: {
     gap: 4,
   },
@@ -408,31 +475,55 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 8,
   },
-  barChartScroll: {
-    marginTop: 4,
-  },
-  barChartContainer: {
+  weeklyChartRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingBottom: 2,
-    gap: 3,
+    justifyContent: 'space-between',
+    paddingTop: 4,
   },
-  barCol: {
+  weekCol: {
     alignItems: 'center',
-    width: 14,
+    flex: 1,
   },
-  barTrack: {
-    height: 80,
+  weekAmount: {
+    fontSize: 9,
+    color: '#424242',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  weekTrack: {
+    height: 70,
+    width: '70%',
     justifyContent: 'flex-end',
   },
-  barFill: {
-    width: 10,
+  weekBudgetLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#9E9E9E',
+    borderStyle: 'dashed',
+  },
+  weekBarFill: {
+    width: '100%',
     borderRadius: 3,
   },
-  barLabel: {
-    fontSize: 8,
+  weekLabel: {
+    fontSize: 9,
     color: '#9E9E9E',
     marginTop: 3,
+  },
+  weekMarkGood: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4CAF50',
+    marginTop: 1,
+  },
+  weekMarkBad: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#F44336',
+    marginTop: 1,
   },
   insightRow: {
     flexDirection: 'row',
