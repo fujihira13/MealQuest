@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
+import { getCurrentDate } from '@/utils/dateHelpers';
 
 function getTimeUntilMidnight(): string {
   const now = new Date();
@@ -14,13 +15,23 @@ function getTimeUntilMidnight(): string {
 }
 
 export default function MissionsTab() {
-  const { missions, streaks, claimMissionReward } = useAppStore();
+  const { missions, streaks, claimMissionReward, initializeMissions } =
+    useAppStore();
   const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
 
   useEffect(() => {
-    const timer = setInterval(() => setTimeLeft(getTimeUntilMidnight()), 1000);
+    let lastDate = getCurrentDate();
+    const timer = setInterval(() => {
+      setTimeLeft(getTimeUntilMidnight());
+      // この画面を開いたまま日付をまたいだ場合もミッションを切り替える
+      const today = getCurrentDate();
+      if (today !== lastDate) {
+        lastDate = today;
+        initializeMissions();
+      }
+    }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [initializeMissions]);
 
   const dailyList = Object.values(missions.daily);
   const weeklyList = Object.values(missions.weekly);
@@ -58,7 +69,7 @@ export default function MissionsTab() {
               <Text style={styles.timerLabel}>リセットまで</Text>
             </View>
             <Text style={styles.timer}>{timeLeft}</Text>
-            <Text style={styles.timerSub}>次回起動時に更新</Text>
+            <Text style={styles.timerSub}>0時に自動で更新</Text>
           </View>
         </View>
         <View style={styles.divider} />

@@ -48,6 +48,10 @@ const initialGoals = {
   monthlySavingsGoal: 5000,
 };
 
+// 累計節約額から節約レベルを算出（1,000円ごとに1レベル）
+const calculateSavingsLevel = (totalSavings: number): number =>
+  Math.floor(Math.max(0, totalSavings) / 1000) + 1;
+
 const gachaItems: GachaItem[] = [
   { id: 1, name: "金のコイン", icon: "🪙", rarity: "common", description: "普通の金貨です" },
   { id: 2, name: "節約レシピ本", icon: "📚", rarity: "common", description: "簡単節約レシピが載っています" },
@@ -423,6 +427,7 @@ export const useAppStore = create<AppStore>()(
         }));
         get().updateMissionProgress("savings");
         get().updateMissionProgress("total_savings", amount);
+        get().checkSavingsLevelUp();
         get().checkBadgeProgress();
         get().updateMonthlyData();
       },
@@ -485,7 +490,7 @@ export const useAppStore = create<AppStore>()(
 
       checkSavingsLevelUp: () => {
         const state = get();
-        const newLevel = Math.floor(state.userData.totalSavings / 1000) + 1;
+        const newLevel = calculateSavingsLevel(state.userData.totalSavings);
         if (newLevel > state.userData.savingsLevel) {
           const bonus = (newLevel - state.userData.savingsLevel) * 20;
           set((state) => ({
@@ -938,7 +943,7 @@ export const useAppStore = create<AppStore>()(
     {
       name: "food-expense-app-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
+      version: 3,
       migrate: (persistedState) => {
         const state = persistedState as PersistedAppState;
         if (!state?.userData) return persistedState;
@@ -950,6 +955,15 @@ export const useAppStore = create<AppStore>()(
           getTotalXpRequiredForLevel(currentLevel)
         );
 
+        // checkSavingsLevelUp() が呼ばれていなかった期間に取り残された savingsLevel を
+        // 累計節約額から復元する（ボーナスポイントは遡って付与しない）
+        const totalSavings =
+          state.userData.totalSavings ?? initialUserData.totalSavings;
+        const savingsLevel = Math.max(
+          state.userData.savingsLevel ?? initialUserData.savingsLevel,
+          calculateSavingsLevel(totalSavings)
+        );
+
         return {
           ...state,
           userData: {
@@ -957,6 +971,7 @@ export const useAppStore = create<AppStore>()(
             ...state.userData,
             totalXp,
             level: Math.max(currentLevel, calculateLevelFromTotalXp(totalXp)),
+            savingsLevel,
           },
         };
       },
