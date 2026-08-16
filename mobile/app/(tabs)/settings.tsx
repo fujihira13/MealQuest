@@ -188,7 +188,7 @@ export default function SettingsTab() {
               <View>
                 <Text style={styles.settingLabel}>月のスーパーの予算</Text>
                 <Text style={styles.settingSub}>
-                  スーパーの予算に反映
+                  スーパーの予算
                 </Text>
               </View>
             </View>
@@ -210,7 +210,7 @@ export default function SettingsTab() {
               <Text style={styles.settingIcon}>👛</Text>
               <View>
                 <Text style={styles.settingLabel}>月のお小遣い予算</Text>
-                <Text style={styles.settingSub}>スーパー以外の予算に反映</Text>
+                <Text style={styles.settingSub}>スーパー以外の予算</Text>
               </View>
             </View>
             <View style={styles.settingRight}>

@@ -100,7 +100,7 @@ export function CollectionList() {
             <Text style={styles.gachaMachine}>🎰</Text>
           </View>
           <View style={styles.gachaCenter}>
-            <Text style={styles.gachaTitle}>節約ガチャ</Text>
+            <Text style={styles.gachaTitle}>ガチャ</Text>
             <Text style={styles.gachaSub}>100ptで1回</Text>
           </View>
           <TouchableOpacity style={styles.gachaBtn} onPress={handleGacha}>

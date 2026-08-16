@@ -460,7 +460,7 @@ export default function HomeTab() {
               router.push({ pathname: "/(tabs)/achievements", params: { segment: "items" } })
             }
           >
-            <Text style={styles.gachaBtnText}>コレクションを見る →</Text>
+            <Text style={styles.gachaBtnText}>ガチャを引く →</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

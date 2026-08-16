@@ -53,7 +53,7 @@ export function GachaResultModal({ visible, result, onClose }: Props) {
 
           {bonusPoints > 0 && (
             <View style={styles.bonusBadge}>
-              <Text style={styles.bonusText}>🎁 レアリティボーナス +{bonusPoints}pt</Text>
+              <Text style={styles.bonusText}>🎁 ボーナス +{bonusPoints}pt</Text>
             </View>
           )}
 
