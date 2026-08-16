@@ -17,6 +17,7 @@ import Constants from "expo-constants";
 import { useAppStore } from "@/store/useAppStore";
 import { formatCurrency, getMealLabel } from "@/utils/formatHelpers";
 import { getCurrentDate } from "@/utils/dateHelpers";
+import { HelpModal } from "@/components/HelpModal";
 import type { ExpenseRecord } from "@/types";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
@@ -68,6 +69,7 @@ export default function SettingsTab() {
         DEFAULT_TITLE);
   const [isExporting, setIsExporting] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [editingBudgetType, setEditingBudgetType] =
     useState<EditableBudgetType>("expense");
   const [budgetInput, setBudgetInput] = useState(
@@ -137,10 +139,7 @@ export default function SettingsTab() {
   };
 
   const handleHelp = () => {
-    Alert.alert(
-      "ヘルプ",
-      "MealQuest は食費管理に特化したゲーミフィケーション付き家計簿アプリです。\n\n自炊・節約・ミッション達成でXPを貯めてレベルアップし、ポイントでガチャや報酬を楽しみましょう！",
-    );
+    setIsHelpModalOpen(true);
   };
 
   const handleReset = () => {
@@ -347,6 +346,8 @@ export default function SettingsTab() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <HelpModal visible={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
     </>
   );
 }
