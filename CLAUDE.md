@@ -27,14 +27,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 /mobile              ★現行アプリ (Expo SDK 54 / React Native 0.81 / React 19)
   app/               Expo Router v6 のファイルベースルーティング
     _layout.tsx      ルート。起動時に initializeMissions() を実行
-    (tabs)/          6タブ: index(ホーム) / stats / missions / badges / collection / settings
+    (tabs)/          5タブ: index(ホーム) / stats(ふりかえり) / missions / achievements(実績) / settings
   src/
     store/useAppStore.ts   AppStore + UIStore
     components/            InputModal, CookingModal, DateSelector, AppHeader,
-                           CircularProgress, PieChart
+                           CircularProgress, PieChart, BadgeList, CollectionList,
+                           GachaResultModal, Toast
     types/index.ts         全型定義
     utils/                 dateHelpers, formatHelpers, calculationHelpers, levelHelpers
-    constants/game.ts      COOKING_RECORD_POINTS のみ
+    constants/             categories.ts（CATEGORY_LIST/COLORS/ICONS, WASTE_CATEGORIES）、
+                           game.ts（COOKING_RECORD_POINTS, ALL_DAY_COOKING_BONUS_POINTS）、
+                           rarity.ts（RARITY_COLORS/BG/STARS）
   app.json / eas.json      Expo・EAS Build 設定
   assets/images/           アイコン・スプラッシュ
 
@@ -43,6 +46,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 /store-assets        ストア提出用画像（Play/App Store アイコン、フィーチャーグラフィック）
 /plans               作業計画
 ```
+
+「実績」タブ（`app/(tabs)/achievements.tsx`）はセグメントコントロールで「バッジ」（`BadgeList.tsx`）と「アイテム」（`CollectionList.tsx`、旧・コレクション画面）を切り替える単一画面。旧 `badges.tsx` / `collection.tsx` は廃止された。タブバーは横スクロールなしで5項目を均等表示する。
 
 モノレポ構成ではない。型定義・ユーティリティは Web 版と `mobile/` に**重複コピー**されており共有されていない
 （Web 版は凍結済みのため、同期する必要はない）。
@@ -66,12 +71,13 @@ npm run lint         # Expo Lint
 
 `mobile/src/store/useAppStore.ts` に **AppStore** と **UIStore** の2ストアが同居している（別ファイルではない）。
 
-**AppStore** — ビジネスロジック全体（約1000行、アクション26種）
+**AppStore** — ビジネスロジック全体（約820行、アクション17種）
 - State: `userData`, `goals`, `expenses[]`, `cookingRecords[]`, `savingsRecords[]`, `missions`, `badges`, `streaks`, `collection[]`, `gachaItems[]`, `badgeDefinitions[]`, `savingsEquivalents[]`, `allDayCookingBonusDates[]`
-- Actions: 支出の記録/編集/削除、自炊の記録/メモ/削除、節約記録、ガチャ、レベル判定、ミッション生成/進捗/報酬受取/リセット、バッジ判定、連続記録、目標更新、月次集計、全データリセット
+- Actions（17種）: `addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord`、`toggleCookingRecordWithDate`、`addSavingsRecord`、`playGacha`、`checkSavingsLevelUp`、`initializeMissions` / `updateMissionProgress` / `claimMissionReward`、`checkBadgeProgress`、`recordNoWasteDay` / `recordSnackFreeDay` / `resetStreakIfNeeded`、`updateGoals`、`updateMonthlyData`、`resetAllData`
+- 2026-08-16 のリファクタで UI から一度も呼ばれていなかった9アクション（`checkLevelUp` / `toggleCookingRecord` / `addCookingRecord` / `updateCookingRecordMemo` / `deleteCookingRecord` / `generateDailyMissions` / `generateWeeklyMissions` / `resetDailyMissions` / `resetWeeklyMissions`）を削除済み。生成・リセットの機能は `initializeMissions()` に、レベル再計算は `applyXpChange()` に統合されている
 
-**UIStore** — **モバイル画面からは現在1箇所も使われていない**（Web 版から移植されたまま）。
-各画面は `useAppStore` + `useState` のローカル state で完結している。新規実装でも UIStore は使わないこと。
+**UIStore** — `notifications[]`（Toast 表示用）と `appHeaderHeight`（`AppHeader` が実測したヘッダー高さ）のみを持つ。`Toast.tsx` が `notifications` を購読して画面上部にバナー表示し、`showNotification()` は自炊記録時などに呼ばれる（3秒で自動削除）。`AppHeader.tsx` が `onLayout` で高さを測って `setAppHeaderHeight()` に渡し、`Toast` がその直下に重ならないよう配置する。
+Web版から移植されたまま未使用だった `currentTab` / モーダル状態 / 確認ダイアログ / ヘルプ関連の状態と、参照先のなくなった `TabType` 型は削除済み。各画面の一時的なUI状態（モーダル開閉など）は引き続き `useAppStore` + ローカル `useState` で管理する。
 
 **永続化:** AsyncStorage、キー `"food-expense-app-storage"`。
 `version: 3` と `migrate` を設定済み。旧データ（`totalXp` を持たない形式）から累計XPを再計算し、あわせて累計節約額から `savingsLevel` を復元する（遡ってのボーナスポイント付与はしない）。
@@ -85,6 +91,7 @@ npm run lint         # Expo Lint
 |---|---|
 | 支出記録 | **0pt**（ミッション進捗のみ更新） |
 | 自炊記録 | +20pt（`COOKING_RECORD_POINTS`。取り消し時は減算） |
+| 1日3食（朝・昼・夜）すべて自炊 | +50pt（`ALL_DAY_COOKING_BONUS_POINTS`）。`allDayCookingBonusDates` で日付ごとに1回だけ付与するよう二重付与を防止 |
 | 節約記録 | 金額 ÷ 10 pt |
 | デイリーミッション報酬 | 20〜30pt |
 | ウィークリーミッション報酬 | 80〜120pt |
@@ -107,7 +114,7 @@ npm run lint         # Expo Lint
 2. バックグラウンドからフォアグラウンドへ復帰した時（`AppState` の `change` を購読）
 3. ミッション画面を開いたまま0時をまたいだ時（`app/(tabs)/missions.tsx` の1秒タイマーで日付変化を検知）
 
-`generateDailyMissions()` / `resetDailyMissions()` 等の個別アクションは UI から使われていない。
+ウィークリーの `cooking` / `total_savings` / `expense_control` は、進捗を `m.progress + value` で積み上げるのではなく、当週（`lastWeeklyReset` 〜 その7日後）の記録から**毎回再計算**する（`updateMissionProgress()` 内の `weeklyProgress()`）。`expense_control`（`weekly_expense_goal`）は「週の最終日（`weekStart` から数えて7日目）に入っていて、かつ当週の支出合計が週予算以下」なら進捗1（達成）、それ以外は0。最終日より前は、途中経過が予算内であっても進捗0のまま（「1週間抑えきったか」は週が終わるまで判定できないため。この判定がないと最初の安い買い物1回で達成が確定してしまう）。週予算は `(goals.monthlyExpenseGoal + goals.allowanceGoal) ÷ その月の週数`（`stats.tsx` の週別グラフと同じ「4 or 5週」判定。ただし対象期間は月内の日付5区切りではなく `weekStart`〜`weekStart+7日`）で、週予算が0円以下（目標未設定）のときは常に未達成扱い。`addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord` から日付を問わず呼ばれる。他のミッション同様、一度 `completed` になると `updateMissionProgress()` は以降そのミッションを更新しない（`applyProgress()` の `!m.completed` 条件）が、`expense_control` は最終日にしか達成しないためこの凍結が問題になる場面はほぼない。
 
 **バッジ:** 24種類（`category` 別に cooking 5 / savings 9 / level 4 / special 6。savings には節約レベル系3種を含む）。`checkBadgeProgress()` が state から動的に判定する。
 
@@ -123,14 +130,18 @@ npm run lint         # Expo Lint
 
 `goals.cookingGoal` / `goals.monthlySavingsGoal` は state には存在するが、設定画面から編集する導線がない。
 
+**ホーム画面の予算ゲージ:** 「使った分が増える」ではなく「**残額が減る**」表示（`getBudgetPercent()` は残り割合を返す）。お小遣いを主役として大きい数字・太いバーで、スーパーは食材費として細いバーで控えめに表示し、食費合計は1行テキストのみ。目標額が0円のときはバーをグレー表示にして「使い切り」と区別する（`getBudgetColor()`）。
+
 ### Key Implementation Patterns
 
 **支出記録フロー:**
-1. `InputModal` でカテゴリ・金額・食事時間・日付を入力
-2. `addExpenseRecord()` 内で `resetStreakIfNeeded()` → `updateMissionProgress("expense_record")` → `updateMissionProgress("record_habit")` → `checkBadgeProgress()` → `updateMonthlyData()` の順に自動実行（ミッション更新は当日記録のときのみ）
+1. `InputModal` でカテゴリ → 金額 → 食事時間 → 日付（折りたたみ式）の順に入力。金額欄は `autoFocus` + `keyboardType="number-pad"`、記録ボタンは `ScrollView` の外の `footer` に固定表示。Android では `KeyboardAvoidingView` の `behavior` を `undefined` にしている（RN の Modal がウィンドウに `SOFT_INPUT_ADJUST_RESIZE` を強制するため、`padding`/`height` を指定すると二重補正になる）。iOS は `padding`
+2. `addExpenseRecord()` は**当日記録のときのみ** `resetStreakIfNeeded()` → `updateMissionProgress("expense_record")` → `updateMissionProgress("record_habit")` を実行する（過去日付で記録すると、ミッション更新だけでなくストリークのリセットも行われない）。続けて日付を問わず常に `updateMissionProgress("expense_control")`（後述、週内の支出合計を再計算） → `checkBadgeProgress()` → `updateMonthlyData()` が実行される
 3. スーパーカテゴリのみ食事時間選択を無効化（`'lunch'` 固定）— `mobile/src/components/InputModal.tsx`
 
-**自炊記録フロー:** `CookingModal` → `toggleCookingRecordWithDate()`。過去日付も記録可能で、デイリーミッションは当日記録のみ加算される。
+**自炊記録フロー:** `CookingModal` → `toggleCookingRecordWithDate()`。過去日付も記録可能で、デイリーミッションは当日記録のみ加算される。1食記録すると Toast で `🍳 +20pt` を表示し、その日の朝・昼・夜が揃うと `ALL_DAY_COOKING_BONUS_POINTS`（+50pt）が別途 Toast で通知される。
+
+**行動フィードバック:** `useUIStore().showNotification()` → `Toast.tsx` が3秒間表示するバナー通知。ガチャの結果は `GachaResultModal.tsx`（`CollectionList.tsx` から表示）で演出付きに表示する（確率・排出内容・消費ポイントは変更なし）。
 
 **データ変更の原則:** コンポーネントから直接状態を変更しない。必ず `useAppStore` のアクションを経由する。
 
@@ -138,7 +149,7 @@ npm run lint         # Expo Lint
 
 - `react-native-reanimated` v4.x の Babel プラグインが `react-native-worklets` を必要とする（`mobile/package.json` に明示的に記載済み）
 - New Architecture（`newArchEnabled: true`）有効
-- グラフは外部ライブラリではなく `react-native-svg` ベースの自作コンポーネント（`PieChart` / `CircularProgress`）。統計画面の日別推移バーは `stats.tsx` 内で直接描画している
+- グラフは外部ライブラリではなく `react-native-svg` ベースの自作コンポーネント（`PieChart` / `CircularProgress`）。統計画面の週別推移バーは `stats.tsx` 内で直接描画している（月内を 1-7 / 8-14 / 15-21 / 22-28 / 29-末日 の5区切りに集計）
 - スタイルは RN の `StyleSheet` のみ（NativeWind 等は未導入）
 - CSV 書き出しは `expo-file-system`（`File` / `Paths` API）+ `expo-sharing`
 
@@ -155,12 +166,12 @@ npm run lint         # Expo Lint
 
 ## リリース運用（Android）
 
-- `mobile/eas.json` は `appVersionSource: "local"`。**`mobile/app.json` の `android.versionCode` を手動でインクリメントする**（現在 4）。上げ忘れると Play Console でアップロード時に重複エラーになる
+- `mobile/eas.json` は `appVersionSource: "remote"` + `production.autoIncrement: true`。**`android.versionCode` は EAS が自動採番する**ため、`mobile/app.json` 側を手動でインクリメントする必要はない（`app.json` 内の `versionCode` 値はローカルの参考値であり、ビルド結果には反映されない）
+- `mobile/app.json` の `version`（アプリバージョン表示用）は `2.0.0`
 - ビルドプロファイル: `development`（dev client）/ `preview`（APK・内部配布）/ `production`（AAB）
 - パッケージ名 `com.mealquest.app` / minSdkVersion 26 / EAS owner `sakana1113`
 - ストア提出用画像は `store-assets/` 配下
 
 ## 既知の問題（触るときは意識すること）
 
-- `checkLevelUp()` / `generateDailyMissions()` / `generateWeeklyMissions()` / `resetDailyMissions()` / `resetWeeklyMissions()` / `toggleCookingRecord()` / `addCookingRecord()` / `deleteCookingRecord()` は UI から未使用（機能は `initializeMissions()` や `applyXpChange()` 側に集約済み）
 - `firebase ^12.0.0` はルートの依存関係に残っているが未使用（`mobile/` は参照していない）

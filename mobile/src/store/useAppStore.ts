@@ -25,7 +25,13 @@ import {
   calculateLevelFromTotalXp,
   getTotalXpRequiredForLevel,
 } from "@/utils/levelHelpers";
-import { formatDateKey, getCurrentDate, getDaysAgo } from "@/utils/dateHelpers";
+import {
+  formatDateKey,
+  getCurrentDate,
+  getDaysAgo,
+  addDaysToDateKey,
+  isValidDateKey,
+} from "@/utils/dateHelpers";
 
 // 初期データ定義
 const initialUserData: UserData = {
@@ -51,6 +57,16 @@ const initialGoals = {
 // 累計節約額から節約レベルを算出（1,000円ごとに1レベル）
 const calculateSavingsLevel = (totalSavings: number): number =>
   Math.floor(Math.max(0, totalSavings) / 1000) + 1;
+
+// 日付キー（YYYY-MM-DD）が属する月の週数（4 or 5）を算出する。
+// stats.tsx の週別グラフ（月内を 1-7/8-14/15-21/22-28/29-末日 の5区切り）と同じ判定基準
+// （29日以降が存在する月だけ5週目を作る）に合わせている。
+const getWeeksInMonthFromDateKey = (dateKey: string): number => {
+  const [y, m] = dateKey.split("-").map(Number);
+  if (!y || !m || Number.isNaN(y) || Number.isNaN(m)) return 4;
+  const daysInMonth = new Date(y, m, 0).getDate();
+  return daysInMonth >= 29 ? 5 : 4;
+};
 
 // 1日3食コンプリートボーナスの判定対象となる食事時間帯
 const ALL_DAY_MEALS: MealTime[] = ["morning", "lunch", "dinner"];
@@ -212,6 +228,9 @@ export const useAppStore = create<AppStore>()(
           get().updateMissionProgress("expense_record");
           get().updateMissionProgress("record_habit");
         }
+        // expense_control は当週の支出記録から進捗を毎回再計算するため、
+        // 過去日付の記録であっても（当週分であれば）日付を問わず呼び出す
+        get().updateMissionProgress("expense_control");
         get().checkBadgeProgress();
         get().updateMonthlyData();
       },
@@ -224,6 +243,7 @@ export const useAppStore = create<AppStore>()(
               : exp
           ),
         }));
+        get().updateMissionProgress("expense_control");
         get().updateMonthlyData();
         get().checkBadgeProgress();
       },
@@ -232,6 +252,7 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           expenses: state.expenses.filter((exp) => exp.id !== id),
         }));
+        get().updateMissionProgress("expense_control");
         get().updateMonthlyData();
         get().checkBadgeProgress();
       },
@@ -442,6 +463,26 @@ export const useAppStore = create<AppStore>()(
               return state.cookingRecords.filter(
                 (r) => r.date >= weekStart && r.date < weekEndKey
               ).length;
+            }
+            if (actionType === "expense_control") {
+              // 「1週間を通して食費を抑えられたか」は週が終わるまで判定できない。
+              // weekStart（missions.lastWeeklyReset）から数えて7日目（＝最終日）に入るまでは、
+              // 途中経過が予算内であっても未達成（0）のまま扱う。
+              // これがないと週の最初の安い買い物1回だけで達成が確定してしまう。
+              if (!isValidDateKey(weekStart)) return 0;
+              const lastDayOfWeek = addDaysToDateKey(weekStart, 6);
+              if (getCurrentDate() < lastDayOfWeek) return 0;
+
+              // 週予算 = (月間食費予算 + お小遣い予算) ÷ その月の週数（stats.tsx と同じ考え方）。
+              // 目標未設定などで週予算が0円以下のときはゼロ除算を避け、常に未達成（0）とする。
+              const totalBudgetGoal = state.goals.monthlyExpenseGoal + state.goals.allowanceGoal;
+              const weeklyBudget = totalBudgetGoal / getWeeksInMonthFromDateKey(weekStart);
+              if (weeklyBudget <= 0) return 0;
+
+              const weekExpenseTotal = state.expenses
+                .filter((e) => e.date >= weekStart && e.date < weekEndKey)
+                .reduce((sum, e) => sum + e.amount, 0);
+              return weekExpenseTotal <= weeklyBudget ? 1 : 0;
             }
             return m.progress + value;
           };
