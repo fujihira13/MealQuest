@@ -87,6 +87,16 @@ export default function StatsTab() {
     color: CATEGORY_COLORS[cat],
   })).filter((d) => d.value > 0);
 
+  // その月の日数（週予算の日割り計算に使う）
+  const daysInMonth = useMemo(() => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    return new Date(y, m, 0).getDate();
+  }, [selectedMonth]);
+
+  // 1日あたりの予算 = 月の予算合計 ÷ その月の日数。
+  // 判定の精度を保つため丸めない（表示するときだけ formatCurrency に渡す直前で丸める）。
+  const dailyBudget = totalBudgetGoal > 0 ? totalBudgetGoal / daysInMonth : 0;
+
   // 月内の日付を5区切り（1-7, 8-14, 15-21, 22-28, 29-末日）にした週別集計。
   // カレンダー週（日曜始まり）ではなく月内の日付レンジで区切ることで、
   // 月をまたがず「第1週」〜「第5週」のラベルが自然になる。
@@ -96,9 +106,10 @@ export default function StatsTab() {
   // 週の最終日が今日より前なら終了済み、開始日が今日より後ならまだ来ていない、
   // それ以外（今日を含む）は進行中。日付キー同士の文字列比較（YYYY-MM-DD）で判定できる。
   // 過去の月を見ているときは月内の全日が today より前になるため、自然に全週が 'ended' になる。
+  //
+  // 週ごとの予算 = 1日あたりの予算 × その週の日数。最終週は日数が1〜3日しかないことがあるため、
+  // 単純に月予算を週数で割るより実態に近い（週予算 = 月予算 ÷ 週数 だと最終週が必ず「予算内」になってしまう）。
   const weeklyData = useMemo(() => {
-    const [y, m] = selectedMonth.split('-').map(Number);
-    const daysInMonth = new Date(y, m, 0).getDate();
     const ranges = [
       { start: 1, end: 7 },
       { start: 8, end: 14 },
@@ -119,12 +130,11 @@ export default function StatsTab() {
       const endKey = `${selectedMonth}-${String(r.end).padStart(2, '0')}`;
       const status: 'ended' | 'current' | 'upcoming' =
         endKey < today ? 'ended' : startKey > today ? 'upcoming' : 'current';
-      return { label: `第${i + 1}週`, amount, status };
+      const days = r.end - r.start + 1;
+      const budget = dailyBudget * days;
+      return { label: `第${i + 1}週`, start: r.start, end: r.end, amount, status, budget };
     });
-  }, [monthExpenses, selectedMonth, today]);
-
-  // 週予算 = 月の予算合計 ÷ その月の週数（4 or 5）
-  const weeklyBudget = weeklyData.length > 0 ? totalBudgetGoal / weeklyData.length : 0;
+  }, [monthExpenses, selectedMonth, today, daysInMonth, dailyBudget]);
 
   const monthSavings = useMemo(
     () => savingsRecords.filter((r) => r.date.startsWith(selectedMonth)).reduce((s, r) => s + r.amount, 0),
@@ -251,9 +261,9 @@ export default function StatsTab() {
       <View style={styles.card}>
         <View style={styles.weeklyHeaderRow}>
           <Text style={styles.cardTitle}>週別の食費</Text>
-          {weeklyBudget > 0 && (
+          {dailyBudget > 0 && (
             <Text style={styles.weeklyBudgetLabel}>
-              週予算 {formatCurrency(weeklyBudget)}
+              1日あたり {formatCurrency(Math.round(dailyBudget))}（月予算 ÷ {daysInMonth}日）
             </Text>
           )}
         </View>
@@ -262,11 +272,15 @@ export default function StatsTab() {
         ) : (
           <View>
             {weeklyData.map((w, i) => {
-              const isOver = weeklyBudget > 0 && w.amount > weeklyBudget;
-              const remaining = weeklyBudget - w.amount;
+              const isOver = w.budget > 0 && w.amount > w.budget;
+              const remaining = w.budget - w.amount;
+              const dateRangeLabel = w.start === w.end ? `${w.start}日` : `${w.start}〜${w.end}日`;
               return (
                 <View key={i} style={styles.weekRow}>
-                  <Text style={styles.weekRowLabel}>{w.label}</Text>
+                  <View style={styles.weekRowLabelCol}>
+                    <Text style={styles.weekRowLabel}>{w.label}</Text>
+                    <Text style={styles.weekRowDateRange}>{dateRangeLabel}</Text>
+                  </View>
                   <Text style={styles.weekRowAmount}>
                     {w.status === 'upcoming' ? '—' : formatCurrency(w.amount)}
                   </Text>
@@ -276,16 +290,13 @@ export default function StatsTab() {
                       w.status === 'ended' && (isOver ? styles.changeBad : styles.changeGood),
                     ]}
                   >
-                    {w.status === 'ended' && weeklyBudget > 0
+                    {w.status === 'ended' && w.budget > 0
                       ? isOver
-                        ? `超過 ${formatCurrency(Math.abs(remaining))}`
-                        : `残り ${formatCurrency(remaining)}`
+                        ? `超過 ${formatCurrency(Math.round(Math.abs(remaining)))}`
+                        : `残り ${formatCurrency(Math.round(remaining))}`
                       : w.status === 'current'
                         ? '今週'
                         : ''}
-                  </Text>
-                  <Text style={isOver ? styles.weekRowMarkBad : styles.weekRowMarkGood}>
-                    {w.status === 'ended' && weeklyBudget > 0 ? (isOver ? '✗' : '✓') : ''}
                   </Text>
                 </View>
               );
@@ -563,11 +574,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F5F5F5',
     gap: 8,
   },
+  weekRowLabelCol: {
+    width: 58,
+    gap: 1,
+  },
   weekRowLabel: {
     fontSize: 12,
     color: '#424242',
     fontWeight: '600',
-    width: 40,
+  },
+  weekRowDateRange: {
+    fontSize: 10,
+    color: '#9E9E9E',
   },
   weekRowAmount: {
     fontSize: 13,
@@ -581,20 +599,6 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     flex: 1,
     textAlign: 'right',
-  },
-  weekRowMarkGood: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#4CAF50',
-    width: 16,
-    textAlign: 'center',
-  },
-  weekRowMarkBad: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#F44336',
-    width: 16,
-    textAlign: 'center',
   },
   insightRow: {
     flexDirection: 'row',

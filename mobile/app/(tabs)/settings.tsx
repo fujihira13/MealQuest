@@ -170,9 +170,6 @@ export default function SettingsTab() {
         {/* アカウント */}
         <Text style={styles.sectionLabel}>アカウント</Text>
         <View style={styles.accountCard}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarIcon}>👑</Text>
-          </View>
           <View style={styles.accountInfo}>
             <Text style={styles.accountName}>{currentTitleName}</Text>
             <Text style={styles.accountLevel}>Lv. {userData.level}</Text>
@@ -384,19 +381,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
-  },
-  avatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#E8F5E9",
-    borderWidth: 2,
-    borderColor: "#4CAF50",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarIcon: {
-    fontSize: 26,
   },
   accountInfo: {
     flex: 1,

@@ -102,19 +102,25 @@ export default function MissionsTab() {
                 <Text style={styles.rewardText}>+{mission.reward}pt</Text>
               )}
             </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${Math.min((mission.progress / mission.target) * 100, 100)}%`,
-                    backgroundColor: mission.completed ? '#4CAF50' : '#81C784',
-                  },
-                ]}
-              />
-            </View>
+            {mission.target > 1 && (
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${Math.min((mission.progress / mission.target) * 100, 100)}%`,
+                      backgroundColor: mission.completed ? '#4CAF50' : '#81C784',
+                    },
+                  ]}
+                />
+              </View>
+            )}
             <View style={styles.missionFooter}>
-              <Text style={styles.progressText}>{mission.progress}/{mission.target}</Text>
+              {mission.target > 1 ? (
+                <Text style={styles.progressText}>{mission.progress}/{mission.target}</Text>
+              ) : (
+                <View />
+              )}
               {mission.completed && !mission.claimed && (
                 <TouchableOpacity style={styles.claimBtn} onPress={() => claimMissionReward(mission.id)}>
                   <Text style={styles.claimBtnText}>受け取る +{mission.reward}pt</Text>
@@ -151,19 +157,25 @@ export default function MissionsTab() {
                 <Text style={styles.rewardText}>+{mission.reward}pt</Text>
               )}
             </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${Math.min((mission.progress / mission.target) * 100, 100)}%`,
-                    backgroundColor: mission.completed ? '#2196F3' : '#64B5F6',
-                  },
-                ]}
-              />
-            </View>
+            {mission.target > 1 && (
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${Math.min((mission.progress / mission.target) * 100, 100)}%`,
+                      backgroundColor: mission.completed ? '#2196F3' : '#64B5F6',
+                    },
+                  ]}
+                />
+              </View>
+            )}
             <View style={styles.missionFooter}>
-              <Text style={styles.progressText}>{mission.progress}/{mission.target}</Text>
+              {mission.target > 1 ? (
+                <Text style={styles.progressText}>{mission.progress}/{mission.target}</Text>
+              ) : (
+                <View />
+              )}
               {mission.completed && !mission.claimed && (
                 <TouchableOpacity
                   style={[styles.claimBtn, styles.claimBtnBlue]}

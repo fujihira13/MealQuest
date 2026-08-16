@@ -1,6 +1,5 @@
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { getRarityDisplay } from '@/utils/formatHelpers';
-import { RARITY_COLORS, RARITY_STAR_COUNT, RARITY_BG } from '@/constants/rarity';
+import { RARITY_COLORS, RARITY_STAR_COUNT, RARITY_BG, RARITY_NAMES } from '@/constants/rarity';
 import type { CollectionItem } from '@/types';
 
 const TOTAL_RARITY_STARS = 4;
@@ -45,7 +44,7 @@ export function GachaResultModal({ visible, result, onClose }: Props) {
               ))}
             </View>
             <Text style={[styles.rarityLabel, { color: rarityColor }]}>
-              {getRarityDisplay(item.rarity)}
+              {RARITY_NAMES[item.rarity] ?? item.rarity}
             </Text>
           </View>
 

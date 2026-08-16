@@ -31,3 +31,11 @@ export const RARITY_STAR_COUNT: Record<string, number> = {
   epic: 3,
   legendary: 4,
 };
+
+// レアリティの名前表示（GachaResultModal の星の隣に出す文字ラベル）。
+export const RARITY_NAMES: Record<string, string> = {
+  common: 'ノーマル',
+  rare: 'レア',
+  epic: 'エピック',
+  legendary: 'レジェンド',
+};

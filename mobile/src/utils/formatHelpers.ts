@@ -24,13 +24,3 @@ export const getMealLabel = (meal: string): string => {
   };
   return labels[meal] || meal;
 };
-
-export const getRarityDisplay = (rarity: string): string => {
-  const rarityText: { [key: string]: string } = {
-    common: "⭐",
-    rare: "⭐⭐",
-    epic: "⭐⭐⭐",
-    legendary: "⭐⭐⭐⭐",
-  };
-  return rarityText[rarity] || "⭐";
-};

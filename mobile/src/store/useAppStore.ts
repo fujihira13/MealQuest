@@ -57,14 +57,12 @@ const initialGoals = {
 const calculateSavingsLevel = (totalSavings: number): number =>
   Math.floor(Math.max(0, totalSavings) / 1000) + 1;
 
-// 日付キー（YYYY-MM-DD）が属する月の週数（4 or 5）を算出する。
-// stats.tsx の週別グラフ（月内を 1-7/8-14/15-21/22-28/29-末日 の5区切り）と同じ判定基準
-// （29日以降が存在する月だけ5週目を作る）に合わせている。
-const getWeeksInMonthFromDateKey = (dateKey: string): number => {
+// 日付キー（YYYY-MM-DD）が属する月の日数を算出する。
+// ミッションの週予算（1日あたりの予算 × 7日）を出すために使う。
+const getDaysInMonthFromDateKey = (dateKey: string): number => {
   const [y, m] = dateKey.split("-").map(Number);
-  if (!y || !m || Number.isNaN(y) || Number.isNaN(m)) return 4;
-  const daysInMonth = new Date(y, m, 0).getDate();
-  return daysInMonth >= 29 ? 5 : 4;
+  if (!y || !m || Number.isNaN(y) || Number.isNaN(m)) return 30;
+  return new Date(y, m, 0).getDate();
 };
 
 // 1日3食コンプリートボーナスの判定対象となる食事時間帯
@@ -458,10 +456,15 @@ export const useAppStore = create<AppStore>()(
               const lastDayOfWeek = addDaysToDateKey(weekStart, 6);
               if (getCurrentDate() < lastDayOfWeek) return 0;
 
-              // 週予算 = (月間食費予算 + お小遣い予算) ÷ その月の週数（stats.tsx と同じ考え方）。
+              // ミッションの週予算 = 1日あたりの予算 × 7日（stats.tsx と同じ「日割り × 日数」の考え方）。
+              // ミッションの週は常に「週の開始日から7日間」なので日数は固定で7。
+              // 1日あたりの予算は weekStart（missions.lastWeeklyReset）が属する月の日数で算出する。
+              // ミッションの週が月をまたぐ場合（例: 8/30〜9/5）は厳密には日割りで按分すべきだが、
+              // 複雑さの割に差が小さいため、weekStart の月の日数だけを基準にする簡略化としている。
               // 目標未設定などで週予算が0円以下のときはゼロ除算を避け、常に未達成（0）とする。
               const totalBudgetGoal = state.goals.monthlyExpenseGoal + state.goals.allowanceGoal;
-              const weeklyBudget = totalBudgetGoal / getWeeksInMonthFromDateKey(weekStart);
+              const dailyBudget = totalBudgetGoal / getDaysInMonthFromDateKey(weekStart);
+              const weeklyBudget = dailyBudget * 7;
               if (weeklyBudget <= 0) return 0;
 
               const weekExpenseTotal = state.expenses

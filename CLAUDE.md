@@ -116,7 +116,9 @@ Web版から移植されたまま未使用だった `currentTab` / モーダル�
 
 起動時（1.）の実行は AsyncStorage からの復元完了を待ってから行う。復元は非同期のため、復元前に `initializeMissions()` を呼ぶと、復元完了時の state 置換でミッション生成が巻き戻ってしまう不具合が以前から存在していた。`app/_layout.tsx` で `useAppStore.persist.hasHydrated()` により復元済みかを判定し、未復元なら `onFinishHydration()` で復元完了後に実行するよう修正済み（`AppState` 復帰時の実行は従来どおり）。
 
-ウィークリーの `cooking` / `total_savings` / `expense_control` は、進捗を `m.progress + value` で積み上げるのではなく、当週（`lastWeeklyReset` 〜 その7日後）の記録から**毎回再計算**する（`updateMissionProgress()` 内の `weeklyProgress()`）。`expense_control`（`weekly_expense_goal`）は「週の最終日（`weekStart` から数えて7日目）に入っていて、かつ当週の支出合計が週予算以下」なら進捗1（達成）、それ以外は0。最終日より前は、途中経過が予算内であっても進捗0のまま（「1週間抑えきったか」は週が終わるまで判定できないため。この判定がないと最初の安い買い物1回で達成が確定してしまう）。週予算は `(goals.monthlyExpenseGoal + goals.allowanceGoal) ÷ その月の週数`（`stats.tsx` の週別グラフと同じ「4 or 5週」判定。ただし対象期間は月内の日付5区切りではなく `weekStart`〜`weekStart+7日`）で、週予算が0円以下（目標未設定）のときは常に未達成扱い。`addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord` から日付を問わず呼ばれる。他のミッション同様、一度 `completed` になると `updateMissionProgress()` は以降そのミッションを更新しない（`applyProgress()` の `!m.completed` 条件）が、`expense_control` は最終日にしか達成しないためこの凍結が問題になる場面はほぼない。
+ウィークリーの `cooking` / `total_savings` / `expense_control` は、進捗を `m.progress + value` で積み上げるのではなく、当週（`lastWeeklyReset` 〜 その7日後）の記録から**毎回再計算**する（`updateMissionProgress()` 内の `weeklyProgress()`）。`expense_control`（`weekly_expense_goal`）は「週の最終日（`weekStart` から数えて7日目）に入っていて、かつ当週の支出合計が週予算以下」なら進捗1（達成）、それ以外は0。最終日より前は、途中経過が予算内であっても進捗0のまま（「1週間抑えきったか」は週が終わるまで判定できないため。この判定がないと最初の安い買い物1回で達成が確定してしまう）。週予算は「1日あたりの予算 × 7日」（ミッションの週は常に7日固定）で、1日あたりの予算は `(goals.monthlyExpenseGoal + goals.allowanceGoal) ÷ weekStart が属する月の日数`（`getDaysInMonthFromDateKey()`。`stats.tsx` の週別表と同じ「日割り」の考え方）。週が月をまたぐ場合（例: 8/30〜9/5）も厳密な日割りはせず `weekStart` の月の日数だけを基準にする簡略化。週予算が0円以下（目標未設定）のときは常に未達成扱い。`addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord` から日付を問わず呼ばれる。他のミッション同様、一度 `completed` になると `updateMissionProgress()` は以降そのミッションを更新しない（`applyProgress()` の `!m.completed` 条件）が、`expense_control` は最終日にしか達成しないためこの凍結が問題になる場面はほぼない。
+
+（旧実装では月の日数ではなく「月の週数（4 or 5）」で単純に割っており、最終週が1〜3日しかなくても7日分と同じ予算が付く誤りがあったため、日割り方式に修正済み。旧ヘルパー `getWeeksInMonthFromDateKey` は `getDaysInMonthFromDateKey`（月の日数を返す）に置き換わった。）
 
 **バッジ:** 24種類（`category` 別に cooking 5 / savings 9 / level 4 / special 6。savings には節約レベル系3種を含む）。`checkBadgeProgress()` が state から動的に判定する。
 
@@ -151,7 +153,7 @@ Web版から移植されたまま未使用だった `currentTab` / モーダル�
 
 - `react-native-reanimated` v4.x の Babel プラグインが `react-native-worklets` を必要とする（`mobile/package.json` に明示的に記載済み）
 - New Architecture（`newArchEnabled: true`）有効
-- グラフは外部ライブラリではなく `react-native-svg` ベースの自作コンポーネント（`PieChart` / `CircularProgress`）。統計画面の週別集計はグラフではなく表形式で `stats.tsx` 内に直接実装している（月内を 1-7 / 8-14 / 15-21 / 22-28 / 29-末日 の5区切りに集計し、各週を「終了 / 進行中 / これから」の3状態で判定。終了週のみ✓✗の判定マークを表示し、進行中の週は金額のみ「今週」表示、これから来る週は金額を「—」表示にする）
+- グラフは外部ライブラリではなく `react-native-svg` ベースの自作コンポーネント（`PieChart` / `CircularProgress`）。統計画面の週別集計はグラフではなく表形式で `stats.tsx` 内に直接実装している（月内を 1-7 / 8-14 / 15-21 / 22-28 / 29-末日 の5区切りに集計し、各行に日付範囲（例:「1〜7日」）を併記。各週を「終了 / 進行中 / これから」の3状態で判定し、終了週のみ「残り ¥○○」「超過 ¥○○」を表示、進行中の週は金額のみ「今週」表示、これから来る週は金額を「—」表示にする。見出し横には「1日あたり ¥○○（月予算 ÷ ◯日）」を表示。以前は終了週に✓✗マークも出していたが、「残り」「超過」の文字と意味が重複するため削除し、緑・赤の文字色のみで判別する）
 - スタイルは RN の `StyleSheet` のみ（NativeWind 等は未導入）
 - CSV 書き出しは `expo-file-system`（`File` / `Paths` API）+ `expo-sharing`
 

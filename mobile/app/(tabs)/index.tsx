@@ -370,7 +370,7 @@ export default function HomeTab() {
               <Text style={styles.actionIcon}>✨</Text>
               <Text style={[styles.actionTitle, !noWasteToday && wastedToday && styles.actionTitleMissed]}>無駄遣いなし</Text>
               <Text style={styles.actionSub}>
-                {noWasteToday ? '記録済み！' : wastedToday ? '無駄遣いあり' : `連続${streaks.noWasteStreak}日`}
+                {noWasteToday ? '記録済み！' : wastedToday ? '今日は達成なし' : `連続${streaks.noWasteStreak}日`}
               </Text>
             </TouchableOpacity>
 
@@ -387,7 +387,7 @@ export default function HomeTab() {
               <Text style={styles.actionIcon}>🥗</Text>
               <Text style={[styles.actionTitle, !snackFreeToday && snackedToday && styles.actionTitleMissed]}>間食なし</Text>
               <Text style={styles.actionSub}>
-                {snackFreeToday ? '記録済み！' : snackedToday ? '間食あり' : `連続${streaks.snackFreeStreak}日`}
+                {snackFreeToday ? '記録済み！' : snackedToday ? '今日は達成なし' : `連続${streaks.snackFreeStreak}日`}
               </Text>
             </TouchableOpacity>
           </View>
