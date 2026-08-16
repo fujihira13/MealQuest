@@ -164,13 +164,6 @@ export interface Goals {
   monthlySavingsGoal: number;
 }
 
-// 節約額相当型定義
-export interface SavingsEquivalent {
-  amount: number;
-  item: string;
-  icon: string;
-}
-
 // アプリケーション状態型定義
 export interface AppState {
   userData: UserData;
@@ -184,7 +177,6 @@ export interface AppState {
   streaks: Streaks;
   gachaItems: GachaItem[];
   badgeDefinitions: Badge[];
-  savingsEquivalents: SavingsEquivalent[];
 }
 
 // 通知型定義

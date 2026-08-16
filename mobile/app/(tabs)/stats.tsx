@@ -22,7 +22,7 @@ function addMonths(yearMonth: string, delta: number): string {
 
 
 export default function StatsTab() {
-  const { expenses, cookingRecords, savingsRecords, savingsEquivalents, goals, deleteExpenseRecord } =
+  const { expenses, cookingRecords, savingsRecords, goals, deleteExpenseRecord } =
     useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
@@ -125,24 +125,11 @@ export default function StatsTab() {
 
   // 週予算 = 月の予算合計 ÷ その月の週数（4 or 5）
   const weeklyBudget = weeklyData.length > 0 ? totalBudgetGoal / weeklyData.length : 0;
-  // まだ来ていない週（upcoming）はバーを表示しないため、バーの高さの基準（maxWeekly）の
-  // 計算からも除外する（本来 upcoming 週の amount は常に0のはずだが、念のため除外して安全にする）。
-  const displayedWeeklyAmounts = weeklyData
-    .filter((w) => w.status !== 'upcoming')
-    .map((w) => w.amount);
-  const maxWeekly = Math.max(...displayedWeeklyAmounts, weeklyBudget, 1);
 
   const monthSavings = useMemo(
     () => savingsRecords.filter((r) => r.date.startsWith(selectedMonth)).reduce((s, r) => s + r.amount, 0),
     [savingsRecords, selectedMonth]
   );
-
-  // 節約額「以下」で最大の項目を、身近な物への言い換えとして採用する
-  const savingsEquivalentMatch = useMemo(() => {
-    const candidates = savingsEquivalents.filter((eq) => eq.amount <= monthSavings);
-    if (candidates.length === 0) return null;
-    return candidates.reduce((max, eq) => (eq.amount > max.amount ? eq : max));
-  }, [monthSavings, savingsEquivalents]);
 
   const insights = useMemo(() => {
     const result: { icon: string; text: string; sub: string }[] = [];
@@ -218,9 +205,13 @@ export default function StatsTab() {
           >
             <View style={styles.alignCenter}>
               <Text style={styles.circleSmall}>{Math.round(budgetPercent)}%</Text>
-              <Text style={[styles.circleResult, isOverBudget ? styles.changeBad : styles.changeGood]}>
-                {isOverBudget ? '超過' : '達成 🎉'}
-              </Text>
+              {/* 今月（進行中）は月末まで結果が確定しないためパーセントのみ表示。
+                  過去の月（確定済み）だけ「予算内」「超過」を表示する。 */}
+              {selectedMonth !== currentMonth && (
+                <Text style={[styles.circleResult, isOverBudget ? styles.changeBad : styles.changeGood]}>
+                  {isOverBudget ? '超過' : '予算内'}
+                </Text>
+              )}
             </View>
           </CircularProgress>
           <Text style={[styles.summaryChange, remaining < 0 && styles.changeBad]}>
@@ -236,11 +227,6 @@ export default function StatsTab() {
         <View style={[styles.card, styles.alignCenter]}>
           <Text style={styles.summaryLabel}>今月の節約</Text>
           <Text style={styles.summaryAmount}>{formatCurrency(monthSavings)}</Text>
-          {savingsEquivalentMatch && (
-            <Text style={styles.savingsEquivalentText}>
-              = {savingsEquivalentMatch.item} {savingsEquivalentMatch.icon}
-            </Text>
-          )}
         </View>
       )}
 
@@ -259,51 +245,48 @@ export default function StatsTab() {
         </View>
       </View>
 
-      {/* 週別推移 — 月内を日付で5区切り（1-7/8-14/15-21/22-28/29-末日）にした週別バー。
-          全日分（最大31本）の横スクロールバーは1本10px程度で傾向が読めなかったため、
-          5本のバーが1画面に収まる形に変更。週予算ラインとの比較で「勝敗」を一目で示す。 */}
+      {/* 週別の食費 — 月内を日付で5区切り（1-7/8-14/15-21/22-28/29-末日）にした週別の表。
+          以前はバー表示だったが「意味が分からない」という指摘があり、
+          具体的な金額・残り/超過額・判定を横並びで見せる表形式に変更した。 */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>週別推移</Text>
+        <View style={styles.weeklyHeaderRow}>
+          <Text style={styles.cardTitle}>週別の食費</Text>
+          {weeklyBudget > 0 && (
+            <Text style={styles.weeklyBudgetLabel}>
+              週予算 {formatCurrency(weeklyBudget)}
+            </Text>
+          )}
+        </View>
         {monthExpenses.length === 0 ? (
           <Text style={styles.empty}>まだ記録がありません</Text>
         ) : (
-          <View style={styles.weeklyChartRow}>
+          <View>
             {weeklyData.map((w, i) => {
-              const isUpcoming = w.status === 'upcoming';
-              const heightPct = !isUpcoming && maxWeekly > 0 ? w.amount / maxWeekly : 0;
-              const barH = Math.max(Math.round(heightPct * 70), !isUpcoming && w.amount > 0 ? 4 : 0);
               const isOver = weeklyBudget > 0 && w.amount > weeklyBudget;
-              const budgetLineBottom =
-                !isUpcoming && weeklyBudget > 0
-                  ? Math.min(Math.round((weeklyBudget / maxWeekly) * 70), 70)
-                  : null;
+              const remaining = weeklyBudget - w.amount;
               return (
-                <View key={i} style={styles.weekCol}>
-                  <Text style={styles.weekAmount} numberOfLines={1}>
-                    {isUpcoming ? '—' : formatCurrency(w.amount)}
+                <View key={i} style={styles.weekRow}>
+                  <Text style={styles.weekRowLabel}>{w.label}</Text>
+                  <Text style={styles.weekRowAmount}>
+                    {w.status === 'upcoming' ? '—' : formatCurrency(w.amount)}
                   </Text>
-                  <View style={styles.weekTrack}>
-                    {!isUpcoming && budgetLineBottom !== null && (
-                      <View style={[styles.weekBudgetLine, { bottom: budgetLineBottom }]} />
-                    )}
-                    {!isUpcoming && (
-                      <View
-                        style={[
-                          styles.weekBarFill,
-                          { height: barH, backgroundColor: isOver ? '#F44336' : '#4CAF50' },
-                        ]}
-                      />
-                    )}
-                  </View>
-                  <Text style={styles.weekLabel}>{w.label}</Text>
-                  {w.status === 'ended' && weeklyBudget > 0 && (
-                    <Text style={isOver ? styles.weekMarkBad : styles.weekMarkGood}>
-                      {isOver ? '✗' : '✓'}
-                    </Text>
-                  )}
-                  {w.status === 'current' && (
-                    <Text style={styles.weekMarkCurrent}>今週</Text>
-                  )}
+                  <Text
+                    style={[
+                      styles.weekRowStatus,
+                      w.status === 'ended' && (isOver ? styles.changeBad : styles.changeGood),
+                    ]}
+                  >
+                    {w.status === 'ended' && weeklyBudget > 0
+                      ? isOver
+                        ? `超過 ${formatCurrency(Math.abs(remaining))}`
+                        : `残り ${formatCurrency(remaining)}`
+                      : w.status === 'current'
+                        ? '今週'
+                        : ''}
+                  </Text>
+                  <Text style={isOver ? styles.weekRowMarkBad : styles.weekRowMarkGood}>
+                    {w.status === 'ended' && weeklyBudget > 0 ? (isOver ? '✗' : '✓') : ''}
+                  </Text>
                 </View>
               );
             })}
@@ -533,11 +516,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 1,
   },
-  savingsEquivalentText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
   legend: {
     gap: 4,
   },
@@ -567,61 +545,56 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 8,
   },
-  weeklyChartRow: {
+  weeklyHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingTop: 4,
-  },
-  weekCol: {
     alignItems: 'center',
-    flex: 1,
+    justifyContent: 'space-between',
   },
-  weekAmount: {
-    fontSize: 9,
+  weeklyBudgetLabel: {
+    fontSize: 12,
+    color: '#757575',
+    fontWeight: '600',
+  },
+  weekRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+    gap: 8,
+  },
+  weekRowLabel: {
+    fontSize: 12,
     color: '#424242',
     fontWeight: '600',
-    marginBottom: 2,
+    width: 40,
   },
-  weekTrack: {
-    height: 70,
-    width: '70%',
-    justifyContent: 'flex-end',
+  weekRowAmount: {
+    fontSize: 13,
+    color: '#212121',
+    fontWeight: '700',
+    width: 76,
+    textAlign: 'right',
   },
-  weekBudgetLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    borderTopWidth: 1,
-    borderTopColor: '#9E9E9E',
-    borderStyle: 'dashed',
-  },
-  weekBarFill: {
-    width: '100%',
-    borderRadius: 3,
-  },
-  weekLabel: {
-    fontSize: 9,
+  weekRowStatus: {
+    fontSize: 11,
     color: '#9E9E9E',
-    marginTop: 3,
+    flex: 1,
+    textAlign: 'right',
   },
-  weekMarkGood: {
-    fontSize: 12,
+  weekRowMarkGood: {
+    fontSize: 13,
     fontWeight: '700',
     color: '#4CAF50',
-    marginTop: 1,
+    width: 16,
+    textAlign: 'center',
   },
-  weekMarkBad: {
-    fontSize: 12,
+  weekRowMarkBad: {
+    fontSize: 13,
     fontWeight: '700',
     color: '#F44336',
-    marginTop: 1,
-  },
-  weekMarkCurrent: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#9E9E9E',
-    marginTop: 1,
+    width: 16,
+    textAlign: 'center',
   },
   insightRow: {
     flexDirection: 'row',

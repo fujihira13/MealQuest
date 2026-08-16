@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BadgeList } from '@/components/BadgeList';
 import { CollectionList } from '@/components/CollectionList';
 
@@ -11,7 +12,23 @@ const SEGMENTS: { key: Segment; label: string }[] = [
 ];
 
 export default function AchievementsTab() {
+  // この画面はタブ切替でアンマウントされないため、`useState` の初期化関数は
+  // 最初にこのタブを開いたとき一度しか評価されない。そのため「ホームからガチャ導線で
+  // 来たときだけアイテムを開く」判定はマウント時の初期値ではなく、
+  // パラメータの変化を検知する effect で行う（マウント済みでも反応させるため）。
+  const router = useRouter();
+  const { segment: segmentParam } = useLocalSearchParams<{ segment?: string }>();
   const [segment, setSegment] = useState<Segment>('badges');
+
+  useEffect(() => {
+    if (segmentParam !== 'items') return;
+    setSegment('items');
+    // パラメータを消費したらクリアする。クリアしないと「アイテム」を手動でバッジに
+    // 戻した後にもう一度同じボタンから segment=items で遷移してきたとき、
+    // 値が前回と変わらず（'items' → 'items'）この effect の依存配列が変化しないため
+    // 再実行されない＝2回目以降アイテムが開かなくなってしまう。
+    router.setParams({ segment: undefined });
+  }, [segmentParam, router]);
 
   return (
     <View style={styles.container}>

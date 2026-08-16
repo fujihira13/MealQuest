@@ -25,7 +25,7 @@ All UI text is Japanese.
 - Food expense tracking with 7 categories (スーパー, 自販機, コンビニ, 外食, 飲み会, デート, その他)
 - Meal-time tracking: morning / lunch / dinner / snack (間食)
 - Gamification: levels (cumulative XP), points, daily/weekly missions, 24 badges, gacha collection, streaks
-- Monthly statistics with a pie chart, per-week bars (5 buckets per month: 1-7/8-14/15-21/22-28/29-end), and budget gauges
+- Monthly statistics with a pie chart, a per-week expense table (5 buckets per month: 1-7/8-14/15-21/22-28/29-end, each row status-flagged as ended/current/upcoming), and budget gauges
 - CSV export of expense records
 
 ## Architecture
@@ -70,7 +70,7 @@ This is **not** a monorepo. Types and utils are duplicated between root `src/` a
 ### Core State
 
 **AppStore** (~820 lines, 17 actions) holds all business logic:
-`userData`, `goals`, `expenses[]`, `cookingRecords[]`, `savingsRecords[]`, `collection[]`, `missions`, `badges`, `streaks`, `gachaItems[]`, `badgeDefinitions[]`, `savingsEquivalents[]`, `allDayCookingBonusDates[]`.
+`userData`, `goals`, `expenses[]`, `cookingRecords[]`, `savingsRecords[]`, `collection[]`, `missions`, `badges`, `streaks`, `gachaItems[]`, `badgeDefinitions[]`, `allDayCookingBonusDates[]`.
 
 The 17 actions: `addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord`, `toggleCookingRecordWithDate`, `addSavingsRecord`, `playGacha`, `checkSavingsLevelUp`, `initializeMissions` / `updateMissionProgress` / `claimMissionReward`, `checkBadgeProgress`, `recordNoWasteDay` / `recordSnackFreeDay` / `resetStreakIfNeeded`, `updateGoals`, `updateMonthlyData`, `resetAllData`. A cleanup pass removed 9 actions that had zero UI callers (`checkLevelUp`, `toggleCookingRecord`, `addCookingRecord`, `updateCookingRecordMemo`, `deleteCookingRecord`, `generateDailyMissions`, `generateWeeklyMissions`, `resetDailyMissions`, `resetWeeklyMissions`) — generation/reset logic now lives entirely in `initializeMissions()`, and level recalculation in `applyXpChange()`.
 
@@ -122,7 +122,7 @@ npm run lint         # expo lint
 
 **Gacha:** 100pt per pull, 15 items, rarity odds common 60% / rare 25% / epic 12% / legendary 3%.
 
-**Missions:** fixed templates, 3 daily and 3 weekly. Generation and reset are handled entirely by `initializeMissions()`, which runs on app startup, on foreground resume (`AppState` `change` listener in `app/_layout.tsx`), and when the missions screen is left open across midnight.
+**Missions:** fixed templates, 3 daily and 3 weekly. Generation and reset are handled entirely by `initializeMissions()`, which runs on app startup, on foreground resume (`AppState` `change` listener in `app/_layout.tsx`), and when the missions screen is left open across midnight. The startup call waits for the AsyncStorage restore to finish first: restoring is asynchronous, and calling `initializeMissions()` before it completes let the subsequent state replacement roll back the freshly generated missions — a pre-existing bug (mission progress would never stick). `app/_layout.tsx` now checks `useAppStore.persist.hasHydrated()` and, if not yet hydrated, defers the call to `onFinishHydration()`.
 
 The weekly `cooking` / `total_savings` / `expense_control` missions don't accumulate via `m.progress + value`; `updateMissionProgress()`'s `weeklyProgress()` recomputes their progress from scratch every call, from records in the current week (`lastWeeklyReset` through 7 days later). `expense_control` (`weekly_expense_goal`) evaluates to progress 1 (done) only once **the week's final day has arrived (day 7, counted from `weekStart`) and** the week's expense total is at or under the weekly budget; before the final day, progress stays 0 no matter how low spending is so far — "stayed under budget for the whole week" can't be known until the week is over, and without this gate a single cheap purchase on day 1 would lock in completion immediately. The weekly budget is `(goals.monthlyExpenseGoal + goals.allowanceGoal) / weeks in that month` — the same "4 or 5 weeks" rule `stats.tsx`'s weekly chart uses, but applied to the mission's own `weekStart`–`weekStart+7days` window rather than the stats screen's date-based 5-way split of the month. A weekly budget of 0 or less (no goal set) is always treated as not achieved. It's recalculated from `addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord` regardless of the record's date. Like the other weekly missions, once a mission is `completed`, `updateMissionProgress()` stops updating it (`applyProgress()`'s `!m.completed` guard); since `expense_control` can only complete on the final day in the first place, this freeze rarely matters in practice.
 

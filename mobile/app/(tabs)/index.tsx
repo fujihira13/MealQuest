@@ -354,7 +354,7 @@ export default function HomeTab() {
             >
               <Text style={styles.actionIcon}>💰</Text>
               <Text style={styles.actionTitle}>節約を記録</Text>
-              <Text style={styles.actionSub}>{savingsToday ? '記録済み' : '節約した金額を入力'}</Text>
+              <Text style={styles.actionSub}>{savingsToday ? '記録済み' : '買うのをやめた金額'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -370,7 +370,7 @@ export default function HomeTab() {
               <Text style={styles.actionIcon}>✨</Text>
               <Text style={[styles.actionTitle, !noWasteToday && wastedToday && styles.actionTitleMissed]}>無駄遣いなし</Text>
               <Text style={styles.actionSub}>
-                {noWasteToday ? '記録済み！' : wastedToday ? 'また明日' : `連続${streaks.noWasteStreak}日`}
+                {noWasteToday ? '記録済み！' : wastedToday ? '無駄遣いあり' : `連続${streaks.noWasteStreak}日`}
               </Text>
             </TouchableOpacity>
 
@@ -387,7 +387,7 @@ export default function HomeTab() {
               <Text style={styles.actionIcon}>🥗</Text>
               <Text style={[styles.actionTitle, !snackFreeToday && snackedToday && styles.actionTitleMissed]}>間食なし</Text>
               <Text style={styles.actionSub}>
-                {snackFreeToday ? '記録済み！' : snackedToday ? 'また明日' : `連続${streaks.snackFreeStreak}日`}
+                {snackFreeToday ? '記録済み！' : snackedToday ? '間食あり' : `連続${streaks.snackFreeStreak}日`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -456,7 +456,9 @@ export default function HomeTab() {
           </View>
           <TouchableOpacity
             style={styles.gachaBtn}
-            onPress={() => router.push("/(tabs)/achievements")}
+            onPress={() =>
+              router.push({ pathname: "/(tabs)/achievements", params: { segment: "items" } })
+            }
           >
             <Text style={styles.gachaBtnText}>コレクションを見る →</Text>
           </TouchableOpacity>
@@ -490,7 +492,7 @@ export default function HomeTab() {
         >
           <View style={styles.savingsSheet}>
             <Text style={styles.savingsTitle}>節約を記録する</Text>
-            <Text style={styles.savingsSub}>節約した金額を入力してください（¥10 = 1pt）</Text>
+            <Text style={styles.savingsSub}>買うのをやめた金額を入力してください（¥10 = 1pt）</Text>
             <View style={styles.savingsInputRow}>
               <Text style={styles.savingsYen}>¥</Text>
               <TextInput

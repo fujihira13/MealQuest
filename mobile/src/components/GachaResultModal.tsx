@@ -1,7 +1,11 @@
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { getRarityDisplay } from '@/utils/formatHelpers';
-import { RARITY_COLORS, RARITY_STARS, RARITY_BG } from '@/constants/rarity';
+import { RARITY_COLORS, RARITY_STAR_COUNT, RARITY_BG } from '@/constants/rarity';
 import type { CollectionItem } from '@/types';
+
+const TOTAL_RARITY_STARS = 4;
+const STAR_FILLED_COLOR = '#FF9800';
+const STAR_EMPTY_COLOR = '#E0E0E0';
 
 interface Props {
   visible: boolean;
@@ -14,6 +18,7 @@ export function GachaResultModal({ visible, result, onClose }: Props) {
   const { item, bonusPoints } = result;
   const rarityColor = RARITY_COLORS[item.rarity] ?? '#9E9E9E';
   const rarityBg = RARITY_BG[item.rarity] ?? '#FAFAFA';
+  const filledStars = RARITY_STAR_COUNT[item.rarity] ?? 1;
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -25,9 +30,24 @@ export function GachaResultModal({ visible, result, onClose }: Props) {
             <Text style={styles.icon}>{item.icon}</Text>
           </View>
 
-          <Text style={[styles.rarityStars, { color: rarityColor }]}>
-            {RARITY_STARS[item.rarity] ?? ''} {getRarityDisplay(item.rarity)}
-          </Text>
+          <View style={styles.rarityRow}>
+            <View style={styles.starsRow}>
+              {Array.from({ length: TOTAL_RARITY_STARS }).map((_, i) => (
+                <Text
+                  key={i}
+                  style={[
+                    styles.starChar,
+                    { color: i < filledStars ? STAR_FILLED_COLOR : STAR_EMPTY_COLOR },
+                  ]}
+                >
+                  {i < filledStars ? '★' : '☆'}
+                </Text>
+              ))}
+            </View>
+            <Text style={[styles.rarityLabel, { color: rarityColor }]}>
+              {getRarityDisplay(item.rarity)}
+            </Text>
+          </View>
 
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.description}>{item.description}</Text>
@@ -83,10 +103,22 @@ const styles = StyleSheet.create({
   icon: {
     fontSize: 52,
   },
-  rarityStars: {
+  rarityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    marginRight: 6,
+  },
+  starChar: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  rarityLabel: {
     fontSize: 15,
     fontWeight: '800',
-    marginBottom: 8,
   },
   name: {
     fontSize: 18,

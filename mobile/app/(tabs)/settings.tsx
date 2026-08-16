@@ -13,10 +13,13 @@ import {
 } from "react-native";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
+import Constants from "expo-constants";
 import { useAppStore } from "@/store/useAppStore";
 import { formatCurrency, getMealLabel } from "@/utils/formatHelpers";
 import { getCurrentDate } from "@/utils/dateHelpers";
 import type { ExpenseRecord } from "@/types";
+
+const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
 type EditableBudgetType = "expense" | "allowance";
 
@@ -188,7 +191,7 @@ export default function SettingsTab() {
               <View>
                 <Text style={styles.settingLabel}>月のスーパーの予算</Text>
                 <Text style={styles.settingSub}>
-                  ホームのスーパーの予算に反映
+                  スーパーの予算に反映
                 </Text>
               </View>
             </View>
@@ -289,7 +292,7 @@ export default function SettingsTab() {
               <Text style={styles.settingIcon}>📱</Text>
               <Text style={styles.settingLabel}>バージョン</Text>
             </View>
-            <Text style={styles.settingValue}>1.0.0</Text>
+            <Text style={styles.settingValue}>{APP_VERSION}</Text>
           </View>
         </View>
 

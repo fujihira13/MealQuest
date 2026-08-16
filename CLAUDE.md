@@ -72,7 +72,7 @@ npm run lint         # Expo Lint
 `mobile/src/store/useAppStore.ts` に **AppStore** と **UIStore** の2ストアが同居している（別ファイルではない）。
 
 **AppStore** — ビジネスロジック全体（約820行、アクション17種）
-- State: `userData`, `goals`, `expenses[]`, `cookingRecords[]`, `savingsRecords[]`, `missions`, `badges`, `streaks`, `collection[]`, `gachaItems[]`, `badgeDefinitions[]`, `savingsEquivalents[]`, `allDayCookingBonusDates[]`
+- State: `userData`, `goals`, `expenses[]`, `cookingRecords[]`, `savingsRecords[]`, `missions`, `badges`, `streaks`, `collection[]`, `gachaItems[]`, `badgeDefinitions[]`, `allDayCookingBonusDates[]`
 - Actions（17種）: `addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord`、`toggleCookingRecordWithDate`、`addSavingsRecord`、`playGacha`、`checkSavingsLevelUp`、`initializeMissions` / `updateMissionProgress` / `claimMissionReward`、`checkBadgeProgress`、`recordNoWasteDay` / `recordSnackFreeDay` / `resetStreakIfNeeded`、`updateGoals`、`updateMonthlyData`、`resetAllData`
 - 2026-08-16 のリファクタで UI から一度も呼ばれていなかった9アクション（`checkLevelUp` / `toggleCookingRecord` / `addCookingRecord` / `updateCookingRecordMemo` / `deleteCookingRecord` / `generateDailyMissions` / `generateWeeklyMissions` / `resetDailyMissions` / `resetWeeklyMissions`）を削除済み。生成・リセットの機能は `initializeMissions()` に、レベル再計算は `applyXpChange()` に統合されている
 
@@ -114,6 +114,8 @@ Web版から移植されたまま未使用だった `currentTab` / モーダル�
 2. バックグラウンドからフォアグラウンドへ復帰した時（`AppState` の `change` を購読）
 3. ミッション画面を開いたまま0時をまたいだ時（`app/(tabs)/missions.tsx` の1秒タイマーで日付変化を検知）
 
+起動時（1.）の実行は AsyncStorage からの復元完了を待ってから行う。復元は非同期のため、復元前に `initializeMissions()` を呼ぶと、復元完了時の state 置換でミッション生成が巻き戻ってしまう不具合が以前から存在していた。`app/_layout.tsx` で `useAppStore.persist.hasHydrated()` により復元済みかを判定し、未復元なら `onFinishHydration()` で復元完了後に実行するよう修正済み（`AppState` 復帰時の実行は従来どおり）。
+
 ウィークリーの `cooking` / `total_savings` / `expense_control` は、進捗を `m.progress + value` で積み上げるのではなく、当週（`lastWeeklyReset` 〜 その7日後）の記録から**毎回再計算**する（`updateMissionProgress()` 内の `weeklyProgress()`）。`expense_control`（`weekly_expense_goal`）は「週の最終日（`weekStart` から数えて7日目）に入っていて、かつ当週の支出合計が週予算以下」なら進捗1（達成）、それ以外は0。最終日より前は、途中経過が予算内であっても進捗0のまま（「1週間抑えきったか」は週が終わるまで判定できないため。この判定がないと最初の安い買い物1回で達成が確定してしまう）。週予算は `(goals.monthlyExpenseGoal + goals.allowanceGoal) ÷ その月の週数`（`stats.tsx` の週別グラフと同じ「4 or 5週」判定。ただし対象期間は月内の日付5区切りではなく `weekStart`〜`weekStart+7日`）で、週予算が0円以下（目標未設定）のときは常に未達成扱い。`addExpenseRecord` / `updateExpenseRecord` / `deleteExpenseRecord` から日付を問わず呼ばれる。他のミッション同様、一度 `completed` になると `updateMissionProgress()` は以降そのミッションを更新しない（`applyProgress()` の `!m.completed` 条件）が、`expense_control` は最終日にしか達成しないためこの凍結が問題になる場面はほぼない。
 
 **バッジ:** 24種類（`category` 別に cooking 5 / savings 9 / level 4 / special 6。savings には節約レベル系3種を含む）。`checkBadgeProgress()` が state から動的に判定する。
@@ -149,7 +151,7 @@ Web版から移植されたまま未使用だった `currentTab` / モーダル�
 
 - `react-native-reanimated` v4.x の Babel プラグインが `react-native-worklets` を必要とする（`mobile/package.json` に明示的に記載済み）
 - New Architecture（`newArchEnabled: true`）有効
-- グラフは外部ライブラリではなく `react-native-svg` ベースの自作コンポーネント（`PieChart` / `CircularProgress`）。統計画面の週別推移バーは `stats.tsx` 内で直接描画している（月内を 1-7 / 8-14 / 15-21 / 22-28 / 29-末日 の5区切りに集計）
+- グラフは外部ライブラリではなく `react-native-svg` ベースの自作コンポーネント（`PieChart` / `CircularProgress`）。統計画面の週別集計はグラフではなく表形式で `stats.tsx` 内に直接実装している（月内を 1-7 / 8-14 / 15-21 / 22-28 / 29-末日 の5区切りに集計し、各週を「終了 / 進行中 / これから」の3状態で判定。終了週のみ✓✗の判定マークを表示し、進行中の週は金額のみ「今週」表示、これから来る週は金額を「—」表示にする）
 - スタイルは RN の `StyleSheet` のみ（NativeWind 等は未導入）
 - CSV 書き出しは `expo-file-system`（`File` / `Paths` API）+ `expo-sharing`
 

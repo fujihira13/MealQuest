@@ -135,7 +135,6 @@ export function CollectionList() {
           ListEmptyComponent={
             <Text style={styles.empty}>全てのアイテムを入手済みです！</Text>
           }
-          ListFooterComponent={<View style={styles.footerBanner}><Text style={styles.footerText}>レアアイテムを集めて 特別なごほうびが GET!</Text></View>}
         />
       ) : (
         <FlatList
@@ -149,7 +148,6 @@ export function CollectionList() {
               {filter === 'rare' ? 'レアアイテムはまだありません' : 'まだアイテムがありません\nガチャを引いて集めよう！'}
             </Text>
           }
-          ListFooterComponent={<View style={styles.footerBanner}><Text style={styles.footerText}>レアアイテムを集めて 特別なごほうびが GET!</Text></View>}
         />
       )}
 
@@ -375,18 +373,5 @@ const styles = StyleSheet.create({
     padding: 32,
     fontSize: 14,
     lineHeight: 22,
-  },
-  footerBanner: {
-    margin: 8,
-    backgroundColor: '#E8F5E9',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#2E7D32',
-    textAlign: 'center',
-    fontWeight: '600',
   },
 });

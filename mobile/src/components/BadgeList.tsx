@@ -167,13 +167,6 @@ export function BadgeList() {
         ListEmptyComponent={
           <Text style={styles.empty}>該当するバッジがありません</Text>
         }
-        ListFooterComponent={
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              🏅 バッジを集めて、もっと節約上手になろう！
-            </Text>
-          </View>
-        }
       />
     </View>
   );
@@ -350,15 +343,5 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     padding: 32,
     fontSize: 14,
-  },
-  footer: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#9E9E9E',
-    textAlign: 'center',
-    lineHeight: 18,
   },
 });

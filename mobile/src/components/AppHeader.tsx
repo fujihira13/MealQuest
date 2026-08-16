@@ -18,7 +18,6 @@ export function AppHeader() {
     <View style={[styles.container, { paddingTop: insets.top }]} onLayout={handleLayout}>
       <Text style={styles.appName}>MealQuest</Text>
       <View style={styles.levelBadge}>
-        <Text style={styles.crown}>👑</Text>
         <Text style={styles.levelText}>Lv.{userData.level}</Text>
       </View>
       <View style={styles.points}>
@@ -51,9 +50,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
     gap: 4,
-  },
-  crown: {
-    fontSize: 14,
   },
   levelText: {
     color: '#FFF176',

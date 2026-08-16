@@ -15,7 +15,6 @@ import type {
   MealTime,
   NotificationType,
   GachaItem,
-  SavingsEquivalent,
   MissionType,
 } from "@/types";
 import { COOKING_RECORD_POINTS, ALL_DAY_COOKING_BONUS_POINTS } from "@/constants/game";
@@ -116,19 +115,6 @@ const badgeDefinitions: Badge[] = [
   { id: "mission_master", category: "special", title: "クエストマスター", description: "クエスト20個達成", icon: "🏅", requirement: { type: "missions_completed", value: 20 }, earned: false },
 ];
 
-const savingsEquivalents: SavingsEquivalent[] = [
-  { amount: 300, item: "オーガニック野菜", icon: "🥬" },
-  { amount: 500, item: "プロテイン1回分", icon: "🥛" },
-  { amount: 800, item: "ヘルシーサラダランチ", icon: "🥗" },
-  { amount: 1000, item: "栄養補助食品", icon: "💊" },
-  { amount: 1500, item: "スムージーボウル", icon: "🍓" },
-  { amount: 2000, item: "ヨガクラス1回", icon: "🧘" },
-  { amount: 3000, item: "フィットネス1日券", icon: "🏃" },
-  { amount: 5000, item: "健康的な食材セット", icon: "🥕" },
-  { amount: 8000, item: "マッサージ1回", icon: "💆" },
-  { amount: 10000, item: "良質なオリーブオイル", icon: "🫒" },
-];
-
 type PersistedAppState = Partial<AppState> & {
   userData?: Partial<UserData>;
   allDayCookingBonusDates?: string[];
@@ -205,7 +191,6 @@ export const useAppStore = create<AppStore>()(
       },
       gachaItems,
       badgeDefinitions,
-      savingsEquivalents,
       allDayCookingBonusDates: [],
 
       addExpenseRecord: (category, amount, meal, date) => {
@@ -803,7 +788,6 @@ export const useAppStore = create<AppStore>()(
           streaks: { noWasteStreak: 0, lastNoWasteDate: "", bestNoWasteStreak: 0, snackFreeStreak: 0, lastSnackFreeDate: "", bestSnackFreeStreak: 0 },
           gachaItems,
           badgeDefinitions,
-          savingsEquivalents,
           allDayCookingBonusDates: [],
         });
       },
