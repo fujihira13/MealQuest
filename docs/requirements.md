@@ -455,7 +455,7 @@ UIStore は `notifications[]`（`Toast.tsx` が購読し、行動へのフィー
 | name / slug | MealQuest / mealquest |
 | version | 2.0.0 |
 | Android package | `com.mealquest.app` |
-| Android versionCode | 4（ローカルの参考値。EAS の自動採番を使うためビルド結果には反映されない） |
+| Android versionCode | `app.json` には記載しない（EAS のサーバー側カウンターで自動採番。2026-08-16 時点のカウンター値は 10） |
 | minSdkVersion | 26 |
 | iOS bundleIdentifier | `com.sakana1113.mealquest`（未提出） |
 | orientation | portrait |
@@ -470,7 +470,17 @@ UIStore は `notifications[]`（`Toast.tsx` が購読し、行動へのフィー
 | `preview` | APK、内部配布（テスト用） |
 | `production` | AAB（Play Store 提出用。`autoIncrement: true`） |
 
-**`appVersionSource` は `"remote"`。** `android.versionCode` は EAS が自動採番するため、`app.json` 側を手動でインクリメントする必要はない（過去に手動インクリメント運用で上げ忘れ、Play Console で重複エラーが発生したことがあり、その再発防止として自動採番に切り替えた）。
+**`appVersionSource` は `"remote"`。** `android.versionCode` は EAS のサーバー側カウンターで自動採番されるため、手動でインクリメントする必要はない（手動運用時に上げ忘れて Play Console で重複エラーが発生したことがあり、その再発防止として自動採番に切り替えた）。`app.json` に `versionCode` は書かない（書いても無視され、実際の採番値と食い違うため）。
+
+現在のカウンター値は次のコマンドで確認できる。
+
+```bash
+cd mobile && npx eas build:version:get --platform android
+```
+
+> ⚠️ **`local` から `remote` へ切り替えた直後の注意**
+> EAS 側のカウンターは 0 から始まるため、Play で使用済みの番号と衝突する。切り替え時は必ず `npx eas build:version:set --platform android` を実行し、Play で使われている最大値より大きい番号を設定すること。**このコマンドは対話式で、実行には実際の端末が必要**（標準入力をパイプで渡す方法・winpty 経由のいずれも拒否される）。
+> 実際にこの手順を飛ばしたまま `--non-interactive` でビルドしたところ、versionCode 2 が採番されて Play にアップロードできず、ビルドを1回無駄にした（2026-08-16）。その後カウンターを 10 に設定して解消。
 
 ### 8.3 ストア用アセット（`store-assets/`）
 

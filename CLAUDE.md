@@ -170,7 +170,9 @@ Web版から移植されたまま未使用だった `currentTab` / モーダル�
 
 ## リリース運用（Android）
 
-- `mobile/eas.json` は `appVersionSource: "remote"` + `production.autoIncrement: true`。**`android.versionCode` は EAS が自動採番する**ため、`mobile/app.json` 側を手動でインクリメントする必要はない（`app.json` 内の `versionCode` 値はローカルの参考値であり、ビルド結果には反映されない）
+- `mobile/eas.json` は `appVersionSource: "remote"` + `production.autoIncrement: true`。**`android.versionCode` は EAS のサーバー側カウンターで自動採番される**ため、`mobile/app.json` に `versionCode` は書かない（書いても無視されるうえ、実際の採番値と食い違って混乱の元になるため削除済み）
+- 現在のカウンター値は `cd mobile && npx eas build:version:get --platform android` で確認できる。**2026-08-16 時点で 10**（次の production ビルドで 11 が採番される）
+- ⚠️ **`appVersionSource` を `local` から `remote` へ切り替えた直後は、EAS 側のカウンターが 0 から始まる。** Play で使用済みの番号と衝突するため、切り替え時は必ず `npx eas build:version:set --platform android` で現在の値より大きい番号を設定すること（このコマンドは対話式で、実行には端末が必要）。実際に一度この手順を飛ばして versionCode 2 でビルドしてしまい、アップロードできずビルドを1回無駄にした
 - `mobile/app.json` の `version`（アプリバージョン表示用）は `2.0.0`
 - ビルドプロファイル: `development`（dev client）/ `preview`（APK・内部配布）/ `production`（AAB）
 - パッケージ名 `com.mealquest.app` / minSdkVersion 26 / EAS owner `sakana1113`

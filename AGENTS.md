@@ -140,7 +140,9 @@ The weekly `cooking` / `total_savings` / `expense_control` missions don't accumu
 
 ## Release (Android)
 
-- `mobile/eas.json` uses `appVersionSource: "remote"` with `production.autoIncrement: true`, so **EAS auto-assigns `android.versionCode`** on each production build. The `versionCode` value in `mobile/app.json` is a local placeholder only and does not need to be bumped by hand — it has no effect on what gets uploaded
+- `mobile/eas.json` uses `appVersionSource: "remote"` with `production.autoIncrement: true`, so **EAS auto-assigns `android.versionCode`** from a server-side counter on each production build. `mobile/app.json` deliberately has **no** `versionCode` key — it would be ignored and would only create confusion by disagreeing with the real assigned value
+- Check the current counter with `cd mobile && npx eas build:version:get --platform android`. **As of 2026-08-16 it is 10** (the next production build gets 11)
+- ⚠️ **When switching `appVersionSource` from `local` to `remote`, the EAS counter starts at 0** and will collide with version codes already used on Play. Always run `npx eas build:version:set --platform android` right after switching and set a number above the highest one Play has seen. That command is interactive and needs a real terminal. Skipping this step once produced a build with versionCode 2 that Play rejected, wasting a build
 - `mobile/app.json`'s `version` (the user-facing app version) is `2.0.0`
 - Build profiles: `development` (dev client), `preview` (internal APK), `production` (AAB)
 - Package `com.mealquest.app`, minSdkVersion 26, EAS owner `sakana1113`
