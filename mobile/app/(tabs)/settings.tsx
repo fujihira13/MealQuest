@@ -53,9 +53,16 @@ function createExpensesCsv(expenses: ExpenseRecord[]): string {
   return `\uFEFF${csvLines.join("\r\n")}`;
 }
 
+const DEFAULT_TITLE = "かけだし節約家";
+
 export default function SettingsTab() {
-  const { userData, goals, expenses, updateGoals, resetAllData } =
+  const { userData, goals, expenses, badges, badgeDefinitions, updateGoals, resetAllData } =
     useAppStore();
+  const currentTitleName =
+    badges.currentTitle === "beginner"
+      ? DEFAULT_TITLE
+      : (badgeDefinitions.find((b) => b.id === badges.currentTitle)?.title ??
+        DEFAULT_TITLE);
   const [isExporting, setIsExporting] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingBudgetType, setEditingBudgetType] =
@@ -159,19 +166,18 @@ export default function SettingsTab() {
       >
         {/* アカウント */}
         <Text style={styles.sectionLabel}>アカウント</Text>
-        <TouchableOpacity style={styles.accountCard}>
+        <View style={styles.accountCard}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarIcon}>👑</Text>
           </View>
           <View style={styles.accountInfo}>
-            <Text style={styles.accountName}>節約マスター</Text>
+            <Text style={styles.accountName}>{currentTitleName}</Text>
             <Text style={styles.accountLevel}>Lv. {userData.level}</Text>
             <Text style={styles.accountPoints}>
               🪙 {userData.points.toLocaleString()} pt
             </Text>
           </View>
-          <Text style={styles.arrow}>{">"}</Text>
-        </TouchableOpacity>
+        </View>
 
         {/* 予算設定 */}
         <Text style={styles.sectionLabel}>予算設定</Text>

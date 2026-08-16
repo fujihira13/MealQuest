@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { formatCurrency, getCategoryIcon } from '@/utils/formatHelpers';
-import { getCurrentMonth } from '@/utils/dateHelpers';
+import { getCurrentMonth, getCurrentDate } from '@/utils/dateHelpers';
 import { CircularProgress } from '@/components/CircularProgress';
 import { PieChart } from '@/components/PieChart';
 import { InputModal } from '@/components/InputModal';
@@ -27,10 +27,33 @@ export default function StatsTab() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [editingExpense, setEditingExpense] = useState<ExpenseRecord | null>(null);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
+  const [isMonthListOpen, setIsMonthListOpen] = useState(false);
 
   const currentMonth = getCurrentMonth();
+  const today = getCurrentDate();
 
   const prevMonth = addMonths(selectedMonth, -1);
+
+  // 月一覧（新しい順）: 記録（支出・自炊・節約）がある最も古い月〜当月まで。
+  // 記録が1件もなければ当月のみを表示する。未来の月は currentMonth が上限のため出てこない。
+  const availableMonths = useMemo(() => {
+    const recordedMonths = [
+      ...expenses.map((e) => e.date.slice(0, 7)),
+      ...cookingRecords.map((r) => r.date.slice(0, 7)),
+      ...savingsRecords.map((r) => r.date.slice(0, 7)),
+    ];
+    const earliestMonth = recordedMonths.reduce(
+      (min, m) => (m < min ? m : min),
+      currentMonth
+    );
+    const months: string[] = [];
+    let cursor = earliestMonth;
+    while (cursor <= currentMonth) {
+      months.push(cursor);
+      cursor = addMonths(cursor, 1);
+    }
+    return months.reverse();
+  }, [expenses, cookingRecords, savingsRecords, currentMonth]);
 
   const monthExpenses = useMemo(
     () => expenses.filter((e) => e.date.startsWith(selectedMonth)),
@@ -68,6 +91,11 @@ export default function StatsTab() {
   // カレンダー週（日曜始まり）ではなく月内の日付レンジで区切ることで、
   // 月をまたがず「第1週」〜「第5週」のラベルが自然になる。
   // 29日以降が存在しない月（2月など）は第5週を作らない。
+  //
+  // 各週には status を持たせる（'ended' | 'current' | 'upcoming'）。
+  // 週の最終日が今日より前なら終了済み、開始日が今日より後ならまだ来ていない、
+  // それ以外（今日を含む）は進行中。日付キー同士の文字列比較（YYYY-MM-DD）で判定できる。
+  // 過去の月を見ているときは月内の全日が today より前になるため、自然に全週が 'ended' になる。
   const weeklyData = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
@@ -87,13 +115,22 @@ export default function StatsTab() {
           return day >= r.start && day <= r.end;
         })
         .reduce((s, e) => s + e.amount, 0);
-      return { label: `第${i + 1}週`, amount };
+      const startKey = `${selectedMonth}-${String(r.start).padStart(2, '0')}`;
+      const endKey = `${selectedMonth}-${String(r.end).padStart(2, '0')}`;
+      const status: 'ended' | 'current' | 'upcoming' =
+        endKey < today ? 'ended' : startKey > today ? 'upcoming' : 'current';
+      return { label: `第${i + 1}週`, amount, status };
     });
-  }, [monthExpenses, selectedMonth]);
+  }, [monthExpenses, selectedMonth, today]);
 
   // 週予算 = 月の予算合計 ÷ その月の週数（4 or 5）
   const weeklyBudget = weeklyData.length > 0 ? totalBudgetGoal / weeklyData.length : 0;
-  const maxWeekly = Math.max(...weeklyData.map((w) => w.amount), weeklyBudget, 1);
+  // まだ来ていない週（upcoming）はバーを表示しないため、バーの高さの基準（maxWeekly）の
+  // 計算からも除外する（本来 upcoming 週の amount は常に0のはずだが、念のため除外して安全にする）。
+  const displayedWeeklyAmounts = weeklyData
+    .filter((w) => w.status !== 'upcoming')
+    .map((w) => w.amount);
+  const maxWeekly = Math.max(...displayedWeeklyAmounts, weeklyBudget, 1);
 
   const monthSavings = useMemo(
     () => savingsRecords.filter((r) => r.date.startsWith(selectedMonth)).reduce((s, r) => s + r.amount, 0),
@@ -138,7 +175,9 @@ export default function StatsTab() {
         <TouchableOpacity onPress={() => setSelectedMonth(addMonths(selectedMonth, -1))}>
           <Text style={styles.navArrow}>{'＜'}</Text>
         </TouchableOpacity>
-        <Text style={styles.monthLabel}>{getMonthLabel(selectedMonth)}</Text>
+        <TouchableOpacity onPress={() => setIsMonthListOpen(true)} activeOpacity={0.7}>
+          <Text style={styles.monthLabel}>{getMonthLabel(selectedMonth)}</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {
             if (selectedMonth < currentMonth) setSelectedMonth(addMonths(selectedMonth, 1));
@@ -230,32 +269,40 @@ export default function StatsTab() {
         ) : (
           <View style={styles.weeklyChartRow}>
             {weeklyData.map((w, i) => {
-              const heightPct = maxWeekly > 0 ? w.amount / maxWeekly : 0;
-              const barH = Math.max(Math.round(heightPct * 70), w.amount > 0 ? 4 : 0);
+              const isUpcoming = w.status === 'upcoming';
+              const heightPct = !isUpcoming && maxWeekly > 0 ? w.amount / maxWeekly : 0;
+              const barH = Math.max(Math.round(heightPct * 70), !isUpcoming && w.amount > 0 ? 4 : 0);
               const isOver = weeklyBudget > 0 && w.amount > weeklyBudget;
               const budgetLineBottom =
-                weeklyBudget > 0 ? Math.min(Math.round((weeklyBudget / maxWeekly) * 70), 70) : null;
+                !isUpcoming && weeklyBudget > 0
+                  ? Math.min(Math.round((weeklyBudget / maxWeekly) * 70), 70)
+                  : null;
               return (
                 <View key={i} style={styles.weekCol}>
                   <Text style={styles.weekAmount} numberOfLines={1}>
-                    {formatCurrency(w.amount)}
+                    {isUpcoming ? '—' : formatCurrency(w.amount)}
                   </Text>
                   <View style={styles.weekTrack}>
-                    {budgetLineBottom !== null && (
+                    {!isUpcoming && budgetLineBottom !== null && (
                       <View style={[styles.weekBudgetLine, { bottom: budgetLineBottom }]} />
                     )}
-                    <View
-                      style={[
-                        styles.weekBarFill,
-                        { height: barH, backgroundColor: isOver ? '#F44336' : '#4CAF50' },
-                      ]}
-                    />
+                    {!isUpcoming && (
+                      <View
+                        style={[
+                          styles.weekBarFill,
+                          { height: barH, backgroundColor: isOver ? '#F44336' : '#4CAF50' },
+                        ]}
+                      />
+                    )}
                   </View>
                   <Text style={styles.weekLabel}>{w.label}</Text>
-                  {weeklyBudget > 0 && (
+                  {w.status === 'ended' && weeklyBudget > 0 && (
                     <Text style={isOver ? styles.weekMarkBad : styles.weekMarkGood}>
                       {isOver ? '✗' : '✓'}
                     </Text>
+                  )}
+                  {w.status === 'current' && (
+                    <Text style={styles.weekMarkCurrent}>今週</Text>
                   )}
                 </View>
               );
@@ -335,6 +382,51 @@ export default function StatsTab() {
       editingRecord={editingExpense}
       onClose={() => setEditingExpense(null)}
     />
+
+    {/* 月一覧モーダル — 見た目は DateSelector.tsx のカレンダーモーダルに揃える
+        （オーバーレイの濃さ・角丸・ボタンの形など） */}
+    <Modal
+      visible={isMonthListOpen}
+      animationType="fade"
+      transparent
+      onRequestClose={() => setIsMonthListOpen(false)}
+    >
+      <View style={styles.monthModalOverlay}>
+        <View style={styles.monthModalCard}>
+          <Text style={styles.monthModalTitle}>月を選択</Text>
+          <ScrollView style={styles.monthListScroll}>
+            {availableMonths.map((m) => {
+              const active = m === selectedMonth;
+              return (
+                <TouchableOpacity
+                  key={m}
+                  style={[styles.monthListItem, active && styles.monthListItemActive]}
+                  onPress={() => {
+                    setSelectedMonth(m);
+                    setIsMonthListOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.monthListItemText,
+                      active && styles.monthListItemTextActive,
+                    ]}
+                  >
+                    {getMonthLabel(m)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <TouchableOpacity
+            style={styles.monthModalCloseBtn}
+            onPress={() => setIsMonthListOpen(false)}
+          >
+            <Text style={styles.monthModalCloseBtnText}>閉じる</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
     </>
   );
 }
@@ -525,6 +617,12 @@ const styles = StyleSheet.create({
     color: '#F44336',
     marginTop: 1,
   },
+  weekMarkCurrent: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#9E9E9E',
+    marginTop: 1,
+  },
   insightRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -576,5 +674,65 @@ const styles = StyleSheet.create({
   },
   deleteBtnText: {
     fontSize: 16,
+  },
+  // 月一覧モーダル — DateSelector.tsx のカレンダーモーダルと同じ見た目
+  // （オーバーレイの濃さ・角丸・ボタンの形）に揃えている。
+  monthModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  monthModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    maxHeight: '70%',
+  },
+  monthModalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#212121',
+    textAlign: 'center',
+  },
+  monthListScroll: {
+    flexGrow: 0,
+  },
+  monthListItem: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FAFAFA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  monthListItemActive: {
+    borderColor: '#4CAF50',
+    backgroundColor: '#E8F5E9',
+  },
+  monthListItemText: {
+    fontSize: 15,
+    color: '#424242',
+    fontWeight: '600',
+  },
+  monthListItemTextActive: {
+    color: '#2E7D32',
+    fontWeight: '800',
+  },
+  monthModalCloseBtn: {
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthModalCloseBtnText: {
+    fontSize: 14,
+    color: '#424242',
+    fontWeight: '700',
   },
 });

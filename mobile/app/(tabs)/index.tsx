@@ -181,7 +181,7 @@ export default function HomeTab() {
       >
         {/* 今月の残り予算（お小遣いが主役の残量メーター） */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>今月あと使えるお金</Text>
+          <Text style={styles.sectionTitle}>今月の残り予算</Text>
 
           <View style={styles.allowanceBlock}>
             <Text style={styles.allowanceLabel}>👛 今月の無駄遣い枠</Text>
@@ -458,7 +458,7 @@ export default function HomeTab() {
             style={styles.gachaBtn}
             onPress={() => router.push("/(tabs)/achievements")}
           >
-            <Text style={styles.gachaBtnText}>報酬をチェック →</Text>
+            <Text style={styles.gachaBtnText}>コレクションを見る →</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
