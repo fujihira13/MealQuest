@@ -315,6 +315,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   calendarCard: {
+    width: '90%',
+    alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,

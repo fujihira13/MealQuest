@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { DateSelector } from '@/components/DateSelector';
-import { getCurrentDate, isValidDateKey, isToday, formatDateForDisplay } from '@/utils/dateHelpers';
+import { getCurrentDate, isValidDateKey } from '@/utils/dateHelpers';
 import { CATEGORY_LIST, CATEGORY_ICONS } from '@/constants/categories';
 import type { ExpenseCategory, ExpenseRecord, MealTime } from '@/types';
 
@@ -41,7 +41,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
   const [amount, setAmount] = useState(editingRecord?.amount?.toString() ?? '');
   const [meal, setMeal] = useState<MealTime>(editingRecord?.meal ?? 'lunch');
   const [date, setDate] = useState(editingRecord?.date ?? getCurrentDate());
-  const [isDateExpanded, setIsDateExpanded] = useState(false);
+  const amountInputRef = useRef<TextInput>(null);
 
   const handleCategoryChange = (cat: ExpenseCategory) => {
     setCategory(cat);
@@ -71,62 +71,58 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
     onClose();
   };
 
-  const dateSummaryLabel = isValidDateKey(date)
-    ? isToday(date)
-      ? '今日'
-      : formatDateForDisplay(date)
-    : '日付を選択';
-
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+      onShow={() => amountInputRef.current?.focus()}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
         <View style={styles.sheet}>
-          <View style={styles.handle} />
-
-          {isEditing && (
-            <View style={styles.editingBadge}>
-              <Text style={styles.editingBadgeText}>編集中</Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={styles.closeIconBtn}
-            onPress={onClose}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.closeIconText}>✕</Text>
-          </TouchableOpacity>
-
-          {/* 固定領域: カテゴリー見出し・金額入力（ScrollView の外） */}
+          {/* 固定領域: 見出し行・金額入力（ScrollView の外） */}
           <View style={styles.fixedTop}>
-            {/* カテゴリー見出し（新規入力時のみ。編集時はグリッドが ScrollView 側に表示される） */}
-            {!isEditing && (
-              <View style={styles.categoryHeaderRow}>
-                <Text style={styles.categoryHeaderIcon}>{CATEGORY_ICONS[category]}</Text>
-                <Text style={styles.categoryHeaderText}>{category}</Text>
-                {category === 'スーパー' && (
-                  <View style={styles.categoryTag}>
-                    <Text style={styles.categoryTagText}>食材費</Text>
-                  </View>
-                )}
-              </View>
-            )}
+            {/* 見出し行: カテゴリー（または編集中バッジ）と閉じるボタンを同じ行に配置 */}
+            <View style={styles.topRow}>
+              {isEditing ? (
+                <View style={styles.editingBadge}>
+                  <Text style={styles.editingBadgeText}>編集中</Text>
+                </View>
+              ) : (
+                <View style={styles.categoryHeaderRow}>
+                  <Text style={styles.categoryHeaderIcon}>{CATEGORY_ICONS[category]}</Text>
+                  <Text style={styles.categoryHeaderText}>{category}</Text>
+                  {category === 'スーパー' && (
+                    <View style={styles.categoryTag}>
+                      <Text style={styles.categoryTagText}>食材費</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={styles.closeIconBtn}
+                onPress={onClose}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.closeIconText}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* 金額入力 */}
             <View style={styles.amountSection}>
               <View style={styles.amountRow}>
                 <Text style={styles.yen}>¥</Text>
                 <TextInput
+                  ref={amountInputRef}
                   style={styles.amountInput}
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="number-pad"
-                  placeholder="0"
-                  placeholderTextColor="#BDBDBD"
-                  autoFocus
                 />
               </View>
               <View style={styles.amountUnderline} />
@@ -174,21 +170,9 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
               </View>
             )}
 
-            {/* 日付（折りたたみ） */}
+            {/* 日付 */}
             <View style={styles.dateSection}>
-              <TouchableOpacity
-                style={styles.dateSummaryRow}
-                onPress={() => setIsDateExpanded((prev) => !prev)}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.dateSummaryText}>{'\u{1F4C5}'} {dateSummaryLabel}</Text>
-                <Text style={styles.dateSummaryChevron}>{isDateExpanded ? '▲' : '▾'}</Text>
-              </TouchableOpacity>
-              {isDateExpanded && (
-                <View style={styles.dateExpandedWrap}>
-                  <DateSelector value={date} onChange={setDate} disableFuture />
-                </View>
-              )}
+              <DateSelector value={date} onChange={setDate} disableFuture />
             </View>
           </ScrollView>
 
@@ -216,19 +200,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     maxHeight: '92%',
   },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 8,
-  },
   closeIconBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 16,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -248,16 +220,19 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   fixedTop: {
     paddingHorizontal: 20,
-    paddingTop: 44,
+    paddingTop: 16,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   editingBadge: {
-    position: 'absolute',
-    top: 10,
-    left: 16,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -272,8 +247,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 4,
-    marginBottom: 12,
   },
   categoryHeaderIcon: {
     fontSize: 22,
@@ -329,7 +302,7 @@ const styles = StyleSheet.create({
   },
   amountSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   amountRow: {
     flexDirection: 'row',
@@ -343,7 +316,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     minWidth: 120,
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: '800',
     color: '#212121',
     paddingVertical: 4,
@@ -359,7 +332,7 @@ const styles = StyleSheet.create({
   mealRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   mealBtn: {
     flex: 1,
@@ -384,29 +357,6 @@ const styles = StyleSheet.create({
   },
   dateSection: {
     marginBottom: 4,
-  },
-  dateSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
-  },
-  dateSummaryText: {
-    fontSize: 14,
-    color: '#424242',
-    fontWeight: '600',
-  },
-  dateSummaryChevron: {
-    fontSize: 12,
-    color: '#9E9E9E',
-  },
-  dateExpandedWrap: {
-    marginTop: 10,
   },
   footer: {
     paddingHorizontal: 20,
