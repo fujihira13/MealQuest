@@ -8,8 +8,6 @@ import {
   Alert,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
@@ -17,6 +15,7 @@ import Constants from "expo-constants";
 import { useAppStore } from "@/store/useAppStore";
 import { formatCurrency, getMealLabel } from "@/utils/formatHelpers";
 import { getCurrentDate } from "@/utils/dateHelpers";
+import { useKeyboardHeight } from "@/utils/useKeyboardHeight";
 import { HelpModal } from "@/components/HelpModal";
 import type { ExpenseRecord } from "@/types";
 
@@ -76,6 +75,7 @@ export default function SettingsTab() {
     String(goals.monthlyExpenseGoal),
   );
   const totalBudgetGoal = goals.monthlyExpenseGoal + goals.allowanceGoal;
+  const keyboardHeight = useKeyboardHeight();
 
   const handleBudgetChange = (type: EditableBudgetType) => {
     setEditingBudgetType(type);
@@ -306,10 +306,7 @@ export default function SettingsTab() {
         transparent
         onRequestClose={() => setIsBudgetModalOpen(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
-        >
+        <View style={[styles.modalOverlay, { paddingBottom: keyboardHeight }]}>
           <View style={styles.budgetModal}>
             <Text style={styles.modalTitle}>
               {BUDGET_LABELS[editingBudgetType]}
@@ -344,7 +341,7 @@ export default function SettingsTab() {
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       <HelpModal visible={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />

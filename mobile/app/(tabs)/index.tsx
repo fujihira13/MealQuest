@@ -7,8 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -19,6 +17,7 @@ import {
 } from "@/utils/calculationHelpers";
 import { formatCurrency } from "@/utils/formatHelpers";
 import { getCurrentDate } from "@/utils/dateHelpers";
+import { useKeyboardHeight } from "@/utils/useKeyboardHeight";
 import { InputModal } from "@/components/InputModal";
 import { CookingModal } from "@/components/CookingModal";
 import type { ExpenseCategory, MealTime } from "@/types";
@@ -92,6 +91,7 @@ export default function HomeTab() {
   const [showCookingModal, setShowCookingModal] = useState(false);
   const [showSavingsModal, setShowSavingsModal] = useState(false);
   const [savingsAmount, setSavingsAmount] = useState('');
+  const keyboardHeight = useKeyboardHeight();
 
   const today = getCurrentDate();
   const currentMonth = today.slice(0, 7);
@@ -486,10 +486,7 @@ export default function HomeTab() {
         transparent
         onRequestClose={() => setShowSavingsModal(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.savingsOverlay}
-        >
+        <View style={[styles.savingsOverlay, { paddingBottom: keyboardHeight }]}>
           <View style={styles.savingsSheet}>
             <Text style={styles.savingsTitle}>節約を記録する</Text>
             <Text style={styles.savingsSub}>買うのをやめた金額を入力してください（¥10 = 1pt）</Text>
@@ -517,7 +514,7 @@ export default function HomeTab() {
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </>
   );

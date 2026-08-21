@@ -7,13 +7,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { DateSelector } from '@/components/DateSelector';
 import { getCurrentDate, isValidDateKey, isToday, formatDateForDisplay } from '@/utils/dateHelpers';
+import { useKeyboardHeight } from '@/utils/useKeyboardHeight';
 import { CATEGORY_LIST, CATEGORY_ICONS } from '@/constants/categories';
 import type { ExpenseCategory, ExpenseRecord, MealTime } from '@/types';
 
@@ -42,6 +41,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
   const [meal, setMeal] = useState<MealTime>(editingRecord?.meal ?? 'lunch');
   const [date, setDate] = useState(editingRecord?.date ?? getCurrentDate());
   const [isDateExpanded, setIsDateExpanded] = useState(false);
+  const keyboardHeight = useKeyboardHeight();
 
   const handleCategoryChange = (cat: ExpenseCategory) => {
     setCategory(cat);
@@ -79,10 +79,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
-      >
+      <View style={[styles.overlay, { paddingBottom: keyboardHeight }]}>
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
@@ -193,7 +190,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
