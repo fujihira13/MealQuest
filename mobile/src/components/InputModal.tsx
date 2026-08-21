@@ -8,11 +8,12 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useAppStore } from '@/store/useAppStore';
 import { DateSelector } from '@/components/DateSelector';
 import { getCurrentDate, isValidDateKey, isToday, formatDateForDisplay } from '@/utils/dateHelpers';
-import { useKeyboardHeight } from '@/utils/useKeyboardHeight';
 import { CATEGORY_LIST, CATEGORY_ICONS } from '@/constants/categories';
 import type { ExpenseCategory, ExpenseRecord, MealTime } from '@/types';
 
@@ -41,7 +42,6 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
   const [meal, setMeal] = useState<MealTime>(editingRecord?.meal ?? 'lunch');
   const [date, setDate] = useState(editingRecord?.date ?? getCurrentDate());
   const [isDateExpanded, setIsDateExpanded] = useState(false);
-  const keyboardHeight = useKeyboardHeight();
 
   const handleCategoryChange = (cat: ExpenseCategory) => {
     setCategory(cat);
@@ -79,7 +79,10 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={[styles.overlay, { paddingBottom: keyboardHeight }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.overlay}
+      >
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
@@ -97,29 +100,10 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
             <Text style={styles.closeIconText}>✕</Text>
           </TouchableOpacity>
 
-          <ScrollView
-            style={styles.scrollArea}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* カテゴリー */}
-            {isEditing ? (
-              <View style={styles.categoryGrid}>
-                {CATEGORY_LIST.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
-                    onPress={() => handleCategoryChange(cat)}
-                  >
-                    <Text style={styles.categoryIcon}>{CATEGORY_ICONS[cat]}</Text>
-                    <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
+          {/* 固定領域: カテゴリー見出し・金額入力（ScrollView の外） */}
+          <View style={styles.fixedTop}>
+            {/* カテゴリー見出し（新規入力時のみ。編集時はグリッドが ScrollView 側に表示される） */}
+            {!isEditing && (
               <View style={styles.categoryHeaderRow}>
                 <Text style={styles.categoryHeaderIcon}>{CATEGORY_ICONS[category]}</Text>
                 <Text style={styles.categoryHeaderText}>{category}</Text>
@@ -147,6 +131,31 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
               </View>
               <View style={styles.amountUnderline} />
             </View>
+          </View>
+
+          <ScrollView
+            style={styles.scrollArea}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* カテゴリー選択グリッド（編集時のみ） */}
+            {isEditing && (
+              <View style={styles.categoryGrid}>
+                {CATEGORY_LIST.map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
+                    onPress={() => handleCategoryChange(cat)}
+                  >
+                    <Text style={styles.categoryIcon}>{CATEGORY_ICONS[cat]}</Text>
+                    <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
             {/* 食事時間 */}
             {category !== 'スーパー' && (
@@ -190,7 +199,7 @@ export function InputModal({ visible, initialCategory, onClose, editingRecord = 
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -239,8 +248,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 44,
     paddingBottom: 16,
+  },
+  fixedTop: {
+    paddingHorizontal: 20,
+    paddingTop: 44,
   },
   editingBadge: {
     position: 'absolute',
