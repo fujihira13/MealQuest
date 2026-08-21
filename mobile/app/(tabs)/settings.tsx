@@ -39,6 +39,20 @@ function escapeCsvValue(value: string | number): string {
   return text;
 }
 
+function formatTimestampForCsv(timestamp: string): string {
+  const parsed = new Date(timestamp);
+  if (Number.isNaN(parsed.getTime())) {
+    return timestamp;
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = parsed.getFullYear();
+  const month = pad(parsed.getMonth() + 1);
+  const day = pad(parsed.getDate());
+  const hours = pad(parsed.getHours());
+  const minutes = pad(parsed.getMinutes());
+  return `${year}/${month}/${day} ${hours}:${minutes}`;
+}
+
 function createExpensesCsv(expenses: ExpenseRecord[]): string {
   const sortedExpenses = [...expenses].sort((a, b) => {
     const dateDiff = a.date.localeCompare(b.date);
@@ -49,7 +63,7 @@ function createExpensesCsv(expenses: ExpenseRecord[]): string {
     expense.category,
     getMealLabel(expense.meal),
     expense.amount,
-    expense.timestamp,
+    formatTimestampForCsv(expense.timestamp),
   ]);
   const csvLines = [CSV_HEADERS, ...rows].map((row) =>
     row.map(escapeCsvValue).join(","),
