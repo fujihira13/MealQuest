@@ -52,7 +52,6 @@
 - Zustand
 - AsyncStorage
 - react-native-svg
-- EAS Build
 
 ## 現在のアプリ
 
